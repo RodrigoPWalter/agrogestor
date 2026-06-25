@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Iniciar AgroGestor API",
+      "request": "launch",
+      "mainClass": "br.com.agrogestor.AgroGestorApplication",
+      "projectName": "agrogestor-backend",
+      "console": "integratedTerminal"
+    }
+  ]
+}

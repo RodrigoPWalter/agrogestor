@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: agrogestor
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrogestor}
+    username: ${DB_USERNAME:agrogestor}
+    password: ${DB_PASSWORD:agrogestor}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+server:
+  error:
+    include-message: never

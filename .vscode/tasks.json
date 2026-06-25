@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AgroGestor: executar testes",
+      "type": "shell",
+      "command": ".\\mvnw.cmd",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": ["$javac"]
+    },
+    {
+      "label": "AgroGestor: iniciar API",
+      "type": "shell",
+      "command": ".\\mvnw.cmd",
+      "args": ["spring-boot:run"],
+      "group": "build",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "AgroGestor: instalar frontend",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}\\frontend"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "AgroGestor: iniciar interface",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}\\frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "AgroGestor: testar frontend",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["test"],
+      "options": {
+        "cwd": "${workspaceFolder}\\frontend"
+      },
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}
