@@ -1,0 +1,132 @@
+package br.com.agrogestor.planting.service;
+
+import br.com.agrogestor.planting.dto.PlantingRequest;
+import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.repository.PlantingRepository;
+import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class PlantingServiceTest {
+
+    @Mock
+    private PlantingRepository repository;
+
+    private PlantingService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new PlantingService(repository);
+    }
+
+    @Test
+    void shouldCreateAndNormalizePlanting() {
+        PlantingRequest request = request("  Soja   precoce  ", "  Talhão   norte  ");
+        when(repository.save(any(Planting.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.create(request);
+
+        ArgumentCaptor<Planting> captor = ArgumentCaptor.forClass(Planting.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getCrop()).isEqualTo("Soja precoce");
+        assertThat(response.crop()).isEqualTo("Soja precoce");
+        assertThat(response.observations()).isEqualTo("Talhão norte");
+    }
+
+    @Test
+    void shouldFilterListByHarvest() {
+        Planting planting = planting();
+        when(repository.findByHarvestIgnoreCase(any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(planting)));
+
+        var result = service.findAll(" 2026/2027 ", 0, 20);
+
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().getFirst().harvest()).isEqualTo("2026/2027");
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findByHarvestIgnoreCase(
+                org.mockito.ArgumentMatchers.eq("2026/2027"),
+                pageableCaptor.capture()
+        );
+        assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
+        verify(repository, never()).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void shouldThrowClearErrorWhenPlantingDoesNotExist() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.findById(id))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining(id.toString());
+    }
+
+    @Test
+    void shouldUpdateExistingPlanting() {
+        UUID id = UUID.randomUUID();
+        Planting planting = planting();
+        when(repository.findById(id)).thenReturn(Optional.of(planting));
+
+        var response = service.update(id, request("Milho", null));
+
+        assertThat(response.crop()).isEqualTo("Milho");
+        assertThat(response.observations()).isNull();
+    }
+
+    @Test
+    void shouldDeleteOnlyExistingPlanting() {
+        UUID id = UUID.randomUUID();
+        Planting planting = planting();
+        when(repository.findById(id)).thenReturn(Optional.of(planting));
+
+        service.delete(id);
+
+        verify(repository).delete(planting);
+    }
+
+    private PlantingRequest request(String crop, String observations) {
+        return new PlantingRequest(
+                crop,
+                "2026/2027",
+                new BigDecimal("18.50"),
+                LocalDate.of(2026, 10, 15),
+                "BRS 284",
+                new BigDecimal("925.000"),
+                observations
+        );
+    }
+
+    private Planting planting() {
+        return new Planting(
+                "Soja",
+                "2026/2027",
+                new BigDecimal("18.50"),
+                LocalDate.of(2026, 10, 15),
+                "BRS 284",
+                new BigDecimal("925.000"),
+                "Talhão norte"
+        );
+    }
+}
