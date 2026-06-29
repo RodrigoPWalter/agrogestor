@@ -16,7 +16,10 @@ public record PlantingRequest(
         String crop,
 
         @NotBlank(message = "A safra é obrigatória")
-        @Pattern(regexp = "^\\d{4}/\\d{4}$", message = "A safra deve seguir o formato 2026/2027")
+        @Pattern(
+                regexp = "^(\\d{4}|\\d{4}/\\d{4})$",
+                message = "A safra deve seguir o formato 2026 ou 2026/2027"
+        )
         String harvest,
 
         @NotNull(message = "A área plantada é obrigatória")
