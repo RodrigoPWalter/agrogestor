@@ -7,6 +7,7 @@ import br.com.agrogestor.inventory.dto.InventoryProductResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductUpdateRequest;
 import br.com.agrogestor.inventory.entity.InventoryMovement;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
+import br.com.agrogestor.inventory.entity.MovementType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
@@ -38,7 +39,19 @@ public class InventoryService {
                 normalize(request.name()), request.productType(), quantity(request.initialQuantity()),
                 request.unit(), quantity(request.minimumStock()), request.expirationDate()
         );
-        return toResponse(productRepository.save(product));
+        InventoryProduct savedProduct = productRepository.save(product);
+
+        if (savedProduct.getQuantity().signum() > 0) {
+            movementRepository.save(new InventoryMovement(
+                    savedProduct,
+                    MovementType.ENTRY,
+                    savedProduct.getQuantity(),
+                    LocalDate.now(),
+                    "Saldo inicial"
+            ));
+        }
+
+        return toResponse(savedProduct);
     }
 
     @Transactional(readOnly = true)
