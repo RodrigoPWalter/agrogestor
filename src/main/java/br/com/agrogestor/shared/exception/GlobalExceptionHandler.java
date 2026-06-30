@@ -101,6 +101,14 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(BusinessRuleException.class)
+    ResponseEntity<ApiError> handleBusinessRule(
+            BusinessRuleException exception,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request, Map.of());
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> handleUnexpected(
             Exception exception,
