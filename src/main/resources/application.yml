@@ -25,3 +25,9 @@ springdoc:
 server:
   error:
     include-message: never
+
+agrogestor:
+  weather:
+    latitude: ${WEATHER_LATITUDE:-27.6736}
+    longitude: ${WEATHER_LONGITUDE:-53.8056}
+    location-name: ${WEATHER_LOCATION_NAME:Campo Novo - RS}
