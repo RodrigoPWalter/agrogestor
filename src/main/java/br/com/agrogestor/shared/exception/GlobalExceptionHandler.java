@@ -109,6 +109,20 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), request, Map.of());
     }
 
+    @ExceptionHandler(ExternalServiceException.class)
+    ResponseEntity<ApiError> handleExternalService(
+            ExternalServiceException exception,
+            HttpServletRequest request
+    ) {
+        LOGGER.warn("Serviço externo indisponível: {}", exception.getMessage(), exception);
+        return response(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage(),
+                request,
+                Map.of()
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> handleUnexpected(
             Exception exception,
