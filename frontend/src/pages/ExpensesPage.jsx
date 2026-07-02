@@ -61,7 +61,7 @@ export function ExpensesPage() {
 
   useEffect(() => {
     api
-      .getPlantings()
+      .getAllPlantings()
       .then((page) => {
         setPlantings(page.content);
         if (page.content.length > 0) {

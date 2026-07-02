@@ -1273,6 +1273,44 @@ p {
   margin-bottom: 20px;
 }
 
+.planting-tabs {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #e7ece6;
+}
+
+.planting-tabs button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 13px;
+  color: var(--muted);
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+  font-size: 0.73rem;
+  font-weight: 750;
+}
+
+.planting-tabs button.is-active {
+  color: var(--green-800);
+  background: #fff;
+  box-shadow: 0 3px 10px rgba(34, 61, 43, 0.08);
+}
+
+.icon-button--success {
+  color: var(--green-700);
+}
+
+.icon-button--success:hover {
+  background: var(--green-100);
+}
+
 .search-box {
   display: flex;
   width: min(460px, 100%);

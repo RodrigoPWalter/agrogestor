@@ -2,6 +2,7 @@ package br.com.agrogestor.planting.controller;
 
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.service.PlantingService;
 import br.com.agrogestor.shared.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,6 +16,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -55,10 +57,11 @@ public class PlantingController {
     @Operation(summary = "Listar plantios", description = "Aceita filtro opcional por safra e paginação")
     public ResponseEntity<PageResponse<PlantingResponse>> findAll(
             @RequestParam(required = false) String harvest,
+            @RequestParam(required = false) PlantingStatus status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
-        return ResponseEntity.ok(service.findAll(harvest, page, size));
+        return ResponseEntity.ok(service.findAll(harvest, status, page, size));
     }
 
     @GetMapping("/{id}")
@@ -81,6 +84,12 @@ public class PlantingController {
     @Operation(summary = "Excluir um plantio")
     public void delete(@PathVariable UUID id) {
         service.delete(id);
+    }
+
+    @PatchMapping("/{id}/finish")
+    @Operation(summary = "Marcar plantio como colhido")
+    public PlantingResponse finish(@PathVariable UUID id) {
+        return service.finish(id);
     }
 
     @GetMapping("/harvests")

@@ -1,6 +1,8 @@
 import {
   CalendarDays,
+  CheckCircle2,
   Edit3,
+  History,
   Plus,
   Search,
   Sprout,
@@ -38,11 +40,15 @@ export function PlantingsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [view, setView] = useState("active");
 
   const loadPlantings = useCallback(async () => {
     setLoading(true);
     try {
-      const page = await api.getPlantings();
+      const page =
+        view === "active"
+          ? await api.getPlantings()
+          : await api.getPlantingHistory();
       setPlantings(page.content);
       setError("");
     } catch (requestError) {
@@ -50,7 +56,7 @@ export function PlantingsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [view]);
 
   useEffect(() => {
     loadPlantings();
@@ -127,6 +133,20 @@ export function PlantingsPage() {
     }
   }
 
+  async function handleFinish(planting) {
+    if (
+      !window.confirm(`Finalizar o plantio de ${planting.crop} como colhido?`)
+    )
+      return;
+    try {
+      await api.finishPlanting(planting.id);
+      setSuccess("Plantio finalizado e movido para o histórico.");
+      await loadPlantings();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   return (
     <div className="page">
       <PageHeader
@@ -142,6 +162,21 @@ export function PlantingsPage() {
 
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
+
+      <div className="planting-tabs">
+        <button
+          className={view === "active" ? "is-active" : ""}
+          onClick={() => setView("active")}
+        >
+          <Sprout size={17} /> Plantios ativos
+        </button>
+        <button
+          className={view === "history" ? "is-active" : ""}
+          onClick={() => setView("history")}
+        >
+          <History size={17} /> Histórico de safras
+        </button>
+      </div>
 
       <div className="toolbar">
         <label className="search-box">
@@ -193,6 +228,15 @@ export function PlantingsPage() {
                   <span className="badge">{planting.harvest}</span>
                 </div>
                 <div className="card-actions">
+                  {view === "active" && (
+                    <button
+                      className="icon-button icon-button--success"
+                      onClick={() => handleFinish(planting)}
+                      aria-label="Finalizar plantio"
+                    >
+                      <CheckCircle2 size={18} />
+                    </button>
+                  )}
                   <button
                     className="icon-button"
                     onClick={() => openEdit(planting)}
@@ -214,6 +258,12 @@ export function PlantingsPage() {
                 <span>Área plantada</span>
               </div>
               <dl className="details-list">
+                {planting.completedAt && (
+                  <div>
+                    <dt>Finalizado</dt>
+                    <dd>{formatDate(planting.completedAt.slice(0, 10))}</dd>
+                  </div>
+                )}
                 <div>
                   <dt>Variedade</dt>
                   <dd>{planting.seedVariety}</dd>

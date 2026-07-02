@@ -33,7 +33,11 @@ export const api = {
       headers: JSON_HEADERS,
       body: JSON.stringify(data),
     }),
-  getPlantings: () => request("/api/v1/plantings?page=0&size=100"),
+  getPlantings: () =>
+    request("/api/v1/plantings?status=ACTIVE&page=0&size=100"),
+  getAllPlantings: () => request("/api/v1/plantings?page=0&size=100"),
+  getPlantingHistory: () =>
+    request("/api/v1/plantings?status=HARVESTED&page=0&size=100"),
   createPlanting: (data) =>
     request("/api/v1/plantings", {
       method: "POST",
@@ -48,6 +52,8 @@ export const api = {
     }),
   deletePlanting: (id) =>
     request(`/api/v1/plantings/${id}`, { method: "DELETE" }),
+  finishPlanting: (id) =>
+    request(`/api/v1/plantings/${id}/finish`, { method: "PATCH" }),
 
   calculateProduction: (data) =>
     request("/api/v1/production-estimates/calculate", {

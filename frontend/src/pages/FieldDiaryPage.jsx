@@ -67,7 +67,7 @@ export function FieldDiaryPage() {
 
   useEffect(() => {
     api
-      .getPlantings()
+      .getAllPlantings()
       .then((page) => setPlantings(page.content))
       .catch((requestError) => setError(requestError.message));
     loadEntries("");

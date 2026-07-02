@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -42,6 +44,13 @@ public class Planting {
 
     @Column(length = 1000)
     private String observations;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PlantingStatus status = PlantingStatus.ACTIVE;
+
+    @Column(name = "completed_at")
+    private OffsetDateTime completedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -89,6 +98,11 @@ public class Planting {
         updatedAt = now;
     }
 
+    public void finish() {
+        status = PlantingStatus.HARVESTED;
+        completedAt = OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
     @PreUpdate
     void preUpdate() {
         updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
@@ -124,6 +138,14 @@ public class Planting {
 
     public String getObservations() {
         return observations;
+    }
+
+    public PlantingStatus getStatus() {
+        return status;
+    }
+
+    public OffsetDateTime getCompletedAt() {
+        return completedAt;
     }
 
     public OffsetDateTime getCreatedAt() {

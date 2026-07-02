@@ -3,6 +3,7 @@ package br.com.agrogestor.planting.service;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
@@ -41,15 +42,30 @@ public class PlantingService {
 
     @Transactional(readOnly = true)
     public PageResponse<PlantingResponse> findAll(String harvest, int page, int size) {
+        return findAll(harvest, null, page, size);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PlantingResponse> findAll(
+            String harvest, PlantingStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Direction.DESC, "plantingDate").and(Sort.by("crop"))
         );
 
-        Page<Planting> result = harvest == null || harvest.isBlank()
-                ? repository.findAll(pageable)
-                : repository.findByHarvestIgnoreCase(harvest.trim(), pageable);
+        boolean hasHarvest = harvest != null && !harvest.isBlank();
+        Page<Planting> result;
+        if (status == null) {
+            result = hasHarvest
+                    ? repository.findByHarvestIgnoreCase(harvest.trim(), pageable)
+                    : repository.findAll(pageable);
+        } else {
+            result = hasHarvest
+                    ? repository.findByHarvestIgnoreCaseAndStatus(
+                            harvest.trim(), status, pageable)
+                    : repository.findByStatus(status, pageable);
+        }
 
         return PageResponse.from(result.map(this::toResponse));
     }
@@ -80,6 +96,13 @@ public class PlantingService {
         repository.delete(planting);
     }
 
+    @Transactional
+    public PlantingResponse finish(UUID id) {
+        Planting planting = findEntity(id);
+        planting.finish();
+        return toResponse(planting);
+    }
+
     @Transactional(readOnly = true)
     public List<String> findHarvestHistory() {
         return repository.findDistinctHarvests();
@@ -100,6 +123,9 @@ public class PlantingService {
                 planting.getSeedVariety(),
                 planting.getSeedQuantity(),
                 planting.getObservations(),
+                planting.getStatus(),
+                planting.getStatus().getDisplayName(),
+                planting.getCompletedAt(),
                 planting.getCreatedAt(),
                 planting.getUpdatedAt()
         );
