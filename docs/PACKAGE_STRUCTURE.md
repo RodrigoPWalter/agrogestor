@@ -53,6 +53,12 @@ br.com.agrogestor
 │   ├── entity
 │   ├── repository
 │   └── service
+├── rainfall
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── repository
+│   └── service
 └── shared
     ├── dto
     └── exception

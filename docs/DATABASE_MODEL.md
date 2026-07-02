@@ -9,6 +9,8 @@ oficial da estrutura.
 erDiagram
     PLANTINGS ||--o{ EXPENSES : recebe
     PLANTINGS ||--o{ FIELD_DIARY_ENTRIES : registra
+    FIELD_DIARY_ENTRIES ||--o{ FIELD_DIARY_PRODUCTS : utiliza
+    INVENTORY_PRODUCTS ||--o{ FIELD_DIARY_PRODUCTS : aplicado
     INVENTORY_PRODUCTS ||--o{ INVENTORY_MOVEMENTS : movimenta
     MACHINES ||--o{ MAINTENANCES : recebe
 ```
@@ -50,6 +52,19 @@ interface.
 Cada registro pertence a um plantio e guarda data, tipo de atividade, condição do tempo,
 produtos aplicados e observações. O vínculo usa `ON DELETE RESTRICT` para preservar o
 histórico da safra.
+
+### `field_diary_products`
+
+Relaciona cada atividade do diário aos produtos do estoque e à quantidade aplicada.
+
+### `rainfall_measurements`
+
+Guarda uma leitura do pluviômetro por data, em milímetros.
+
+### `weather_location`
+
+Mantém a cidade escolhida para a previsão. É uma configuração única enquanto o sistema
+ainda trabalha com uma propriedade.
 
 ## Convenções
 

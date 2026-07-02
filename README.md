@@ -12,6 +12,7 @@ precisar montar fórmulas toda vez.
 ## O que dá para fazer hoje
 
 - cadastrar culturas e safras usando `2026` ou `2026/2027`;
+- finalizar plantios colhidos sem perder o histórico das safras;
 - lançar gastos por plantio e acompanhar custo por hectare;
 - estimar produção, faturamento e lucro;
 - calcular sementes e plantas por metro, por hectare ou a partir do PMS;
@@ -20,7 +21,10 @@ precisar montar fórmulas toda vez.
 - cadastrar máquinas, horímetro e histórico de manutenção;
 - acompanhar a próxima revisão de cada máquina;
 - manter um diário de aplicações, vistorias e trabalhos realizados no campo;
-- consultar previsão de chuva e cotações de soja, milho e trigo no painel.
+- selecionar vários produtos do estoque em uma mesma atividade do diário;
+- registrar manualmente as chuvas medidas no pluviômetro;
+- escolher a cidade da previsão do tempo;
+- consultar soja, milho, trigo, Diesel e o histórico recente de preços no painel.
 
 As cotações vêm da Cotricampo. A previsão usa o Open-Meteo e fica configurada para
 Campo Novo, no Rio Grande do Sul, quando nenhuma coordenada é informada.
@@ -82,6 +86,7 @@ Os principais grupos da API são:
 | Máquinas | `/api/v1/machines` |
 | Manutenções | `/api/v1/maintenances` |
 | Diário da lavoura | `/api/v1/field-diary` |
+| Chuvas | `/api/v1/rainfall` |
 | Estimativa de produção | `/api/v1/production-estimates` |
 | Estimativa de semeadura | `/api/v1/seeding-estimates` |
 | Clima | `/api/v1/weather/forecast` |
