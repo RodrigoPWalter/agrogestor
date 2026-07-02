@@ -8,6 +8,7 @@ oficial da estrutura.
 ```mermaid
 erDiagram
     PLANTINGS ||--o{ EXPENSES : recebe
+    PLANTINGS ||--o{ FIELD_DIARY_ENTRIES : registra
     INVENTORY_PRODUCTS ||--o{ INVENTORY_MOVEMENTS : movimenta
     MACHINES ||--o{ MAINTENANCES : recebe
 ```
@@ -44,6 +45,12 @@ Registra manutenção preventiva ou corretiva, peças, custo e o horímetro da p
 revisão. A comparação desse valor com o horímetro da máquina alimenta o alerta da
 interface.
 
+### `field_diary_entries`
+
+Cada registro pertence a um plantio e guarda data, tipo de atividade, condição do tempo,
+produtos aplicados e observações. O vínculo usa `ON DELETE RESTRICT` para preservar o
+histórico da safra.
+
 ## Convenções
 
 - IDs usam UUID.
@@ -55,5 +62,5 @@ interface.
 ## Ainda não modelado
 
 Quando autenticação e múltiplas propriedades entrarem no projeto, as tabelas de negócio
-receberão um `property_id`. O diário da lavoura também deve ganhar tabela própria para
-aplicações, manejo e observações de campo.
+receberão um `property_id`. A baixa automática de produtos usados no diário deve ser
+implementada quando o cadastro de aplicações estiver mais detalhado.

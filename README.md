@@ -19,6 +19,7 @@ precisar montar fórmulas toda vez.
 - registrar entradas, saídas, validade e nível mínimo dos produtos;
 - cadastrar máquinas, horímetro e histórico de manutenção;
 - acompanhar a próxima revisão de cada máquina;
+- manter um diário de aplicações, vistorias e trabalhos realizados no campo;
 - consultar previsão de chuva e cotações de soja, milho e trigo no painel.
 
 As cotações vêm da Cotricampo. A previsão usa o Open-Meteo e fica configurada para
@@ -80,6 +81,7 @@ Os principais grupos da API são:
 | Estoque | `/api/v1/inventory/products` |
 | Máquinas | `/api/v1/machines` |
 | Manutenções | `/api/v1/maintenances` |
+| Diário da lavoura | `/api/v1/field-diary` |
 | Estimativa de produção | `/api/v1/production-estimates` |
 | Estimativa de semeadura | `/api/v1/seeding-estimates` |
 | Clima | `/api/v1/weather/forecast` |
@@ -106,6 +108,6 @@ Há mais detalhes sobre o banco e a divisão dos módulos em
 ## Próximos passos
 
 O próximo corte deve trazer propriedades e usuários. Isso vai permitir guardar a
-localização do clima por fazenda e separar os dados de mais de uma família. O diário da
-lavoura também continua no radar, principalmente para registrar aplicações e condições
-do tempo no dia do manejo.
+localização do clima por fazenda e separar os dados de mais de uma família. Depois disso,
+o diário poderá consumir produtos do estoque automaticamente quando uma aplicação for
+registrada.
