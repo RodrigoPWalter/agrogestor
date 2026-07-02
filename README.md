@@ -1,6 +1,5 @@
 # AgroGestor
 
-![Screenshot do Sistema](link_da_imagem_aqui)
 
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
