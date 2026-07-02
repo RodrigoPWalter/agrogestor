@@ -161,4 +161,21 @@ export const api = {
     }),
   deleteDiaryEntry: (id) =>
     request(`/api/v1/field-diary/${id}`, { method: "DELETE" }),
+
+  getRainfall: () => request("/api/v1/rainfall"),
+  getRainfallSummary: () => request("/api/v1/rainfall/summary"),
+  createRainfall: (data) =>
+    request("/api/v1/rainfall", {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateRainfall: (id, data) =>
+    request(`/api/v1/rainfall/${id}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  deleteRainfall: (id) =>
+    request(`/api/v1/rainfall/${id}`, { method: "DELETE" }),
 };

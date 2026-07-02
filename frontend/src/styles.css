@@ -1034,6 +1034,46 @@ p {
   line-height: 1.55;
 }
 
+.rainfall-list {
+  display: grid;
+}
+
+.rainfall-list article {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0ec;
+}
+
+.rainfall-list article:last-child {
+  border-bottom: 0;
+}
+
+.rainfall-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--blue-600);
+  font-weight: 800;
+}
+
+.rainfall-list strong,
+.rainfall-list small {
+  display: block;
+}
+
+.rainfall-list strong {
+  font-size: 0.78rem;
+}
+
+.rainfall-list small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
 .panel {
   padding: 24px;
   border: 1px solid var(--line);

@@ -1,6 +1,7 @@
 import {
   Calculator,
   BookOpenText,
+  CloudRain,
   LayoutDashboard,
   Leaf,
   Menu,
@@ -19,6 +20,7 @@ const navigation = [
   { to: "/estoque", label: "Estoque", icon: Warehouse },
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
   { to: "/diario", label: "Diário", icon: BookOpenText },
+  { to: "/chuvas", label: "Chuvas", icon: CloudRain },
   { to: "/calculadora", label: "Calculadora", icon: Calculator },
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
 ];
