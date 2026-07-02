@@ -35,6 +35,13 @@ class CotricampoQuoteClientTest {
                       <div class="card_coluna_2"><p>R$ 70,00</p></div>
                     </div>
                   </div>
+                  <div class="coluna_cotacao">
+                    <div class="titulo">COMBUSTÍVEIS</div>
+                    <div class="card_cotacao">
+                      <div class="card_coluna_1"><p>Diesel</p></div>
+                      <div class="card_coluna_2"><p>R$ 6,59</p></div>
+                    </div>
+                  </div>
                 </div>
                 """);
 
@@ -46,8 +53,10 @@ class CotricampoQuoteClientTest {
                 .containsExactlyInAnyOrder(
                         org.assertj.core.groups.Tuple.tuple("SOJA", new BigDecimal("118.00")),
                         org.assertj.core.groups.Tuple.tuple("MILHO", new BigDecimal("58.00")),
-                        org.assertj.core.groups.Tuple.tuple("TRIGO", new BigDecimal("70.00"))
+                        org.assertj.core.groups.Tuple.tuple("TRIGO", new BigDecimal("70.00")),
+                        org.assertj.core.groups.Tuple.tuple("DIESEL", new BigDecimal("6.59"))
                 );
+        assertThat(response.history()).hasSize(1);
         assertThat(response.sourceUrl()).isEqualTo(CotricampoQuoteClient.SOURCE_URL);
         assertThat(response.stale()).isFalse();
     }

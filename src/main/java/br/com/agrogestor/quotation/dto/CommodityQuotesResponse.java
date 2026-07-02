@@ -7,6 +7,7 @@ import java.util.List;
 public record CommodityQuotesResponse(
         LocalDate quotationDate,
         List<CommodityQuoteItemResponse> quotes,
+        List<MarketQuoteHistoryResponse> history,
         String sourceName,
         String sourceUrl,
         OffsetDateTime fetchedAt,
@@ -16,6 +17,7 @@ public record CommodityQuotesResponse(
         return new CommodityQuotesResponse(
                 quotationDate,
                 quotes,
+                history,
                 sourceName,
                 sourceUrl,
                 fetchedAt,

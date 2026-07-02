@@ -357,6 +357,40 @@ export function DashboardPage() {
               {commodityQuotes.stale &&
                 " Exibindo a última atualização disponível."}
             </p>
+            {commodityQuotes.history?.length > 1 && (
+              <div className="quotation-history">
+                <h3>Histórico recente</h3>
+                <div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Data</th>
+                        {commodityQuotes.quotes.map((quote) => (
+                          <th key={quote.commodity}>{quote.commodity}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commodityQuotes.history.slice(0, 7).map((day) => (
+                        <tr key={day.quotationDate}>
+                          <td>{formatDate(day.quotationDate)}</td>
+                          {commodityQuotes.quotes.map((quote) => {
+                            const value = day.quotes.find(
+                              (item) => item.commodity === quote.commodity,
+                            );
+                            return (
+                              <td key={quote.commodity}>
+                                {value ? formatCurrency(value.price) : "—"}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </>
         )}
       </section>
