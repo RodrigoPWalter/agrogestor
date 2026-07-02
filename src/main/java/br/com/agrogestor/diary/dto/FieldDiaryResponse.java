@@ -5,6 +5,7 @@ import br.com.agrogestor.diary.entity.ActivityType;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import java.util.List;
 
 public record FieldDiaryResponse(
         UUID id,
@@ -17,6 +18,7 @@ public record FieldDiaryResponse(
         String activity,
         String weatherCondition,
         String appliedProducts,
+        List<FieldDiaryProductResponse> products,
         String observations,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

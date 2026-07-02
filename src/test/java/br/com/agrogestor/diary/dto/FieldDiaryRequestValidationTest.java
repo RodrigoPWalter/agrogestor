@@ -48,6 +48,7 @@ class FieldDiaryRequestValidationTest {
                 "Vistoria de pragas",
                 "Tempo seco",
                 null,
+                null,
                 null
         );
     }

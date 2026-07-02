@@ -2,8 +2,12 @@ package br.com.agrogestor.diary.service;
 
 import br.com.agrogestor.diary.dto.FieldDiaryRequest;
 import br.com.agrogestor.diary.dto.FieldDiaryResponse;
+import br.com.agrogestor.diary.dto.FieldDiaryProductResponse;
 import br.com.agrogestor.diary.entity.FieldDiaryEntry;
 import br.com.agrogestor.diary.repository.FieldDiaryRepository;
+import br.com.agrogestor.diary.repository.FieldDiaryProductRepository;
+import br.com.agrogestor.diary.entity.FieldDiaryProduct;
+import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
@@ -16,19 +20,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.List;
 
 @Service
 public class FieldDiaryService {
 
     private final FieldDiaryRepository diaryRepository;
     private final PlantingRepository plantingRepository;
+    private final FieldDiaryProductRepository productApplicationRepository;
+    private final InventoryProductRepository inventoryRepository;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
-            PlantingRepository plantingRepository
+            PlantingRepository plantingRepository,
+            FieldDiaryProductRepository productApplicationRepository,
+            InventoryProductRepository inventoryRepository
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
+        this.productApplicationRepository = productApplicationRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     @Transactional
@@ -43,7 +54,9 @@ public class FieldDiaryService {
                 normalizeNullable(request.appliedProducts()),
                 normalizeNullable(request.observations())
         );
-        return toResponse(diaryRepository.save(entry));
+        FieldDiaryEntry saved = diaryRepository.save(entry);
+        replaceProducts(saved, request);
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -77,6 +90,7 @@ public class FieldDiaryService {
                 normalizeNullable(request.appliedProducts()),
                 normalizeNullable(request.observations())
         );
+        replaceProducts(entry, request);
         return toResponse(entry);
     }
 
@@ -101,6 +115,15 @@ public class FieldDiaryService {
 
     private FieldDiaryResponse toResponse(FieldDiaryEntry entry) {
         Planting planting = entry.getPlanting();
+        var products = entry.getId() == null ? List.<FieldDiaryProductResponse>of()
+                : productApplicationRepository.findByEntryId(entry.getId()).stream()
+                .map(item -> new FieldDiaryProductResponse(
+                        item.getProduct().getId(),
+                        item.getProduct().getName(),
+                        item.getQuantity(),
+                        item.getProduct().getUnit().getDisplayName()
+                ))
+                .toList();
         return new FieldDiaryResponse(
                 entry.getId(),
                 planting.getId(),
@@ -112,10 +135,24 @@ public class FieldDiaryService {
                 entry.getActivity(),
                 entry.getWeatherCondition(),
                 entry.getAppliedProducts(),
+                products,
                 entry.getObservations(),
                 entry.getCreatedAt(),
                 entry.getUpdatedAt()
         );
+    }
+
+    private void replaceProducts(FieldDiaryEntry entry, FieldDiaryRequest request) {
+        if (entry.getId() == null) return;
+        productApplicationRepository.deleteByEntryId(entry.getId());
+        if (request.products() == null) return;
+        request.products().forEach(item -> {
+            var product = inventoryRepository.findById(item.productId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Produto não encontrado com o ID " + item.productId()));
+            productApplicationRepository.save(
+                    new FieldDiaryProduct(entry, product, item.quantity()));
+        });
     }
 
     private String normalize(String value) {

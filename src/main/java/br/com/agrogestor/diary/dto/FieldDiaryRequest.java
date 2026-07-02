@@ -5,9 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.Valid;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
 
 public record FieldDiaryRequest(
         @NotNull(message = "O plantio é obrigatório")
@@ -29,6 +31,8 @@ public record FieldDiaryRequest(
 
         @Size(max = 500, message = "Os produtos devem ter no máximo 500 caracteres")
         String appliedProducts,
+
+        List<@Valid FieldDiaryProductRequest> products,
 
         @Size(max = 1000, message = "As observações devem ter no máximo 1000 caracteres")
         String observations

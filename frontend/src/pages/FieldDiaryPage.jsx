@@ -5,6 +5,7 @@ import {
   FlaskConical,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -36,6 +37,7 @@ function emptyForm(plantingId = "") {
     activity: "",
     weatherCondition: "",
     appliedProducts: "",
+    products: [],
     observations: "",
   };
 }
@@ -43,6 +45,7 @@ function emptyForm(plantingId = "") {
 export function FieldDiaryPage() {
   const [plantings, setPlantings] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [inventoryProducts, setInventoryProducts] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +73,10 @@ export function FieldDiaryPage() {
       .getAllPlantings()
       .then((page) => setPlantings(page.content))
       .catch((requestError) => setError(requestError.message));
+    api
+      .getInventoryProducts()
+      .then(setInventoryProducts)
+      .catch(() => {});
     loadEntries("");
   }, [loadEntries]);
 
@@ -93,6 +100,7 @@ export function FieldDiaryPage() {
       activity: entry.activity,
       weatherCondition: entry.weatherCondition || "",
       appliedProducts: entry.appliedProducts || "",
+      products: entry.products || [],
       observations: entry.observations || "",
     });
     setModalOpen(true);
@@ -107,6 +115,12 @@ export function FieldDiaryPage() {
       ...form,
       weatherCondition: form.weatherCondition || null,
       appliedProducts: form.appliedProducts || null,
+      products: form.products
+        .filter((item) => item.productId && Number(item.quantity) > 0)
+        .map((item) => ({
+          productId: item.productId,
+          quantity: Number(item.quantity),
+        })),
       observations: form.observations || null,
     };
 
@@ -258,11 +272,12 @@ export function FieldDiaryPage() {
                           <CloudSun size={16} /> {entry.weatherCondition}
                         </span>
                       )}
-                      {entry.appliedProducts && (
-                        <span>
-                          <FlaskConical size={16} /> {entry.appliedProducts}
+                      {entry.products?.map((product) => (
+                        <span key={product.productId}>
+                          <FlaskConical size={16} /> {product.productName}:{" "}
+                          {product.quantity} {product.unitName}
                         </span>
-                      )}
+                      ))}
                     </div>
                     {entry.observations && <p>{entry.observations}</p>}
                   </div>
@@ -349,19 +364,83 @@ export function FieldDiaryPage() {
                   placeholder="Ex.: Nublado e sem vento"
                 />
               </label>
-              <label>
-                <span>
-                  Produtos usados <small>(opcional)</small>
-                </span>
-                <input
-                  maxLength="500"
-                  value={form.appliedProducts}
-                  onChange={(event) =>
-                    setForm({ ...form, appliedProducts: event.target.value })
-                  }
-                  placeholder="Ex.: Fungicida 2 L/ha"
-                />
-              </label>
+              <div className="form-grid__full diary-products-field">
+                <div className="diary-products-field__header">
+                  <span>
+                    Produtos aplicados <small>(opcional)</small>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        products: [
+                          ...form.products,
+                          { productId: "", quantity: "" },
+                        ],
+                      })
+                    }
+                  >
+                    <Plus size={15} /> Adicionar produto
+                  </button>
+                </div>
+                {form.products.map((product, index) => (
+                  <div className="diary-product-row" key={index}>
+                    <select
+                      value={product.productId}
+                      onChange={(event) => {
+                        const products = [...form.products];
+                        products[index] = {
+                          ...product,
+                          productId: event.target.value,
+                        };
+                        setForm({ ...form, products });
+                      }}
+                    >
+                      <option value="">Escolha o produto</option>
+                      {inventoryProducts.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name} ({item.unitName})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      placeholder="Quantidade"
+                      value={product.quantity}
+                      onChange={(event) => {
+                        const products = [...form.products];
+                        products[index] = {
+                          ...product,
+                          quantity: event.target.value,
+                        };
+                        setForm({ ...form, products });
+                      }}
+                    />
+                    <button
+                      type="button"
+                      aria-label="Remover produto"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+                          products: form.products.filter(
+                            (_, itemIndex) => itemIndex !== index,
+                          ),
+                        })
+                      }
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                {inventoryProducts.length === 0 && (
+                  <small>
+                    Cadastre produtos no Estoque para selecioná-los aqui.
+                  </small>
+                )}
+              </div>
               <label className="form-grid__full">
                 <span>
                   Observações <small>(opcional)</small>

@@ -4,6 +4,8 @@ import br.com.agrogestor.diary.dto.FieldDiaryRequest;
 import br.com.agrogestor.diary.entity.ActivityType;
 import br.com.agrogestor.diary.entity.FieldDiaryEntry;
 import br.com.agrogestor.diary.repository.FieldDiaryRepository;
+import br.com.agrogestor.diary.repository.FieldDiaryProductRepository;
+import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
@@ -33,7 +35,12 @@ class FieldDiaryServiceTest {
     void setUp() {
         diaryRepository = mock(FieldDiaryRepository.class);
         plantingRepository = mock(PlantingRepository.class);
-        service = new FieldDiaryService(diaryRepository, plantingRepository);
+        service = new FieldDiaryService(
+                diaryRepository,
+                plantingRepository,
+                mock(FieldDiaryProductRepository.class),
+                mock(InventoryProductRepository.class)
+        );
     }
 
     @Test
@@ -69,6 +76,7 @@ class FieldDiaryServiceTest {
                 activity,
                 "Nublado",
                 "Fungicida",
+                null,
                 null
         );
     }
