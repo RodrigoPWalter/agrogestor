@@ -23,6 +23,16 @@ async function request(path, options = {}) {
 export const api = {
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getWeatherForecast: () => request("/api/v1/weather/forecast"),
+  searchWeatherLocations: (query) =>
+    request(
+      `/api/v1/weather/locations/search?query=${encodeURIComponent(query)}`,
+    ),
+  selectWeatherLocation: (data) =>
+    request("/api/v1/weather/location", {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
   getPlantings: () => request("/api/v1/plantings?page=0&size=100"),
   createPlanting: (data) =>
     request("/api/v1/plantings", {

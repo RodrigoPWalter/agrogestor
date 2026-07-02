@@ -3,7 +3,6 @@ package br.com.agrogestor.weather.service;
 import br.com.agrogestor.shared.exception.ExternalServiceException;
 import br.com.agrogestor.weather.client.OpenMeteoClient;
 import br.com.agrogestor.weather.dto.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,37 +14,43 @@ import java.util.List;
 public class WeatherService {
     private static final Duration CACHE_DURATION = Duration.ofMinutes(30);
     private final OpenMeteoClient client;
-    private final String locationName;
+    private final WeatherLocationService locationService;
     private volatile WeatherForecastResponse cachedForecast;
+    private volatile String cachedLocationKey;
 
-    public WeatherService(OpenMeteoClient client,
-                          @Value("${agrogestor.weather.location-name}") String locationName) {
+    public WeatherService(OpenMeteoClient client, WeatherLocationService locationService) {
         this.client = client;
-        this.locationName = locationName;
+        this.locationService = locationService;
     }
 
-    // TODO: usar as coordenadas da propriedade quando o módulo de usuários estiver pronto.
     public WeatherForecastResponse forecast() {
+        var location = locationService.current();
+        String locationKey = location.latitude() + ":" + location.longitude();
         WeatherForecastResponse current = cachedForecast;
-        if (isFresh(current)) return current;
+        if (isFresh(current) && locationKey.equals(cachedLocationKey)) return current;
 
         synchronized (this) {
             current = cachedForecast;
-            if (isFresh(current)) return current;
+            if (isFresh(current) && locationKey.equals(cachedLocationKey)) return current;
             try {
-                var source = client.fetch();
+                var source = client.fetch(
+                        location.latitude().doubleValue(),
+                        location.longitude().doubleValue(),
+                        location.timezone()
+                );
                 if (source == null || source.current() == null || source.daily() == null) {
                     throw new IllegalStateException("Resposta meteorológica incompleta");
                 }
                 var days = mapDays(source.daily());
                 var response = new WeatherForecastResponse(
-                        locationName, source.current().temperature(),
+                        location.label(), source.current().temperature(),
                         source.current().apparentTemperature(), source.current().weatherCode(),
                         condition(source.current().weatherCode()), days, alerts(days),
                         "Open-Meteo", OpenMeteoClient.SOURCE_URL,
                         OffsetDateTime.now(ZoneOffset.UTC), false
                 );
                 cachedForecast = response;
+                cachedLocationKey = locationKey;
                 return response;
             } catch (Exception exception) {
                 if (current != null) return current.asStale();

@@ -15,6 +15,7 @@ class WeatherServiceTest {
     @Test
     void shouldMapForecastCreateAlertsAndCacheResponse() {
         OpenMeteoClient client = mock(OpenMeteoClient.class);
+        WeatherLocationService locationService = mock(WeatherLocationService.class);
         var daily = new OpenMeteoResponse.Daily(
                 List.of(LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 3)),
                 List.of(new BigDecimal("2.0"), new BigDecimal("18.0")),
@@ -23,21 +24,28 @@ class WeatherServiceTest {
                 List.of(new BigDecimal("5.0"), BigDecimal.ZERO),
                 List.of(61, 1)
         );
-        when(client.fetch()).thenReturn(new OpenMeteoResponse(
+        when(locationService.current()).thenReturn(
+                new br.com.agrogestor.weather.dto.WeatherLocationResponse(
+                        "Campo Novo", "Rio Grande do Sul", "Brasil",
+                        new BigDecimal("-27.67"), new BigDecimal("-53.80"),
+                        "America/Sao_Paulo"
+                )
+        );
+        when(client.fetch(anyDouble(), anyDouble(), anyString())).thenReturn(new OpenMeteoResponse(
                 new OpenMeteoResponse.Current(
                         new BigDecimal("12.0"), new BigDecimal("10.0"), 2),
                 daily
         ));
-        var service = new WeatherService(client, "Campo Novo - RS");
+        var service = new WeatherService(client, locationService);
 
         var first = service.forecast();
         var second = service.forecast();
 
-        assertThat(first.location()).isEqualTo("Campo Novo - RS");
+        assertThat(first.location()).isEqualTo("Campo Novo - Rio Grande do Sul");
         assertThat(first.days()).hasSize(2);
         assertThat(first.alerts()).extracting(alert -> alert.type())
                 .containsExactlyInAnyOrder("FROST", "HEAT");
         assertThat(second).isSameAs(first);
-        verify(client, times(1)).fetch();
+        verify(client, times(1)).fetch(anyDouble(), anyDouble(), anyString());
     }
 }

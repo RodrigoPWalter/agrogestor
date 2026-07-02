@@ -8,8 +8,10 @@ import {
   ExternalLink,
   LandPlot,
   LoaderCircle,
+  MapPin,
   Plus,
   RefreshCw,
+  Search,
   ThermometerSun,
   ReceiptText,
   Sprout,
@@ -33,6 +35,10 @@ export function DashboardPage() {
   const [weather, setWeather] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState("");
+  const [locationSearchOpen, setLocationSearchOpen] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locationResults, setLocationResults] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([api.getPlantings(), api.getExpenses()])
@@ -71,6 +77,36 @@ export function DashboardPage() {
   useEffect(() => {
     loadWeather();
   }, []);
+
+  async function searchLocations(event) {
+    event.preventDefault();
+    if (locationQuery.trim().length < 3) return;
+    setLocationLoading(true);
+    try {
+      setLocationResults(
+        await api.searchWeatherLocations(locationQuery.trim()),
+      );
+    } catch (requestError) {
+      setWeatherError(requestError.message);
+    } finally {
+      setLocationLoading(false);
+    }
+  }
+
+  async function selectLocation(location) {
+    setLocationLoading(true);
+    try {
+      await api.selectWeatherLocation(location);
+      setLocationSearchOpen(false);
+      setLocationResults([]);
+      setLocationQuery("");
+      loadWeather();
+    } catch (requestError) {
+      setWeatherError(requestError.message);
+    } finally {
+      setLocationLoading(false);
+    }
+  }
 
   const metrics = useMemo(() => {
     const hectares = plantings.reduce(
@@ -172,6 +208,13 @@ export function DashboardPage() {
                   {weather.currentCondition} · Sensação de{" "}
                   {formatNumber(weather.apparentTemperature, 1)}°C
                 </p>
+                <button
+                  className="weather-location-button"
+                  type="button"
+                  onClick={() => setLocationSearchOpen((current) => !current)}
+                >
+                  <MapPin size={13} /> Alterar cidade
+                </button>
               </div>
               <strong>{formatNumber(weather.currentTemperature, 1)}°</strong>
             </div>
@@ -215,6 +258,41 @@ export function DashboardPage() {
               Previsão por {weather.sourceName}
               {weather.stale ? " · última atualização disponível" : ""}
             </a>
+            {locationSearchOpen && (
+              <div className="weather-location-search">
+                <form onSubmit={searchLocations}>
+                  <Search size={17} />
+                  <input
+                    autoFocus
+                    value={locationQuery}
+                    onChange={(event) => setLocationQuery(event.target.value)}
+                    placeholder="Digite sua cidade"
+                    minLength="3"
+                  />
+                  <button disabled={locationLoading}>
+                    {locationLoading ? "Buscando..." : "Buscar"}
+                  </button>
+                </form>
+                {locationResults.length > 0 && (
+                  <div>
+                    {locationResults.map((location) => (
+                      <button
+                        type="button"
+                        key={`${location.latitude}-${location.longitude}`}
+                        onClick={() => selectLocation(location)}
+                      >
+                        <strong>{location.city}</strong>
+                        <span>
+                          {[location.region, location.country]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </section>
