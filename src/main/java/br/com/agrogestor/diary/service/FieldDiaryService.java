@@ -7,6 +7,9 @@ import br.com.agrogestor.diary.entity.FieldDiaryEntry;
 import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.diary.repository.FieldDiaryProductRepository;
 import br.com.agrogestor.diary.entity.FieldDiaryProduct;
+import br.com.agrogestor.inventory.entity.InventoryMovement;
+import br.com.agrogestor.inventory.entity.MovementType;
+import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
@@ -19,8 +22,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class FieldDiaryService {
@@ -29,17 +34,20 @@ public class FieldDiaryService {
     private final PlantingRepository plantingRepository;
     private final FieldDiaryProductRepository productApplicationRepository;
     private final InventoryProductRepository inventoryRepository;
+    private final InventoryMovementRepository movementRepository;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
             PlantingRepository plantingRepository,
             FieldDiaryProductRepository productApplicationRepository,
-            InventoryProductRepository inventoryRepository
+            InventoryProductRepository inventoryRepository,
+            InventoryMovementRepository movementRepository
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
         this.productApplicationRepository = productApplicationRepository;
         this.inventoryRepository = inventoryRepository;
+        this.movementRepository = movementRepository;
     }
 
     @Transactional
@@ -55,7 +63,7 @@ public class FieldDiaryService {
                 normalizeNullable(request.observations())
         );
         FieldDiaryEntry saved = diaryRepository.save(entry);
-        replaceProducts(saved, request);
+        replaceProducts(saved, request, List.of());
         return toResponse(saved);
     }
 
@@ -81,6 +89,8 @@ public class FieldDiaryService {
     @Transactional
     public FieldDiaryResponse update(UUID id, FieldDiaryRequest request) {
         FieldDiaryEntry entry = findEntry(id);
+        List<FieldDiaryProduct> previousProducts =
+                productApplicationRepository.findByEntryId(entry.getId());
         entry.update(
                 findPlanting(request.plantingId()),
                 request.entryDate(),
@@ -90,13 +100,21 @@ public class FieldDiaryService {
                 normalizeNullable(request.appliedProducts()),
                 normalizeNullable(request.observations())
         );
-        replaceProducts(entry, request);
+        replaceProducts(entry, request, previousProducts);
         return toResponse(entry);
     }
 
     @Transactional
     public void delete(UUID id) {
-        diaryRepository.delete(findEntry(id));
+        FieldDiaryEntry entry = findEntry(id);
+        restoreStock(
+                productApplicationRepository.findByEntryId(entry.getId()),
+                entry,
+                "Estorno por exclusão no diário: "
+        );
+        productApplicationRepository.deleteByEntryId(entry.getId());
+        productApplicationRepository.flush();
+        diaryRepository.delete(entry);
     }
 
     private FieldDiaryEntry findEntry(UUID id) {
@@ -142,16 +160,58 @@ public class FieldDiaryService {
         );
     }
 
-    private void replaceProducts(FieldDiaryEntry entry, FieldDiaryRequest request) {
+    private void replaceProducts(
+            FieldDiaryEntry entry,
+            FieldDiaryRequest request,
+            List<FieldDiaryProduct> previousProducts
+    ) {
         if (entry.getId() == null) return;
+        restoreStock(previousProducts, entry, "Estorno por edição no diário: ");
         productApplicationRepository.deleteByEntryId(entry.getId());
-        if (request.products() == null) return;
-        request.products().forEach(item -> {
-            var product = inventoryRepository.findById(item.productId())
+        productApplicationRepository.flush();
+        if (request.products() == null || request.products().isEmpty()) return;
+        var quantitiesByProduct = new LinkedHashMap<UUID, BigDecimal>();
+        request.products().forEach(item ->
+                quantitiesByProduct.merge(item.productId(), item.quantity(), BigDecimal::add)
+        );
+        quantitiesByProduct.forEach((productId, quantity) -> {
+            var product = inventoryRepository.findByIdForUpdate(productId)
                     .orElseThrow(() -> new ResourceNotFoundException(
-                            "Produto não encontrado com o ID " + item.productId()));
+                            "Produto não encontrado com o ID " + productId));
+            product.applyMovement(MovementType.EXIT, quantity);
+            movementRepository.save(new InventoryMovement(
+                    product,
+                    MovementType.EXIT,
+                    quantity,
+                    entry.getEntryDate(),
+                    "Aplicação no diário: " + entry.getActivity()
+            ));
             productApplicationRepository.save(
-                    new FieldDiaryProduct(entry, product, item.quantity()));
+                    new FieldDiaryProduct(entry, product, quantity));
+        });
+    }
+
+    private void restoreStock(
+            List<FieldDiaryProduct> applications,
+            FieldDiaryEntry entry,
+        String notePrefix
+    ) {
+        applications.stream()
+                .filter(FieldDiaryProduct::isStockDeducted)
+                .forEach(application -> {
+            var product = inventoryRepository.findByIdForUpdate(
+                            application.getProduct().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Produto não encontrado com o ID "
+                                    + application.getProduct().getId()));
+            product.applyMovement(MovementType.ENTRY, application.getQuantity());
+            movementRepository.save(new InventoryMovement(
+                    product,
+                    MovementType.ENTRY,
+                    application.getQuantity(),
+                    entry.getEntryDate(),
+                    notePrefix + entry.getActivity()
+            ));
         });
     }
 

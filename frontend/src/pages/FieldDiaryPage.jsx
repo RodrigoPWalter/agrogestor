@@ -127,10 +127,10 @@ export function FieldDiaryPage() {
     try {
       if (editing) {
         await api.updateDiaryEntry(editing.id, payload);
-        setSuccess("Registro atualizado.");
+        setSuccess("Registro e estoque atualizados.");
       } else {
         await api.createDiaryEntry(payload);
-        setSuccess("Atividade adicionada ao diário.");
+        setSuccess("Atividade adicionada e produtos baixados do estoque.");
       }
       setModalOpen(false);
       await loadEntries(selectedPlantingId);
@@ -146,7 +146,7 @@ export function FieldDiaryPage() {
 
     try {
       await api.deleteDiaryEntry(entry.id);
-      setSuccess("Registro excluído.");
+      setSuccess("Registro excluído e produtos devolvidos ao estoque.");
       await loadEntries(selectedPlantingId);
     } catch (requestError) {
       setError(requestError.message);
@@ -400,7 +400,7 @@ export function FieldDiaryPage() {
                       <option value="">Escolha o produto</option>
                       {inventoryProducts.map((item) => (
                         <option key={item.id} value={item.id}>
-                          {item.name} ({item.unitName})
+                          {item.name} — saldo {item.quantity} {item.unitName}
                         </option>
                       ))}
                     </select>
@@ -438,6 +438,12 @@ export function FieldDiaryPage() {
                 {inventoryProducts.length === 0 && (
                   <small>
                     Cadastre produtos no Estoque para selecioná-los aqui.
+                  </small>
+                )}
+                {inventoryProducts.length > 0 && (
+                  <small>
+                    As quantidades informadas serão baixadas automaticamente do
+                    estoque.
                   </small>
                 )}
               </div>

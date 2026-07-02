@@ -22,6 +22,7 @@ precisar montar fórmulas toda vez.
 - acompanhar a próxima revisão de cada máquina;
 - manter um diário de aplicações, vistorias e trabalhos realizados no campo;
 - selecionar vários produtos do estoque em uma mesma atividade do diário;
+- baixar automaticamente do estoque os produtos aplicados no diário;
 - registrar manualmente as chuvas medidas no pluviômetro;
 - escolher a cidade da previsão do tempo;
 - consultar soja, milho, trigo, Diesel e o histórico recente de preços no painel.

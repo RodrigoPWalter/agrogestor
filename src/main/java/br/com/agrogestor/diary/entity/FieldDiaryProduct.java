@@ -19,6 +19,8 @@ public class FieldDiaryProduct {
     private InventoryProduct product;
     @Column(nullable = false, precision = 14, scale = 3)
     private BigDecimal quantity;
+    @Column(name = "stock_deducted", nullable = false)
+    private boolean stockDeducted;
 
     protected FieldDiaryProduct() {}
 
@@ -30,9 +32,11 @@ public class FieldDiaryProduct {
         this.entry = entry;
         this.product = product;
         this.quantity = quantity;
+        this.stockDeducted = true;
     }
 
     public UUID getId() { return id; }
     public InventoryProduct getProduct() { return product; }
     public BigDecimal getQuantity() { return quantity; }
+    public boolean isStockDeducted() { return stockDeducted; }
 }
