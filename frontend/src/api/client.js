@@ -130,4 +130,25 @@ export const api = {
     }),
   deleteMaintenance: (id) =>
     request(`/api/v1/maintenances/${id}`, { method: "DELETE" }),
+
+  getDiaryEntries: (plantingId) => {
+    const query = plantingId
+      ? `?plantingId=${plantingId}&size=100`
+      : "?size=100";
+    return request(`/api/v1/field-diary${query}`);
+  },
+  createDiaryEntry: (data) =>
+    request("/api/v1/field-diary", {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateDiaryEntry: (id, data) =>
+    request(`/api/v1/field-diary/${id}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  deleteDiaryEntry: (id) =>
+    request(`/api/v1/field-diary/${id}`, { method: "DELETE" }),
 };

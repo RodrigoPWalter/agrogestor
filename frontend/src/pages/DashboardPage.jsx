@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  BookOpenText,
   Calculator,
   CircleDollarSign,
   CloudRain,
@@ -318,6 +319,16 @@ export function DashboardPage() {
               <div>
                 <strong>Registrar gasto</strong>
                 <small>Controle custos por plantio</small>
+              </div>
+              <ArrowRight size={19} />
+            </Link>
+            <Link to="/diario" className="quick-action">
+              <span className="quick-action__icon quick-action__icon--green">
+                <BookOpenText />
+              </span>
+              <div>
+                <strong>Atualizar diário</strong>
+                <small>Registre atividades realizadas no campo</small>
               </div>
               <ArrowRight size={19} />
             </Link>
