@@ -1,22 +1,27 @@
 import {
-  Calculator,
   BookOpenText,
+  Calculator,
   CloudRain,
+  Ellipsis,
   LayoutDashboard,
   Leaf,
-  Menu,
   ReceiptText,
-  Settings,
   Sprout,
   Tractor,
   Warehouse,
-  X,
+  Wifi,
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const navigation = [
-  { to: "/", label: "Visão geral", icon: LayoutDashboard, end: true },
+  {
+    to: "/",
+    label: "Visão geral",
+    mobileLabel: "Início",
+    icon: LayoutDashboard,
+    end: true,
+  },
   { to: "/plantios", label: "Plantios", icon: Sprout },
   { to: "/estoque", label: "Estoque", icon: Warehouse },
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
@@ -26,121 +31,128 @@ const navigation = [
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
 ];
 
+const primaryMobilePaths = new Set(["/", "/plantios", "/diario", "/gastos"]);
 const mobileNavigation = navigation.filter(({ to }) =>
-  ["/", "/plantios", "/calculadora", "/gastos"].includes(to),
+  primaryMobilePaths.has(to),
+);
+const moreNavigation = navigation.filter(
+  ({ to }) => !primaryMobilePaths.has(to),
 );
 
 export function AppLayout() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const location = useLocation();
-  const currentPage =
-    navigation.find(({ to, end }) =>
-      end ? location.pathname === to : location.pathname.startsWith(to),
-    )?.label || "AgroGestor";
+  const moreMenuActive = moreNavigation.some(({ to }) =>
+    location.pathname.startsWith(to),
+  );
 
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${mobileMenuOpen ? "sidebar--open" : ""}`}>
-        <div className="brand">
-          <span className="brand__mark">
-            <Leaf size={24} />
-          </span>
-          <div>
-            <strong>AgroGestor</strong>
-            <small>Operação agrícola</small>
-          </div>
-          <button
-            className="icon-button sidebar__close"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Fechar menu"
+    <div className="app-shell app-shell--horizontal">
+      <header className="app-header">
+        <div className="app-header__inner">
+          <NavLink
+            className="app-brand"
+            to="/"
+            aria-label="Ir para a visão geral"
           >
-            <X size={20} />
-          </button>
-        </div>
+            <span>
+              <Leaf size={21} />
+            </span>
+            <strong>AgroGestor</strong>
+          </NavLink>
 
-        <nav className="navigation" aria-label="Navegação principal">
-          {navigation.map(({ to, label, icon: Icon, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `navigation__item ${isActive ? "is-active" : ""}`
-              }
-            >
-              <Icon size={20} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
+          <nav className="desktop-navigation" aria-label="Navegação principal">
+            {navigation.map(({ to, label, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  `desktop-navigation__item ${isActive ? "is-active" : ""}`
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
 
-        <div className="sidebar__footer">
-          <span className="status-dot" />
-          <div>
-            <strong>Sistema conectado</strong>
-            <small>Dados salvos com segurança</small>
-          </div>
-        </div>
-      </aside>
-
-      {mobileMenuOpen && (
-        <button
-          className="sidebar-backdrop"
-          aria-label="Fechar menu"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      <main className="main-content">
-        <header className="topbar">
-          <div className="topbar__context">
-            <button
-              className="icon-button topbar__menu"
-              onClick={() => setMobileMenuOpen(true)}
-              aria-label="Abrir menu"
-            >
-              <Menu size={21} />
-            </button>
-            <div>
-              <span>AgroGestor / Operação</span>
-              <strong>{currentPage}</strong>
+          <div className="app-header__actions">
+            <div className="connection-status">
+              <Wifi size={14} />
+              <span>Sistema conectado</span>
             </div>
-          </div>
-          <div className="topbar__actions">
             <button
-              className="icon-button"
+              className="header-profile"
               type="button"
-              aria-label="Configurações"
+              aria-label="Abrir perfil"
             >
-              <Settings size={18} />
-            </button>
-            <div className="user-profile" aria-label="Usuário atual">
               <span>RW</span>
               <div>
                 <strong>Rodrigo Walter</strong>
                 <small>Administrador</small>
               </div>
-            </div>
+            </button>
           </div>
-        </header>
+        </div>
+      </header>
+
+      <main className="main-content main-content--horizontal">
         <Outlet />
       </main>
 
-      <nav className="bottom-navigation" aria-label="Navegação móvel">
-        {mobileNavigation.map(({ to, label, icon: Icon, end }) => (
+      {moreMenuOpen && (
+        <>
+          <button
+            className="mobile-more-backdrop"
+            type="button"
+            aria-label="Fechar menu adicional"
+            onClick={() => setMoreMenuOpen(false)}
+          />
+          <nav className="mobile-more-menu" aria-label="Outros módulos">
+            <div>
+              <strong>Outros módulos</strong>
+              <small>Acesse as demais áreas do AgroGestor</small>
+            </div>
+            <div className="mobile-more-menu__grid">
+              {moreNavigation.map(({ to, label, icon: Icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={() => setMoreMenuOpen(false)}
+                  className={({ isActive }) => (isActive ? "is-active" : "")}
+                >
+                  <Icon size={20} />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </nav>
+        </>
+      )}
+
+      <nav className="mobile-app-bar" aria-label="Navegação móvel">
+        {mobileNavigation.map(({ to, label, mobileLabel, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
-            className={({ isActive }) =>
-              `bottom-navigation__item ${isActive ? "is-active" : ""}`
-            }
+            onClick={() => setMoreMenuOpen(false)}
+            className={({ isActive }) => (isActive ? "is-active" : "")}
           >
             <Icon size={20} />
-            <span>{label === "Visão geral" ? "Início" : label}</span>
+            <span>{mobileLabel || label}</span>
           </NavLink>
         ))}
+        <button
+          type="button"
+          className={moreMenuActive || moreMenuOpen ? "is-active" : ""}
+          onClick={() => setMoreMenuOpen((current) => !current)}
+          aria-expanded={moreMenuOpen}
+          aria-label="Abrir outros módulos"
+        >
+          <Ellipsis size={21} />
+          <span>Mais</span>
+        </button>
       </nav>
     </div>
   );
