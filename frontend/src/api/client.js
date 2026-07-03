@@ -1,26 +1,24 @@
+import { httpClient } from "./httpClient";
+
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
 async function request(path, options = {}) {
-  const response = await fetch(path, options);
+  const { body, data, ...config } = options;
+  const response = await httpClient.request({
+    url: path,
+    ...config,
+    data: data ?? (body ? JSON.parse(body) : undefined),
+  });
 
-  if (response.status === 204) {
-    return null;
-  }
-
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const fieldMessage = body?.fieldErrors
-      ? Object.values(body.fieldErrors)[0]
-      : null;
-    throw new Error(
-      fieldMessage || body?.message || "Não foi possível concluir a operação.",
-    );
-  }
-
-  return body;
+  return response.status === 204 ? null : response.data;
 }
 
 export const api = {
+  login: (credentials) =>
+    request("/api/v1/auth/login", {
+      method: "POST",
+      data: credentials,
+    }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getWeatherForecast: () => request("/api/v1/weather/forecast"),
   searchWeatherLocations: (query) =>
