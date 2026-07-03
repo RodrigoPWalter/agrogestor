@@ -17,6 +17,16 @@ atividades, a manutenção de máquinas e dados externos relevantes em uma únic
 Sua motivação é prática: substituir registros dispersos por informações estruturadas e
 confiáveis, acessíveis durante o planejamento e a execução das atividades no campo.
 
+## Aplicação Publicada
+
+O AgroGestor está disponível como PWA em:
+
+**https://agrogestor-rodrigowalter.onrender.com**
+
+O ambiente utiliza Render para a interface e a API, além de PostgreSQL gerenciado pelo
+Neon. Como a API está no plano gratuito, o primeiro acesso após um período sem uso pode
+levar alguns segundos enquanto o serviço é iniciado.
+
 ## Funcionalidades Principais
 
 - **Controle de Plantios:** Registro de culturas, safras, áreas, variedades, sementes e
