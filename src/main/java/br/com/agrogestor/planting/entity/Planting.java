@@ -1,5 +1,6 @@
 package br.com.agrogestor.planting.entity;
 
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -99,8 +100,19 @@ public class Planting {
     }
 
     public void finish() {
+        if (status == PlantingStatus.HARVESTED) {
+            throw new BusinessRuleException("Este plantio já está finalizado");
+        }
         status = PlantingStatus.HARVESTED;
         completedAt = OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    public void reactivate() {
+        if (status == PlantingStatus.ACTIVE) {
+            throw new BusinessRuleException("Este plantio já está ativo");
+        }
+        status = PlantingStatus.ACTIVE;
+        completedAt = null;
     }
 
     @PreUpdate

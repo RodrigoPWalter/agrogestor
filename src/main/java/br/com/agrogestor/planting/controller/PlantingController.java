@@ -92,6 +92,12 @@ public class PlantingController {
         return service.finish(id);
     }
 
+    @PatchMapping("/{id}/reactivate")
+    @Operation(summary = "Reativar um plantio finalizado")
+    public PlantingResponse reactivate(@PathVariable UUID id) {
+        return service.reactivate(id);
+    }
+
     @GetMapping("/harvests")
     @Operation(summary = "Consultar o histórico de safras cadastradas")
     public ResponseEntity<List<String>> findHarvestHistory() {

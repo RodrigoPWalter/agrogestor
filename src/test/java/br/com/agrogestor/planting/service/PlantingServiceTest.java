@@ -4,6 +4,7 @@ import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -104,6 +105,19 @@ class PlantingServiceTest {
         service.delete(id);
 
         verify(repository).delete(planting);
+    }
+
+    @Test
+    void shouldReactivateFinishedPlanting() {
+        UUID id = UUID.randomUUID();
+        Planting planting = planting();
+        planting.finish();
+        when(repository.findById(id)).thenReturn(Optional.of(planting));
+
+        var response = service.reactivate(id);
+
+        assertThat(response.status()).isEqualTo(PlantingStatus.ACTIVE);
+        assertThat(response.completedAt()).isNull();
     }
 
     private PlantingRequest request(String crop, String observations) {

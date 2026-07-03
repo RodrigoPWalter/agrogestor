@@ -103,6 +103,13 @@ public class PlantingService {
         return toResponse(planting);
     }
 
+    @Transactional
+    public PlantingResponse reactivate(UUID id) {
+        Planting planting = findEntity(id);
+        planting.reactivate();
+        return toResponse(planting);
+    }
+
     @Transactional(readOnly = true)
     public List<String> findHarvestHistory() {
         return repository.findDistinctHarvests();
