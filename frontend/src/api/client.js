@@ -52,6 +52,8 @@ export const api = {
     request(`/api/v1/plantings/${id}`, { method: "DELETE" }),
   finishPlanting: (id) =>
     request(`/api/v1/plantings/${id}/finish`, { method: "PATCH" }),
+  reactivatePlanting: (id) =>
+    request(`/api/v1/plantings/${id}/reactivate`, { method: "PATCH" }),
 
   calculateProduction: (data) =>
     request("/api/v1/production-estimates/calculate", {
@@ -167,6 +169,8 @@ export const api = {
     request(`/api/v1/field-diary/${id}`, { method: "DELETE" }),
 
   getRainfall: () => request("/api/v1/rainfall"),
+  getRainfallByPlanting: (plantingId) =>
+    request(`/api/v1/rainfall/plantings/${plantingId}`),
   getRainfallSummary: () => request("/api/v1/rainfall/summary"),
   createRainfall: (data) =>
     request("/api/v1/rainfall", {

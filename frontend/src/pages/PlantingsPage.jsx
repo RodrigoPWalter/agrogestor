@@ -18,6 +18,8 @@ import {
 } from "../components/Feedback";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
+import { PlantingDetailsModal } from "../components/PlantingDetailsModal";
+import { PlantingSummaryCard } from "../components/PlantingSummaryCard";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 
 const emptyForm = {
@@ -41,6 +43,8 @@ export function PlantingsPage() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [view, setView] = useState("active");
+  const [summaries, setSummaries] = useState({});
+  const [selectedPlanting, setSelectedPlanting] = useState(null);
 
   const loadPlantings = useCallback(async () => {
     setLoading(true);
@@ -50,6 +54,16 @@ export function PlantingsPage() {
           ? await api.getPlantings()
           : await api.getPlantingHistory();
       setPlantings(page.content);
+      const results = await Promise.all(
+        page.content.map(async (planting) => {
+          try {
+            return [planting.id, await api.getExpenseSummary(planting.id)];
+          } catch {
+            return [planting.id, null];
+          }
+        }),
+      );
+      setSummaries(Object.fromEntries(results));
       setError("");
     } catch (requestError) {
       setError(requestError.message);
@@ -140,7 +154,25 @@ export function PlantingsPage() {
       return;
     try {
       await api.finishPlanting(planting.id);
+      setSelectedPlanting(null);
       setSuccess("Plantio finalizado e movido para o histórico.");
+      await loadPlantings();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function handleReactivate(planting) {
+    if (
+      !window.confirm(
+        `Reativar o plantio de ${planting.crop}? Ele voltará para a lista de plantios ativos.`,
+      )
+    )
+      return;
+    try {
+      await api.reactivatePlanting(planting.id);
+      setSuccess("Plantio reativado e devolvido para a lista de ativos.");
+      setSelectedPlanting(null);
       await loadPlantings();
     } catch (requestError) {
       setError(requestError.message);
@@ -237,6 +269,15 @@ export function PlantingsPage() {
                       <CheckCircle2 size={18} />
                     </button>
                   )}
+                  {view === "history" && (
+                    <button
+                      className="icon-button icon-button--success"
+                      onClick={() => handleReactivate(planting)}
+                      aria-label="Reativar plantio"
+                    >
+                      <History size={18} />
+                    </button>
+                  )}
                   <button
                     className="icon-button"
                     onClick={() => openEdit(planting)}
@@ -257,6 +298,7 @@ export function PlantingsPage() {
                 <strong>{formatNumber(planting.plantedAreaHectares)} ha</strong>
                 <span>Área plantada</span>
               </div>
+              <PlantingSummaryCard summary={summaries[planting.id]} />
               <dl className="details-list">
                 {planting.completedAt && (
                   <div>
@@ -282,9 +324,35 @@ export function PlantingsPage() {
               {planting.observations && (
                 <p className="card-note">{planting.observations}</p>
               )}
+              <div className="planting-card-actions">
+                <button
+                  className="button button--ghost"
+                  onClick={() => setSelectedPlanting(planting)}
+                >
+                  Abrir plantio
+                </button>
+                {view === "history" && (
+                  <button
+                    className="button button--primary"
+                    onClick={() => handleReactivate(planting)}
+                  >
+                    Reativar plantio
+                  </button>
+                )}
+              </div>
             </article>
           ))}
         </div>
+      )}
+
+      {selectedPlanting && (
+        <PlantingDetailsModal
+          planting={selectedPlanting}
+          onClose={() => setSelectedPlanting(null)}
+          onFinish={handleFinish}
+          onReactivate={handleReactivate}
+          onChanged={loadPlantings}
+        />
       )}
 
       {modalOpen && (
