@@ -121,8 +121,11 @@ npm.cmd run build
 npm.cmd run preview -- --host
 ```
 
-Abra o endereço informado pelo Vite no celular conectado à mesma rede. O menu
-**Instalar** dentro do AgroGestor contém as instruções para Android e iPhone.
+No computador, abra <http://localhost:4173> para conferir o manifesto e o service worker.
+Para instalar no celular, publique o frontend em um endereço com HTTPS; um endereço HTTP
+comum da rede local permite visualizar a interface, mas não é considerado um contexto
+seguro para registrar o service worker. O menu **Instalar** dentro do AgroGestor contém
+as instruções para Android e iPhone.
 
 ### Configuração sem Docker
 
