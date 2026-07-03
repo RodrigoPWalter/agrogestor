@@ -37,6 +37,13 @@ public class RainfallService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RainfallResponse> findByPlanting(UUID plantingId) {
+        return repository.findByPlantingIdOrderByMeasurementDateDesc(plantingId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     @Transactional
     public RainfallResponse update(UUID id, RainfallRequest request) {
         RainfallMeasurement measurement = find(id);
@@ -78,8 +85,12 @@ public class RainfallService {
     }
 
     private RainfallResponse toResponse(RainfallMeasurement measurement) {
+        var planting = measurement.getPlanting();
         return new RainfallResponse(
-                measurement.getId(), measurement.getMeasurementDate(),
+                measurement.getId(),
+                planting == null ? null : planting.getId(),
+                planting == null ? null : planting.getCrop(),
+                measurement.getMeasurementDate(),
                 measurement.getMillimeters(), measurement.getNotes(),
                 measurement.getCreatedAt(), measurement.getUpdatedAt()
         );

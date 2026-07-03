@@ -1,18 +1,19 @@
 package br.com.agrogestor.diary.dto;
 
 import br.com.agrogestor.diary.entity.ActivityType;
-import jakarta.validation.constraints.NotBlank;
+import br.com.agrogestor.inventory.entity.MeasurementUnit;
+import br.com.agrogestor.inventory.entity.ProductType;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.Valid;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 public record FieldDiaryRequest(
-        @NotNull(message = "O plantio é obrigatório")
         UUID plantingId,
 
         @NotNull(message = "A data é obrigatória")
@@ -22,7 +23,6 @@ public record FieldDiaryRequest(
         @NotNull(message = "O tipo de atividade é obrigatório")
         ActivityType activityType,
 
-        @NotBlank(message = "A atividade é obrigatória")
         @Size(max = 160, message = "A atividade deve ter no máximo 160 caracteres")
         String activity,
 
@@ -35,6 +35,32 @@ public record FieldDiaryRequest(
         List<@Valid FieldDiaryProductRequest> products,
 
         @Size(max = 1000, message = "As observações devem ter no máximo 1000 caracteres")
-        String observations
+        String observations,
+
+        BigDecimal rainfallMillimeters,
+        UUID productId,
+        String productName,
+        ProductType productType,
+        BigDecimal quantity,
+        MeasurementUnit unit,
+        String supplier,
+        BigDecimal amount,
+        UUID machineId,
+        BigDecimal harvestQuantity,
+        String harvestUnit
 ) {
+    public FieldDiaryRequest(
+            UUID plantingId,
+            LocalDate entryDate,
+            ActivityType activityType,
+            String activity,
+            String weatherCondition,
+            String appliedProducts,
+            List<FieldDiaryProductRequest> products,
+            String observations
+    ) {
+        this(plantingId, entryDate, activityType, activity, weatherCondition,
+                appliedProducts, products, observations, null, null, null,
+                null, null, null, null, null, null, null, null);
+    }
 }

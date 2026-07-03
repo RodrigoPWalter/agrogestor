@@ -18,6 +18,11 @@ import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
+import br.com.agrogestor.rainfall.repository.RainfallRepository;
+import br.com.agrogestor.machine.repository.MachineRepository;
+import br.com.agrogestor.machine.repository.MaintenanceRepository;
+import br.com.agrogestor.expense.repository.ExpenseRepository;
+import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +48,10 @@ class FieldDiaryServiceTest {
     private FieldDiaryProductRepository diaryProductRepository;
     private InventoryProductRepository inventoryRepository;
     private InventoryMovementRepository movementRepository;
+    private RainfallRepository rainfallRepository;
+    private MachineRepository machineRepository;
+    private MaintenanceRepository maintenanceRepository;
+    private ExpenseRepository expenseRepository;
     private FieldDiaryService service;
 
     @BeforeEach
@@ -52,12 +61,20 @@ class FieldDiaryServiceTest {
         diaryProductRepository = mock(FieldDiaryProductRepository.class);
         inventoryRepository = mock(InventoryProductRepository.class);
         movementRepository = mock(InventoryMovementRepository.class);
+        rainfallRepository = mock(RainfallRepository.class);
+        machineRepository = mock(MachineRepository.class);
+        maintenanceRepository = mock(MaintenanceRepository.class);
+        expenseRepository = mock(ExpenseRepository.class);
         service = new FieldDiaryService(
                 diaryRepository,
                 plantingRepository,
                 diaryProductRepository,
                 inventoryRepository,
-                movementRepository
+                movementRepository,
+                rainfallRepository,
+                machineRepository,
+                maintenanceRepository,
+                expenseRepository
         );
     }
 
@@ -154,6 +171,54 @@ class FieldDiaryServiceTest {
                 ArgumentCaptor.forClass(InventoryMovement.class);
         verify(movementRepository).save(movement.capture());
         assertThat(movement.getValue().getMovementType()).isEqualTo(MovementType.ENTRY);
+    }
+
+    @Test
+    void shouldAddPurchasedProductToInventory() {
+        UUID productId = UUID.randomUUID();
+        InventoryProduct product = product(productId, "2.000");
+        when(inventoryRepository.findByIdForUpdate(productId))
+                .thenReturn(Optional.of(product));
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+
+        service.create(new FieldDiaryRequest(
+                null, LocalDate.now(), ActivityType.PRODUCT_PURCHASE, null,
+                null, null, null, "Compra na cooperativa",
+                null, productId, null, null, new BigDecimal("3.000"),
+                null, "Cotricampo", null, null, null, null));
+
+        assertThat(product.getQuantity()).isEqualByComparingTo("5.000");
+        ArgumentCaptor<InventoryMovement> movement =
+                ArgumentCaptor.forClass(InventoryMovement.class);
+        verify(movementRepository).save(movement.capture());
+        assertThat(movement.getValue().getMovementType()).isEqualTo(MovementType.ENTRY);
+    }
+
+    @Test
+    void shouldCreateRainfallFromDiaryWithoutPlanting() {
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+        when(rainfallRepository.save(any(RainfallMeasurement.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create(new FieldDiaryRequest(
+                null, LocalDate.now(), ActivityType.RAIN, null,
+                null, null, null, "Chuva da madrugada",
+                new BigDecimal("24.50"), null, null, null, null,
+                null, null, null, null, null, null));
+
+        ArgumentCaptor<RainfallMeasurement> rainfall =
+                ArgumentCaptor.forClass(RainfallMeasurement.class);
+        verify(rainfallRepository).save(rainfall.capture());
+        assertThat(rainfall.getValue().getMillimeters()).isEqualByComparingTo("24.50");
+        assertThat(rainfall.getValue().getPlanting()).isNull();
     }
 
     private FieldDiaryRequest request(UUID plantingId, String activity) {

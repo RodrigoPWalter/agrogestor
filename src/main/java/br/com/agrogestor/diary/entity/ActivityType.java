@@ -5,6 +5,11 @@ public enum ActivityType {
     FERTILIZATION("Adubação"),
     APPLICATION("Aplicação"),
     INSPECTION("Vistoria"),
+    RAIN("Chuva"),
+    PRODUCT_PURCHASE("Compra de produto"),
+    PRODUCT_USE("Uso de produto"),
+    MAINTENANCE("Manutenção"),
+    OBSERVATION("Observação"),
     HARVEST("Colheita"),
     OTHER("Outra atividade");
 

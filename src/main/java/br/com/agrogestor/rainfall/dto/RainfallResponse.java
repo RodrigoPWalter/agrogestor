@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public record RainfallResponse(
         UUID id,
+        UUID plantingId,
+        String plantingCrop,
         LocalDate measurementDate,
         BigDecimal millimeters,
         String notes,

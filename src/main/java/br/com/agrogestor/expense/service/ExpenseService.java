@@ -42,7 +42,7 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseResponse create(ExpenseRequest request) {
-        Planting planting = findPlanting(request.plantingId());
+        Planting planting = findOptionalPlanting(request.plantingId());
         Expense expense = new Expense(
                 planting,
                 normalize(request.description()),
@@ -86,7 +86,7 @@ public class ExpenseService {
     @Transactional
     public ExpenseResponse update(UUID id, ExpenseRequest request) {
         Expense expense = findExpense(id);
-        Planting planting = findPlanting(request.plantingId());
+        Planting planting = findOptionalPlanting(request.plantingId());
         expense.update(
                 planting,
                 normalize(request.description()),
@@ -156,13 +156,17 @@ public class ExpenseService {
                 ));
     }
 
+    private Planting findOptionalPlanting(UUID id) {
+        return id == null ? null : findPlanting(id);
+    }
+
     private ExpenseResponse toResponse(Expense expense) {
         Planting planting = expense.getPlanting();
         return new ExpenseResponse(
                 expense.getId(),
-                planting.getId(),
-                planting.getCrop(),
-                planting.getHarvest(),
+                planting == null ? null : planting.getId(),
+                planting == null ? null : planting.getCrop(),
+                planting == null ? null : planting.getHarvest(),
                 expense.getDescription(),
                 expense.getCategory(),
                 expense.getCategory().getDisplayName(),

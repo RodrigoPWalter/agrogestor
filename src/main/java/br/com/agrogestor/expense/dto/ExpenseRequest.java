@@ -12,7 +12,6 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record ExpenseRequest(
-        @NotNull(message = "O plantio relacionado é obrigatório")
         UUID plantingId,
 
         @NotBlank(message = "A descrição é obrigatória")

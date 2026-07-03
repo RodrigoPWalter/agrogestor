@@ -11,6 +11,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InventoryProductRepository extends JpaRepository<InventoryProduct, UUID> {
+    Optional<InventoryProduct> findFirstByNameIgnoreCase(String name);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select product from InventoryProduct product where product.id = :id")
     Optional<InventoryProduct> findByIdForUpdate(@Param("id") UUID id);

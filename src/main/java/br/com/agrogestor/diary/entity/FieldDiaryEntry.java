@@ -17,6 +17,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -27,8 +28,8 @@ public class FieldDiaryEntry {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "planting_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "planting_id")
     private Planting planting;
 
     @Column(name = "entry_date", nullable = false)
@@ -49,6 +50,33 @@ public class FieldDiaryEntry {
 
     @Column(length = 1000)
     private String observations;
+
+    @Column(name = "rainfall_mm", precision = 8, scale = 2)
+    private BigDecimal rainfallMillimeters;
+
+    @Column(length = 160)
+    private String supplier;
+
+    @Column(precision = 14, scale = 2)
+    private BigDecimal amount;
+
+    @Column(name = "machine_id")
+    private UUID machineId;
+
+    @Column(name = "harvest_quantity", precision = 14, scale = 3)
+    private BigDecimal harvestQuantity;
+
+    @Column(name = "harvest_unit", length = 30)
+    private String harvestUnit;
+
+    @Column(name = "rainfall_id")
+    private UUID rainfallId;
+
+    @Column(name = "maintenance_id")
+    private UUID maintenanceId;
+
+    @Column(name = "expense_id")
+    private UUID expenseId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -95,6 +123,22 @@ public class FieldDiaryEntry {
         this.weatherCondition = weatherCondition;
         this.appliedProducts = appliedProducts;
         this.observations = observations;
+    }
+
+    public void updateDetails(
+            BigDecimal rainfallMillimeters,
+            String supplier,
+            BigDecimal amount,
+            UUID machineId,
+            BigDecimal harvestQuantity,
+            String harvestUnit
+    ) {
+        this.rainfallMillimeters = rainfallMillimeters;
+        this.supplier = supplier;
+        this.amount = amount;
+        this.machineId = machineId;
+        this.harvestQuantity = harvestQuantity;
+        this.harvestUnit = harvestUnit;
     }
 
     @PrePersist
@@ -147,5 +191,25 @@ public class FieldDiaryEntry {
 
     public OffsetDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public BigDecimal getRainfallMillimeters() { return rainfallMillimeters; }
+    public String getSupplier() { return supplier; }
+    public BigDecimal getAmount() { return amount; }
+    public UUID getMachineId() { return machineId; }
+    public BigDecimal getHarvestQuantity() { return harvestQuantity; }
+    public String getHarvestUnit() { return harvestUnit; }
+    public UUID getRainfallId() { return rainfallId; }
+    public UUID getMaintenanceId() { return maintenanceId; }
+    public UUID getExpenseId() { return expenseId; }
+
+    public void linkRainfall(UUID id) { rainfallId = id; }
+    public void linkMaintenance(UUID id) { maintenanceId = id; }
+    public void linkExpense(UUID id) { expenseId = id; }
+
+    public void clearIntegrationLinks() {
+        rainfallId = null;
+        maintenanceId = null;
+        expenseId = null;
     }
 }

@@ -26,6 +26,11 @@ public class RainfallController {
     @GetMapping
     public List<RainfallResponse> findAll() { return service.findAll(); }
 
+    @GetMapping("/plantings/{plantingId}")
+    public List<RainfallResponse> findByPlanting(@PathVariable UUID plantingId) {
+        return service.findByPlanting(plantingId);
+    }
+
     @GetMapping("/summary")
     public RainfallSummaryResponse summary() { return service.summary(); }
 

@@ -28,8 +28,8 @@ public class Expense {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "planting_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "planting_id")
     private Planting planting;
 
     @Column(nullable = false, length = 160)

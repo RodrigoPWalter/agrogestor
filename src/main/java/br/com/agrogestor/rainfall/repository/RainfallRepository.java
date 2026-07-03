@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface RainfallRepository extends JpaRepository<RainfallMeasurement, UUID> {
     List<RainfallMeasurement> findAllByOrderByMeasurementDateDesc();
+    List<RainfallMeasurement> findByPlantingIdOrderByMeasurementDateDesc(UUID plantingId);
     List<RainfallMeasurement> findByMeasurementDateGreaterThanEqual(LocalDate startDate);
     Optional<RainfallMeasurement> findFirstByOrderByMeasurementDateDesc();
 }
