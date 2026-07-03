@@ -3,6 +3,7 @@ import {
   Calculator,
   CloudRain,
   Ellipsis,
+  ChevronDown,
   LayoutDashboard,
   Leaf,
   ReceiptText,
@@ -10,9 +11,12 @@ import {
   Tractor,
   Warehouse,
   Wifi,
+  LogOut,
+  UserRound,
 } from "lucide-react";
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 const navigation = [
   {
@@ -41,10 +45,19 @@ const moreNavigation = navigation.filter(
 
 export function AppLayout() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
   const location = useLocation();
   const moreMenuActive = moreNavigation.some(({ to }) =>
     location.pathname.startsWith(to),
   );
+  const initials = user?.nome
+    ?.split(" ")
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const roleLabel = user?.role === "ADMIN" ? "Administrador" : "Usuário";
 
   return (
     <div className="app-shell app-shell--horizontal">
@@ -81,17 +94,37 @@ export function AppLayout() {
               <Wifi size={14} />
               <span>Sistema conectado</span>
             </div>
-            <button
-              className="header-profile"
-              type="button"
-              aria-label="Abrir perfil"
-            >
-              <span>RW</span>
-              <div>
-                <strong>Rodrigo Walter</strong>
-                <small>Administrador</small>
-              </div>
-            </button>
+            <div className="profile-menu">
+              <button
+                className="header-profile"
+                type="button"
+                aria-label="Abrir perfil"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((current) => !current)}
+              >
+                <span>{initials || "AG"}</span>
+                <div>
+                  <strong>{user?.nome}</strong>
+                  <small>{roleLabel}</small>
+                </div>
+                <ChevronDown size={13} />
+              </button>
+              {profileMenuOpen && (
+                <div className="profile-dropdown">
+                  <div>
+                    <UserRound size={16} />
+                    <span>
+                      <strong>{user?.nome}</strong>
+                      <small>{user?.email}</small>
+                    </span>
+                  </div>
+                  <button type="button" onClick={logout}>
+                    <LogOut size={15} />
+                    Sair da conta
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
