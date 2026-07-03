@@ -193,7 +193,7 @@ export function ExpensesPage() {
         />
       ) : (
         <>
-          <section className="planting-selector">
+          <section className="planting-selector expenses-planting-selector">
             <div>
               <span className="eyebrow">Plantio selecionado</span>
               <label>
@@ -223,7 +223,7 @@ export function ExpensesPage() {
           ) : (
             <>
               <section className="expense-summary-grid">
-                <article>
+                <article className="expense-summary-card expense-summary-card--financial">
                   <span>
                     <CircleDollarSign size={21} />
                   </span>
@@ -232,7 +232,7 @@ export function ExpensesPage() {
                     <strong>{formatCurrency(summary?.totalExpenses)}</strong>
                   </div>
                 </article>
-                <article>
+                <article className="expense-summary-card expense-summary-card--financial">
                   <span>
                     <LandPlot size={21} />
                   </span>
@@ -243,7 +243,7 @@ export function ExpensesPage() {
                     </strong>
                   </div>
                 </article>
-                <article>
+                <article className="expense-summary-card">
                   <span>
                     <ReceiptText size={21} />
                   </span>
@@ -252,7 +252,7 @@ export function ExpensesPage() {
                     <strong>{expenses.length}</strong>
                   </div>
                 </article>
-                <article>
+                <article className="expense-summary-card">
                   <span>
                     <Tags size={21} />
                   </span>
@@ -264,7 +264,7 @@ export function ExpensesPage() {
               </section>
 
               <div className="expenses-layout">
-                <section className="panel">
+                <section className="panel expense-history-panel">
                   <div className="panel__header">
                     <div>
                       <span className="eyebrow">Histórico</span>
@@ -298,8 +298,10 @@ export function ExpensesPage() {
                           <div className="expense-item__main">
                             <strong>{expense.description}</strong>
                             <small>
-                              {expense.categoryDisplayName} ·{" "}
-                              {formatDate(expense.expenseDate)}
+                              <span className="expense-category-badge">
+                                {expense.categoryDisplayName}
+                              </span>
+                              <span>{formatDate(expense.expenseDate)}</span>
                             </small>
                           </div>
                           <strong className="expense-item__amount">
@@ -327,7 +329,7 @@ export function ExpensesPage() {
                   )}
                 </section>
 
-                <section className="panel">
+                <section className="panel expense-category-panel">
                   <div className="panel__header">
                     <div>
                       <span className="eyebrow">Distribuição</span>

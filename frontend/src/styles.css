@@ -3264,3 +3264,302 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Agricultural machinery color direction */
+:root {
+  --green-950: #163a17;
+  --green-900: #245f22;
+  --green-800: #367c2b;
+  --green-700: #367c2b;
+  --green-600: #4c9141;
+  --green-100: #dfecda;
+  --green-50: #f0f6ed;
+  --gold-600: #766300;
+  --gold-100: #fff5b3;
+  --ink: #172318;
+  --muted: #667064;
+  --line: #d7ddd3;
+  --background: #f4f5f0;
+  --machine-green: #367c2b;
+  --machine-green-dark: #1d541d;
+  --machine-yellow: #ffde00;
+  --machine-yellow-hover: #f1cf00;
+}
+
+.sidebar {
+  border-right-color: #184718;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 34%),
+    #173f19;
+  box-shadow: 8px 0 28px rgba(18, 55, 19, 0.16);
+}
+
+.brand {
+  border-bottom-color: rgba(255, 222, 0, 0.22);
+}
+
+.brand__mark {
+  color: #214e1d;
+  border-color: #ffde00;
+  background: var(--machine-yellow);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+}
+
+.brand small {
+  color: #b7c9b5;
+}
+
+.navigation__item {
+  color: #c1cec0;
+}
+
+.navigation__item:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.navigation__item.is-active {
+  color: #fff;
+  background: var(--machine-green);
+  box-shadow:
+    inset 3px 0 var(--machine-yellow),
+    0 3px 10px rgba(10, 42, 13, 0.18);
+}
+
+.sidebar__footer {
+  border-color: rgba(255, 222, 0, 0.18);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.status-dot {
+  border-color: rgba(255, 222, 0, 0.28);
+  background: var(--machine-yellow);
+  box-shadow: 0 0 0 4px rgba(255, 222, 0, 0.1);
+}
+
+.topbar {
+  border-bottom: 2px solid var(--machine-green);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.topbar__context > div > span {
+  color: #5e765d;
+}
+
+.topbar__actions > .icon-button:hover {
+  color: var(--machine-green-dark);
+  border-color: #a9c6a2;
+  background: var(--green-50);
+}
+
+.user-profile > span {
+  color: #183d18;
+  background: var(--machine-yellow);
+}
+
+.eyebrow,
+.text-link {
+  color: var(--machine-green);
+}
+
+.button--primary {
+  color: #173b18;
+  border: 1px solid #dfc100;
+  background: var(--machine-yellow);
+  box-shadow: 0 3px 8px rgba(132, 112, 0, 0.22);
+}
+
+.button--primary:hover:not(:disabled) {
+  color: #102f12;
+  background: var(--machine-yellow-hover);
+  box-shadow: 0 5px 13px rgba(132, 112, 0, 0.28);
+}
+
+.button--ghost:hover:not(:disabled) {
+  color: var(--machine-green-dark);
+  border-color: #9fbe99;
+  background: var(--green-50);
+}
+
+.form input:focus,
+.form textarea:focus,
+.form select:focus,
+.planting-selector select:focus,
+.search-box:focus-within {
+  border-color: var(--machine-green);
+  box-shadow: 0 0 0 3px rgba(54, 124, 43, 0.16);
+}
+
+.metric-card--green .metric-card__icon,
+.module-summary-grid article > span,
+.expense-summary-grid article > span,
+.planting-selector__icon {
+  color: var(--machine-green-dark);
+  background: var(--green-100);
+}
+
+.metric-card--gold .metric-card__icon,
+.quotation-card__crop,
+.expense-item__icon {
+  color: #594b00;
+  background: var(--gold-100);
+}
+
+.weather-panel {
+  border-color: #2d6b28;
+  background:
+    linear-gradient(110deg, rgba(255, 222, 0, 0.055), transparent 42%), #245f22;
+}
+
+.bottom-navigation__item.is-active {
+  color: var(--machine-green-dark);
+  background: #e5f0e1;
+}
+
+.progress-track span {
+  background: linear-gradient(
+    90deg,
+    var(--machine-green),
+    #68a64f 70%,
+    var(--machine-yellow)
+  );
+}
+
+.expenses-planting-selector {
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid var(--machine-green);
+}
+
+.expenses-planting-selector::after {
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 72px;
+  height: 4px;
+  content: "";
+  background: var(--machine-yellow);
+}
+
+.expenses-planting-selector .planting-selector__icon {
+  color: #244d20;
+  background: var(--machine-yellow);
+}
+
+.expense-summary-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.expense-summary-card::after {
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  content: "";
+  background: #c8d9c3;
+}
+
+.expense-summary-card--financial {
+  border-color: #d6ca70;
+  background:
+    linear-gradient(120deg, rgba(255, 222, 0, 0.16), transparent 62%), #fff;
+}
+
+.expense-summary-card--financial::after {
+  height: 3px;
+  background: var(--machine-yellow);
+}
+
+.expense-summary-card--financial > span {
+  color: #224b1e;
+  background: var(--machine-yellow);
+}
+
+.expense-summary-card--financial strong {
+  color: #194719;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.expense-history-panel {
+  border-top: 3px solid var(--machine-green);
+}
+
+.expense-category-panel {
+  border-top: 3px solid var(--machine-yellow);
+}
+
+.expense-item {
+  margin: 0 -8px;
+  padding: 11px 8px;
+  border-radius: 6px;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.expense-item:hover {
+  background: #f3f7f1;
+  transform: translateX(2px);
+}
+
+.expense-item__icon {
+  border: 1px solid #e6cf38;
+}
+
+.expense-item__main small {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.expense-category-badge {
+  display: inline-flex;
+  padding: 2px 6px;
+  color: #24551f;
+  border: 1px solid #c7dbc1;
+  border-radius: 999px;
+  background: #eaf3e7;
+  font-size: 0.58rem;
+  font-weight: 750;
+}
+
+.expense-item__amount {
+  padding: 6px 8px;
+  color: #183e17;
+  border: 1px solid #e5ca16;
+  border-radius: 5px;
+  background: var(--machine-yellow);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.category-breakdown__row > span {
+  color: var(--machine-green-dark);
+  font-weight: 900;
+}
+
+.category-breakdown__row small {
+  color: #385b35;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-weight: 700;
+}
+
+.modal {
+  border-top: 4px solid var(--machine-yellow);
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    border-bottom-width: 2px;
+  }
+
+  .expense-summary-card--financial strong {
+    font-size: 0.92rem;
+  }
+
+  .expense-item {
+    margin-right: 0;
+    margin-left: 0;
+  }
+}
