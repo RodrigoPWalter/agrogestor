@@ -66,6 +66,11 @@ Guarda uma leitura do pluviômetro por data, em milímetros.
 Mantém a cidade escolhida para a previsão. É uma configuração única enquanto o sistema
 ainda trabalha com uma propriedade.
 
+### `usuarios`
+
+Armazena nome, e-mail normalizado, hash da senha e perfil de acesso. A restrição de
+unicidade do e-mail ignora diferenças entre letras maiúsculas e minúsculas.
+
 ## Convenções
 
 - IDs usam UUID.
@@ -76,6 +81,5 @@ ainda trabalha com uma propriedade.
 
 ## Ainda não modelado
 
-Quando autenticação e múltiplas propriedades entrarem no projeto, as tabelas de negócio
-receberão um `property_id`. A baixa automática de produtos usados no diário deve ser
-implementada quando o cadastro de aplicações estiver mais detalhado.
+Quando o suporte a múltiplas propriedades entrar no projeto, as tabelas de negócio
+receberão um `property_id`.
