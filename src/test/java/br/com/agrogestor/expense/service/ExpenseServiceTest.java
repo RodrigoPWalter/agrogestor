@@ -79,11 +79,13 @@ class ExpenseServiceTest {
                 projection(ExpenseCategory.FERTILIZERS, "6000.00"),
                 projection(ExpenseCategory.FUEL, "4000.00")
         ));
+        when(expenseRepository.countByPlantingId(plantingId)).thenReturn(2L);
 
         var summary = service.summarizeByPlanting(plantingId);
 
         assertThat(summary.totalExpenses()).isEqualByComparingTo("10000.00");
         assertThat(summary.expensePerHectare()).isEqualByComparingTo("100.00");
+        assertThat(summary.expenseCount()).isEqualTo(2);
         assertThat(summary.categories()).hasSize(2);
         assertThat(summary.categories().get(0).percentage()).isEqualByComparingTo("60.00");
         assertThat(summary.categories().get(1).percentage()).isEqualByComparingTo("40.00");

@@ -11,6 +11,7 @@ public record PlantingExpenseSummaryResponse(
         BigDecimal plantedAreaHectares,
         BigDecimal totalExpenses,
         BigDecimal expensePerHectare,
+        long expenseCount,
         List<ExpenseCategorySummaryResponse> categories
 ) {
 }

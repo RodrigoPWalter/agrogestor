@@ -14,6 +14,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
     Page<Expense> findByPlantingId(UUID plantingId, Pageable pageable);
 
+    long countByPlantingId(UUID plantingId);
+
     @Query("""
             select e.category as category, sum(e.amount) as total
             from Expense e

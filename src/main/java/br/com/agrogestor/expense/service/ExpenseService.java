@@ -137,6 +137,7 @@ public class ExpenseService {
                 planting.getPlantedAreaHectares(),
                 money(totalExpenses),
                 expensePerHectare,
+                expenseRepository.countByPlantingId(plantingId),
                 categories
         );
     }
