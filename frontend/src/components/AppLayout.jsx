@@ -6,13 +6,14 @@ import {
   Leaf,
   Menu,
   ReceiptText,
+  Settings,
   Sprout,
   Tractor,
   Warehouse,
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const navigation = [
   { to: "/", label: "Visão geral", icon: LayoutDashboard, end: true },
@@ -31,6 +32,11 @@ const mobileNavigation = navigation.filter(({ to }) =>
 
 export function AppLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const currentPage =
+    navigation.find(({ to, end }) =>
+      end ? location.pathname === to : location.pathname.startsWith(to),
+    )?.label || "AgroGestor";
 
   return (
     <div className="app-shell">
@@ -41,7 +47,7 @@ export function AppLayout() {
           </span>
           <div>
             <strong>AgroGestor</strong>
-            <small>Gestão rural simples</small>
+            <small>Operação agrícola</small>
           </div>
           <button
             className="icon-button sidebar__close"
@@ -87,18 +93,36 @@ export function AppLayout() {
       )}
 
       <main className="main-content">
-        <header className="mobile-header">
-          <button
-            className="icon-button"
-            onClick={() => setMobileMenuOpen(true)}
-            aria-label="Abrir menu"
-          >
-            <Menu size={22} />
-          </button>
-          <span className="mobile-header__brand">
-            <Leaf size={20} /> AgroGestor
-          </span>
-          <span className="mobile-header__spacer" />
+        <header className="topbar">
+          <div className="topbar__context">
+            <button
+              className="icon-button topbar__menu"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Abrir menu"
+            >
+              <Menu size={21} />
+            </button>
+            <div>
+              <span>AgroGestor / Operação</span>
+              <strong>{currentPage}</strong>
+            </div>
+          </div>
+          <div className="topbar__actions">
+            <button
+              className="icon-button"
+              type="button"
+              aria-label="Configurações"
+            >
+              <Settings size={18} />
+            </button>
+            <div className="user-profile" aria-label="Usuário atual">
+              <span>RW</span>
+              <div>
+                <strong>Rodrigo Walter</strong>
+                <small>Administrador</small>
+              </div>
+            </div>
+          </div>
         </header>
         <Outlet />
       </main>

@@ -6,6 +6,7 @@ import {
   CloudRain,
   Droplets,
   ExternalLink,
+  Gauge,
   LandPlot,
   LoaderCircle,
   MapPin,
@@ -121,7 +122,9 @@ export function DashboardPage() {
       [...new Set(plantings.map((item) => item.harvest))].sort().reverse()[0] ||
       "—";
 
-    return { hectares, totalExpenses, currentHarvest };
+    const costPerHectare = hectares > 0 ? totalExpenses / hectares : 0;
+
+    return { hectares, totalExpenses, costPerHectare, currentHarvest };
   }, [plantings, expenses]);
 
   if (loading) {
@@ -135,9 +138,9 @@ export function DashboardPage() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Bom trabalho, Rodrigo"
+        eyebrow="Resumo operacional"
         title="Visão geral da propriedade"
-        description="As informações mais importantes, sem complicação."
+        description="Indicadores consolidados da safra e informações para a operação diária."
         action={
           <Link className="button button--primary" to="/plantios">
             <Plus size={18} /> Novo plantio
@@ -179,6 +182,16 @@ export function DashboardPage() {
             <small>Safra mais recente</small>
             <strong>{metrics.currentHarvest}</strong>
             <span>Histórico organizado</span>
+          </div>
+        </article>
+        <article className="metric-card metric-card--neutral">
+          <span className="metric-card__icon">
+            <Gauge size={22} />
+          </span>
+          <div>
+            <small>Custo médio por hectare</small>
+            <strong>{formatCurrency(metrics.costPerHectare)}</strong>
+            <span>Considerando a área ativa</span>
           </div>
         </article>
       </section>
@@ -305,7 +318,7 @@ export function DashboardPage() {
           <div>
             <div>
               <span className="eyebrow">Mercado agrícola</span>
-              <h2 id="quotation-title">Cotações de soja, milho e trigo</h2>
+              <h2 id="quotation-title">Cotações e variação de mercado</h2>
             </div>
           </div>
           {commodityQuotes && (
@@ -464,26 +477,32 @@ export function DashboardPage() {
               <p>Nenhum plantio cadastrado ainda.</p>
             </div>
           ) : (
-            <div className="recent-list">
-              {plantings.slice(0, 4).map((planting) => (
-                <article key={planting.id} className="recent-item">
-                  <span className="crop-avatar">
-                    {planting.crop.slice(0, 2).toUpperCase()}
-                  </span>
-                  <div>
-                    <strong>{planting.crop}</strong>
-                    <small>
-                      {planting.seedVariety} · {planting.harvest}
-                    </small>
-                  </div>
-                  <div className="recent-item__meta">
-                    <strong>
-                      {formatNumber(planting.plantedAreaHectares)} ha
-                    </strong>
-                    <small>{formatDate(planting.plantingDate)}</small>
-                  </div>
-                </article>
-              ))}
+            <div className="data-table-wrapper">
+              <table className="data-table dashboard-planting-table">
+                <thead>
+                  <tr>
+                    <th>Cultura</th>
+                    <th>Safra</th>
+                    <th>Área</th>
+                    <th>Plantio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {plantings.slice(0, 5).map((planting) => (
+                    <tr key={planting.id}>
+                      <td>
+                        <span className="table-primary">{planting.crop}</span>
+                        <small>{planting.seedVariety}</small>
+                      </td>
+                      <td>{planting.harvest}</td>
+                      <td className="numeric-value">
+                        {formatNumber(planting.plantedAreaHectares)} ha
+                      </td>
+                      <td>{formatDate(planting.plantingDate)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </section>
