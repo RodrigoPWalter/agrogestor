@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import {
   EmptyState,
@@ -18,15 +18,18 @@ import {
 } from "../components/Feedback";
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
+import { DynamicDiaryFields } from "../components/DynamicDiaryFields";
 import { formatDate, toInputDate } from "../utils/formatters";
 
 const activityTypes = [
-  { value: "PLANTING", label: "Plantio" },
-  { value: "FERTILIZATION", label: "Adubação" },
-  { value: "APPLICATION", label: "Aplicação" },
   { value: "INSPECTION", label: "Vistoria" },
+  { value: "RAIN", label: "Chuva" },
+  { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
+  { value: "PRODUCT_USE", label: "Uso de produto" },
+  { value: "MAINTENANCE", label: "Manutenção" },
+  { value: "OBSERVATION", label: "Observação" },
   { value: "HARVEST", label: "Colheita" },
-  { value: "OTHER", label: "Outra atividade" },
+  { value: "OTHER", label: "Outro" },
 ];
 
 function emptyForm(plantingId = "") {
@@ -39,6 +42,17 @@ function emptyForm(plantingId = "") {
     appliedProducts: "",
     products: [],
     observations: "",
+    rainfallMillimeters: "",
+    productId: "",
+    productName: "",
+    productType: "PESTICIDE",
+    quantity: "",
+    unit: "LITER",
+    supplier: "",
+    amount: "",
+    machineId: "",
+    harvestQuantity: "",
+    harvestUnit: "Sacas",
   };
 }
 
@@ -46,6 +60,7 @@ export function FieldDiaryPage() {
   const [plantings, setPlantings] = useState([]);
   const [entries, setEntries] = useState([]);
   const [inventoryProducts, setInventoryProducts] = useState([]);
+  const [machines, setMachines] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -54,6 +69,7 @@ export function FieldDiaryPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm());
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const loadEntries = useCallback(async (plantingId) => {
     setLoading(true);
@@ -77,8 +93,25 @@ export function FieldDiaryPage() {
       .getInventoryProducts()
       .then(setInventoryProducts)
       .catch(() => {});
+    api
+      .getMachines()
+      .then(setMachines)
+      .catch(() => {});
     loadEntries("");
   }, [loadEntries]);
+
+  useEffect(() => {
+    const quickType = searchParams.get("new");
+    if (!quickType || plantings.length === 0) return;
+    const type = quickType === "rain" ? "RAIN" : "OBSERVATION";
+    setEditing(null);
+    setForm({
+      ...emptyForm(searchParams.get("plantingId") || ""),
+      activityType: type,
+    });
+    setModalOpen(true);
+    setSearchParams({});
+  }, [plantings, searchParams, setSearchParams]);
 
   useEffect(() => {
     loadEntries(selectedPlantingId);
@@ -86,7 +119,7 @@ export function FieldDiaryPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm(emptyForm(selectedPlantingId || plantings[0]?.id || ""));
+    setForm(emptyForm(selectedPlantingId));
     setModalOpen(true);
     setError("");
   }
@@ -102,6 +135,17 @@ export function FieldDiaryPage() {
       appliedProducts: entry.appliedProducts || "",
       products: entry.products || [],
       observations: entry.observations || "",
+      rainfallMillimeters: entry.rainfallMillimeters || "",
+      productId: "",
+      productName: "",
+      productType: "PESTICIDE",
+      quantity: "",
+      unit: "LITER",
+      supplier: entry.supplier || "",
+      amount: entry.amount || "",
+      machineId: entry.machineId || "",
+      harvestQuantity: entry.harvestQuantity || "",
+      harvestUnit: entry.harvestUnit || "Sacas",
     });
     setModalOpen(true);
     setError("");
@@ -113,6 +157,7 @@ export function FieldDiaryPage() {
     setError("");
     const payload = {
       ...form,
+      plantingId: form.plantingId || null,
       weatherCondition: form.weatherCondition || null,
       appliedProducts: form.appliedProducts || null,
       products: form.products
@@ -122,6 +167,18 @@ export function FieldDiaryPage() {
           quantity: Number(item.quantity),
         })),
       observations: form.observations || null,
+      rainfallMillimeters: form.rainfallMillimeters
+        ? Number(form.rainfallMillimeters)
+        : null,
+      productId: form.productId || null,
+      productName: form.productName || null,
+      quantity: form.quantity ? Number(form.quantity) : null,
+      supplier: form.supplier || null,
+      amount: form.amount ? Number(form.amount) : null,
+      machineId: form.machineId || null,
+      harvestQuantity: form.harvestQuantity
+        ? Number(form.harvestQuantity)
+        : null,
     };
 
     try {
@@ -130,7 +187,9 @@ export function FieldDiaryPage() {
         setSuccess("Registro e estoque atualizados.");
       } else {
         await api.createDiaryEntry(payload);
-        setSuccess("Atividade adicionada e produtos baixados do estoque.");
+        setSuccess(
+          "Acontecimento registrado e módulos relacionados atualizados.",
+        );
       }
       setModalOpen(false);
       await loadEntries(selectedPlantingId);
@@ -158,13 +217,9 @@ export function FieldDiaryPage() {
       <PageHeader
         eyebrow="Rotina de campo"
         title="Diário da lavoura"
-        description="Registre o que aconteceu em cada plantio e mantenha o histórico da safra."
+        description="Registre rapidamente o que aconteceu no plantio ou na propriedade."
         action={
-          <button
-            className="button button--primary"
-            onClick={openCreate}
-            disabled={plantings.length === 0}
-          >
+          <button className="button button--primary" onClick={openCreate}>
             <Plus size={18} /> Nova atividade
           </button>
         }
@@ -173,120 +228,108 @@ export function FieldDiaryPage() {
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
-      {plantings.length === 0 && !loading ? (
-        <EmptyState
-          title="Cadastre um plantio primeiro"
-          description="Toda atividade do diário precisa estar ligada a uma cultura e safra."
-          action={
-            <Link className="button button--primary" to="/plantios">
-              Ir para plantios
-            </Link>
-          }
-        />
-      ) : (
-        <>
-          <section className="diary-filter">
-            <div>
-              <span className="eyebrow">Filtrar histórico</span>
-              <label>
-                <span className="sr-only">Escolher plantio</span>
-                <select
-                  value={selectedPlantingId}
-                  onChange={(event) =>
-                    setSelectedPlantingId(event.target.value)
-                  }
-                >
-                  <option value="">Todos os plantios</option>
-                  {plantings.map((planting) => (
-                    <option key={planting.id} value={planting.id}>
-                      {planting.crop} — {planting.harvest}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <span>
-              <BookOpenText size={22} />
-              {entries.length} {entries.length === 1 ? "registro" : "registros"}
-            </span>
-          </section>
+      <>
+        <section className="diary-filter">
+          <div>
+            <span className="eyebrow">Filtrar histórico</span>
+            <label>
+              <span className="sr-only">Escolher plantio</span>
+              <select
+                value={selectedPlantingId}
+                onChange={(event) => setSelectedPlantingId(event.target.value)}
+              >
+                <option value="">Todos os plantios</option>
+                {plantings.map((planting) => (
+                  <option key={planting.id} value={planting.id}>
+                    {planting.crop} — {planting.harvest}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <span>
+            <BookOpenText size={22} />
+            {entries.length} {entries.length === 1 ? "registro" : "registros"}
+          </span>
+        </section>
 
-          {loading ? (
-            <LoadingState label="Abrindo o diário..." />
-          ) : entries.length === 0 ? (
-            <EmptyState
-              title="Nenhuma atividade registrada"
-              description="Anote uma vistoria, aplicação ou outro trabalho realizado na lavoura."
-              action={
-                <button className="button button--primary" onClick={openCreate}>
-                  <Plus size={18} /> Registrar atividade
-                </button>
-              }
-            />
-          ) : (
-            <section className="diary-timeline">
-              {entries.map((entry) => (
-                <article key={entry.id} className="diary-entry">
-                  <div className="diary-entry__date">
-                    <strong>
-                      {new Intl.DateTimeFormat("pt-BR", {
-                        day: "2-digit",
-                      }).format(new Date(`${entry.entryDate}T12:00:00`))}
-                    </strong>
-                    <span>
-                      {new Intl.DateTimeFormat("pt-BR", {
-                        month: "short",
-                      }).format(new Date(`${entry.entryDate}T12:00:00`))}
-                    </span>
-                  </div>
-                  <div className="diary-entry__content">
-                    <header>
-                      <div>
-                        <span className="badge">{entry.activityTypeName}</span>
-                        <h2>{entry.activity}</h2>
-                        <small>
-                          {entry.crop} · {entry.harvest} ·{" "}
-                          {formatDate(entry.entryDate)}
-                        </small>
-                      </div>
-                      <div className="card-actions">
-                        <button
-                          className="icon-button"
-                          onClick={() => openEdit(entry)}
-                          aria-label="Editar atividade"
-                        >
-                          <Edit3 size={17} />
-                        </button>
-                        <button
-                          className="icon-button icon-button--danger"
-                          onClick={() => handleDelete(entry)}
-                          aria-label="Excluir atividade"
-                        >
-                          <Trash2 size={17} />
-                        </button>
-                      </div>
-                    </header>
-                    <div className="diary-entry__details">
-                      {entry.weatherCondition && (
-                        <span>
-                          <CloudSun size={16} /> {entry.weatherCondition}
-                        </span>
-                      )}
-                      {entry.products?.map((product) => (
-                        <span key={product.productId}>
-                          <FlaskConical size={16} /> {product.productName}:{" "}
-                          {product.quantity} {product.unitName}
-                        </span>
-                      ))}
+        {loading ? (
+          <LoadingState label="Abrindo o diário..." />
+        ) : entries.length === 0 ? (
+          <EmptyState
+            title="Nenhuma atividade registrada"
+            description="Anote uma vistoria, chuva, compra, manutenção ou observação."
+            action={
+              <button className="button button--primary" onClick={openCreate}>
+                <Plus size={18} /> Registrar atividade
+              </button>
+            }
+          />
+        ) : (
+          <section className="diary-timeline">
+            {entries.map((entry) => (
+              <article key={entry.id} className="diary-entry">
+                <div className="diary-entry__date">
+                  <strong>
+                    {new Intl.DateTimeFormat("pt-BR", {
+                      day: "2-digit",
+                    }).format(new Date(`${entry.entryDate}T12:00:00`))}
+                  </strong>
+                  <span>
+                    {new Intl.DateTimeFormat("pt-BR", {
+                      month: "short",
+                    }).format(new Date(`${entry.entryDate}T12:00:00`))}
+                  </span>
+                </div>
+                <div className="diary-entry__content">
+                  <header>
+                    <div>
+                      <span className="badge">{entry.activityTypeName}</span>
+                      <h2>{entry.activity}</h2>
+                      <small>
+                        {entry.crop
+                          ? `${entry.crop} · ${entry.harvest}`
+                          : "Propriedade em geral"}{" "}
+                        · {formatDate(entry.entryDate)}
+                      </small>
                     </div>
-                    {entry.observations && <p>{entry.observations}</p>}
+                    <div className="card-actions">
+                      <button
+                        className="icon-button"
+                        onClick={() => openEdit(entry)}
+                        aria-label="Editar atividade"
+                      >
+                        <Edit3 size={17} />
+                      </button>
+                      <button
+                        className="icon-button icon-button--danger"
+                        onClick={() => handleDelete(entry)}
+                        aria-label="Excluir atividade"
+                      >
+                        <Trash2 size={17} />
+                      </button>
+                    </div>
+                  </header>
+                  <div className="diary-entry__details">
+                    {entry.weatherCondition && (
+                      <span>
+                        <CloudSun size={16} /> {entry.weatherCondition}
+                      </span>
+                    )}
+                    {entry.products?.map((product) => (
+                      <span key={product.productId}>
+                        <FlaskConical size={16} /> {product.productName}:{" "}
+                        {product.quantity} {product.unitName}
+                      </span>
+                    ))}
                   </div>
-                </article>
-              ))}
-            </section>
-          )}
-        </>
-      )}
+                  {entry.observations && <p>{entry.observations}</p>}
+                </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </>
 
       {modalOpen && (
         <Modal
@@ -295,7 +338,16 @@ export function FieldDiaryPage() {
           onClose={() => setModalOpen(false)}
         >
           <form className="form" onSubmit={handleSubmit}>
-            <div className="form-grid">
+            <DynamicDiaryFields
+              form={form}
+              setForm={setForm}
+              plantings={plantings}
+              products={inventoryProducts}
+              machines={machines}
+              activityTypes={activityTypes}
+              today={toInputDate()}
+            />
+            <fieldset disabled hidden>
               <label className="form-grid__full">
                 <span>Plantio</span>
                 <select
@@ -461,7 +513,7 @@ export function FieldDiaryPage() {
                   placeholder="Anotações importantes da atividade"
                 />
               </label>
-            </div>
+            </fieldset>
             <div className="form-actions">
               <button
                 type="button"
