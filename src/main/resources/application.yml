@@ -23,6 +23,7 @@ springdoc:
     tags-sorter: alpha
 
 server:
+  forward-headers-strategy: framework
   error:
     include-message: never
 
@@ -30,7 +31,8 @@ agrogestor:
   security:
     jwt-secret: ${JWT_SECRET:agrogestor-local-development-secret-change-in-production}
     jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
-    jwt-issuer: https://agrogestor.local
+    jwt-issuer: ${JWT_ISSUER:https://agrogestor.local}
+    cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
     bootstrap-admin:
       enabled: ${APP_ADMIN_ENABLED:true}
       name: ${APP_ADMIN_NAME:Administrador}
