@@ -10,6 +10,7 @@ import { InventoryPage } from "./pages/InventoryPage";
 import { MachinesPage } from "./pages/MachinesPage";
 import { RainfallPage } from "./pages/RainfallPage";
 import { LoginPage } from "./pages/LoginPage";
+import { InstallAppPage } from "./pages/InstallAppPage";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="maquinas" element={<MachinesPage />} />
           <Route path="diario" element={<FieldDiaryPage />} />
           <Route path="chuvas" element={<RainfallPage />} />
+          <Route path="instalar" element={<InstallAppPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

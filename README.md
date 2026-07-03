@@ -100,6 +100,30 @@ npm.cmd run dev
 A interface estará disponível em <http://localhost:5173> e a documentação interativa da
 API em <http://localhost:8080/swagger-ui.html>.
 
+O frontend usa o proxy do Vite durante o desenvolvimento. Para apontar a interface para
+uma API publicada em outra origem, copie `frontend/.env.example` para
+`frontend/.env.local` e preencha:
+
+```text
+VITE_API_URL=https://api.exemplo.com
+```
+
+Não inclua uma barra no final da URL. Quando a variável fica vazia, as requisições
+continuam usando a mesma origem e o proxy local.
+
+### PWA e Instalação no Celular
+
+O manifesto e o service worker são gerados no build de produção. Para validar localmente:
+
+```powershell
+cd frontend
+npm.cmd run build
+npm.cmd run preview -- --host
+```
+
+Abra o endereço informado pelo Vite no celular conectado à mesma rede. O menu
+**Instalar** dentro do AgroGestor contém as instruções para Android e iPhone.
+
 ### Configuração sem Docker
 
 Crie um banco chamado `agrogestor` e configure as variáveis de ambiente:

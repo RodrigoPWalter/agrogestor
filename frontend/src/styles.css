@@ -4622,3 +4622,188 @@ body {
     right: 10px;
   }
 }
+
+/* PWA installation guide */
+.install-app-page {
+  max-width: 1080px;
+}
+
+.install-intro,
+.install-result {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.install-intro {
+  gap: 15px;
+  margin-bottom: 18px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--machine-yellow);
+}
+
+.install-intro > span {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #173f19;
+  border-radius: 8px;
+  background: var(--machine-yellow);
+}
+
+.install-intro h2,
+.install-result h2 {
+  margin-bottom: 4px;
+  color: #173f19;
+  font-size: 0.9rem;
+}
+
+.install-intro p,
+.install-result p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.install-guides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.install-guide {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.install-guide > header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 15px 17px;
+  border-bottom: 1px solid var(--line);
+  background: #f7f9f5;
+}
+
+.install-guide > header > span {
+  display: grid;
+  width: 39px;
+  height: 39px;
+  place-items: center;
+  color: #fff;
+  border-radius: 7px;
+  background: var(--machine-green);
+}
+
+.install-guide h2 {
+  margin-bottom: 2px;
+  color: #173f19;
+  font-size: 0.86rem;
+}
+
+.install-guide header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.install-guide ol {
+  display: flex;
+  margin: 0;
+  padding: 18px;
+  list-style: none;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.install-guide li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.install-guide li > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #173f19;
+  border-radius: 50%;
+  background: var(--machine-yellow);
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.install-guide li p {
+  margin: 3px 0 0;
+  color: #455147;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.install-result {
+  gap: 13px;
+  margin-top: 16px;
+  padding: 16px 18px;
+}
+
+.install-result > svg {
+  flex: 0 0 auto;
+  color: var(--machine-green);
+}
+
+.install-result > div {
+  flex: 1;
+}
+
+.install-result > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  color: #24551f;
+  border: 1px solid #c5dbc0;
+  border-radius: 999px;
+  background: #ebf4e8;
+  font-size: 0.62rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.install-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.63rem;
+}
+
+@media (max-width: 720px) {
+  .install-guides {
+    grid-template-columns: 1fr;
+  }
+
+  .install-intro,
+  .install-result {
+    align-items: flex-start;
+  }
+
+  .install-result {
+    flex-wrap: wrap;
+  }
+
+  .install-result > span {
+    margin-left: 37px;
+  }
+}
