@@ -27,6 +27,15 @@ server:
     include-message: never
 
 agrogestor:
+  security:
+    jwt-secret: ${JWT_SECRET:agrogestor-local-development-secret-change-in-production}
+    jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
+    jwt-issuer: https://agrogestor.local
+    bootstrap-admin:
+      enabled: ${APP_ADMIN_ENABLED:true}
+      name: ${APP_ADMIN_NAME:Administrador}
+      email: ${APP_ADMIN_EMAIL:admin@agrogestor.local}
+      password: ${APP_ADMIN_PASSWORD:AgroGestor@2026}
   weather:
     latitude: ${WEATHER_LATITUDE:-27.6736}
     longitude: ${WEATHER_LONGITUDE:-53.8056}

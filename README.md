@@ -110,6 +110,19 @@ DB_USERNAME=agrogestor
 DB_PASSWORD=agrogestor
 ```
 
+Para autenticação, substitua as credenciais e a chave usadas no ambiente local:
+
+```text
+JWT_SECRET=uma-chave-com-pelo-menos-32-caracteres
+JWT_EXPIRATION_MINUTES=480
+APP_ADMIN_NAME=Administrador
+APP_ADMIN_EMAIL=admin@agrogestor.local
+APP_ADMIN_PASSWORD=uma-senha-forte
+```
+
+Quando a tabela de usuários está vazia, o sistema cria o administrador inicial com essas
+configurações. Os valores padrão existem somente para facilitar a execução local.
+
 Quando nenhuma localização tiver sido escolhida pela interface, a previsão do tempo
 utiliza os seguintes valores de configuração:
 
