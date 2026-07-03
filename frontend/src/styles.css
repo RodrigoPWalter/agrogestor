@@ -2594,6 +2594,329 @@ p {
   }
 }
 
+/* Data-first expenses workspace */
+.expenses-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.expenses-page-header h1 {
+  margin: 3px 0 4px;
+  color: var(--green-950);
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  letter-spacing: -0.035em;
+}
+
+.expenses-page-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.expenses-context-selector {
+  display: flex;
+  min-width: min(480px, 48%);
+  align-items: center;
+  gap: 8px;
+  color: #4f5e50;
+  font-size: 0.72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.expenses-context-selector select {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 24px 5px 2px;
+  color: var(--green-950);
+  border: 0;
+  border-bottom: 1px solid #aebbad;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  font-weight: 800;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.expenses-context-selector select:focus {
+  border-bottom-color: var(--machine-green);
+  box-shadow: 0 2px 0 rgba(54, 124, 43, 0.18);
+}
+
+.expense-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(24, 58, 24, 0.04);
+}
+
+.expense-summary-item {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-right: 1px solid #e2e6df;
+}
+
+.expense-summary-item:last-child {
+  border-right: 0;
+}
+
+.expense-summary-item > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  flex: 0 0 auto;
+  color: var(--machine-green);
+  border-radius: 6px;
+  background: var(--green-50);
+}
+
+.expense-summary-item--financial > span {
+  color: #284d20;
+  background: var(--machine-yellow);
+}
+
+.expense-summary-item small,
+.expense-summary-item strong {
+  display: block;
+}
+
+.expense-summary-item small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expense-summary-item strong {
+  margin-top: 2px;
+  overflow: hidden;
+  color: #1b471b;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.94rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expenses-layout {
+  grid-template-columns: minmax(0, 1.38fr) minmax(280px, 0.62fr);
+}
+
+.expense-history-panel {
+  padding: 0;
+  overflow: hidden;
+  border-top-width: 2px;
+}
+
+.expense-history-panel > .panel__header {
+  margin: 0;
+  padding: 14px 16px 10px;
+}
+
+.expenses-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid #e6e9e4;
+  border-bottom: 1px solid #dfe4dc;
+  background: #f7f8f5;
+}
+
+.expenses-search {
+  display: flex;
+  width: min(360px, 100%);
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: #6d786d;
+  border: 1px solid #cfd6cc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.expenses-search:focus-within {
+  color: var(--machine-green);
+  border-color: var(--machine-green);
+  box-shadow: 0 0 0 3px rgba(54, 124, 43, 0.12);
+}
+
+.expenses-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 0.7rem;
+}
+
+.expense-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.expense-data-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.expense-data-table th,
+.expense-data-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #e5e8e3;
+  text-align: left;
+}
+
+.expense-data-table th {
+  color: #657066;
+  background: #f0f2ee;
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.expense-data-table tbody tr:nth-child(even) {
+  background: #fafbf9;
+}
+
+.expense-data-table tbody tr:hover {
+  background: #f0f6ed;
+}
+
+.expense-data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.expense-description {
+  color: #1d2c1e;
+  font-weight: 750;
+}
+
+.expense-data-table .expense-table-value {
+  color: #1a411b;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 850;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.expense-data-table .expense-table-actions {
+  width: 68px;
+  text-align: center;
+}
+
+.expense-table-actions > div {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+}
+
+.expense-table-actions .icon-button {
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+}
+
+.expense-table-empty {
+  padding: 28px !important;
+  color: var(--muted);
+  text-align: center !important;
+}
+
+.expense-history-panel .state-box {
+  min-height: 210px;
+}
+
+@media (max-width: 1120px) {
+  .expenses-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  .expenses-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .expenses-context-selector {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .expense-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .expense-summary-item:nth-child(2) {
+    border-right: 0;
+  }
+
+  .expense-summary-item:nth-child(-n + 2) {
+    border-bottom: 1px solid #e2e6df;
+  }
+}
+
+@media (max-width: 520px) {
+  .expenses-context-selector {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .expenses-table-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .expenses-search,
+  .expenses-table-toolbar .button {
+    width: 100%;
+  }
+
+  .expense-summary-item {
+    padding: 10px;
+  }
+
+  .expense-summary-item > span {
+    width: 28px;
+    height: 28px;
+  }
+
+  .expense-summary-item > span svg {
+    width: 17px;
+  }
+
+  .expense-summary-item strong {
+    font-size: 0.8rem;
+  }
+}
+
 @media (max-width: 420px) {
   .expense-summary-grid {
     grid-template-columns: 1fr;
