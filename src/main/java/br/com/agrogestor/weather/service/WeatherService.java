@@ -4,6 +4,7 @@ import br.com.agrogestor.shared.exception.ExternalServiceException;
 import br.com.agrogestor.weather.client.OpenMeteoClient;
 import br.com.agrogestor.weather.client.MetNoClient;
 import br.com.agrogestor.weather.dto.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class WeatherService {
     private volatile WeatherForecastResponse cachedForecast;
     private volatile String cachedLocationKey;
 
+    @Autowired
     public WeatherService(
             OpenMeteoClient client,
             MetNoClient fallbackClient,
