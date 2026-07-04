@@ -20,7 +20,8 @@ export const api = {
       data: credentials,
     }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
-  getWeatherForecast: () => request("/api/v1/weather/forecast"),
+  getWeatherForecast: () =>
+    request("/api/v1/weather/forecast", { timeout: 25_000 }),
   searchWeatherLocations: (query) =>
     request(
       `/api/v1/weather/locations/search?query=${encodeURIComponent(query)}`,

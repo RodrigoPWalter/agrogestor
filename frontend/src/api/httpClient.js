@@ -23,6 +23,11 @@ httpClient.interceptors.request.use((config) => {
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.code === "ECONNABORTED") {
+      return Promise.reject(
+        new Error("A previsão demorou para responder. Tente novamente."),
+      );
+    }
     const response = error.response;
     const fieldMessage = response?.data?.fieldErrors
       ? Object.values(response.data.fieldErrors)[0]

@@ -429,16 +429,12 @@ p {
   font-size: 0.7rem;
 }
 
-.weather-location-button {
+.weather-location-fixed {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   margin-top: 6px;
   padding: 0;
   color: #b9e2e7;
-  border: 0;
-  cursor: pointer;
-  background: transparent;
   font-size: 0.63rem;
   font-weight: 700;
 }
