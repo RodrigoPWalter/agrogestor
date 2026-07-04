@@ -2,6 +2,7 @@ package br.com.agrogestor.weather.client;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 
 @Component
 public class OpenMeteoClient {
@@ -9,7 +10,13 @@ public class OpenMeteoClient {
     private final RestClient restClient;
 
     public OpenMeteoClient(RestClient.Builder builder) {
-        this.restClient = builder.baseUrl("https://api.open-meteo.com").build();
+        var requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5_000);
+        requestFactory.setReadTimeout(10_000);
+        this.restClient = builder
+                .baseUrl("https://api.open-meteo.com")
+                .requestFactory(requestFactory)
+                .build();
     }
 
     public OpenMeteoResponse fetch(double latitude, double longitude, String timezone) {

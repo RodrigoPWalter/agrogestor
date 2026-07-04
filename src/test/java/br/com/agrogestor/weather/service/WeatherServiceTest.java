@@ -48,4 +48,40 @@ class WeatherServiceTest {
         assertThat(second).isSameAs(first);
         verify(client, times(1)).fetch(anyDouble(), anyDouble(), anyString());
     }
+
+    @Test
+    void shouldUseSecondarySourceWhenOpenMeteoIsUnavailable() {
+        OpenMeteoClient client = mock(OpenMeteoClient.class);
+        MetNoClient fallbackClient = mock(MetNoClient.class);
+        WeatherLocationService locationService = mock(WeatherLocationService.class);
+        when(locationService.current()).thenReturn(
+                new br.com.agrogestor.weather.dto.WeatherLocationResponse(
+                        "Crissiumal - RS", null, "Brasil",
+                        new BigDecimal("-27.49972"), new BigDecimal("-54.10111"),
+                        "America/Sao_Paulo"
+                )
+        );
+        when(client.fetch(anyDouble(), anyDouble(), anyString()))
+                .thenThrow(new IllegalStateException("timeout"));
+        when(fallbackClient.fetch(anyDouble(), anyDouble(), anyString()))
+                .thenReturn(new OpenMeteoResponse(
+                        new OpenMeteoResponse.Current(
+                                new BigDecimal("8.0"), new BigDecimal("8.0"), 2),
+                        new OpenMeteoResponse.Daily(
+                                List.of(LocalDate.of(2026, 7, 3)),
+                                List.of(new BigDecimal("5.0")),
+                                List.of(new BigDecimal("16.0")),
+                                List.of(0),
+                                List.of(BigDecimal.ZERO),
+                                List.of(2)
+                        )
+                ));
+
+        var response = new WeatherService(client, fallbackClient, locationService)
+                .forecast();
+
+        assertThat(response.location()).isEqualTo("Crissiumal - RS");
+        assertThat(response.sourceName()).isEqualTo("MET Norway");
+        verify(fallbackClient).fetch(anyDouble(), anyDouble(), anyString());
+    }
 }

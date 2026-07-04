@@ -39,6 +39,6 @@ agrogestor:
       email: ${APP_ADMIN_EMAIL:admin@agrogestor.local}
       password: ${APP_ADMIN_PASSWORD:AgroGestor@2026}
   weather:
-    latitude: ${WEATHER_LATITUDE:-27.6736}
-    longitude: ${WEATHER_LONGITUDE:-53.8056}
-    location-name: ${WEATHER_LOCATION_NAME:Campo Novo - RS}
+    latitude: ${WEATHER_LATITUDE:-27.49972}
+    longitude: ${WEATHER_LONGITUDE:-54.10111}
+    location-name: ${WEATHER_LOCATION_NAME:Crissiumal - RS}

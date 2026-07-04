@@ -2,6 +2,7 @@ package br.com.agrogestor.weather.service;
 
 import br.com.agrogestor.shared.exception.ExternalServiceException;
 import br.com.agrogestor.weather.client.OpenMeteoClient;
+import br.com.agrogestor.weather.client.MetNoClient;
 import br.com.agrogestor.weather.dto.*;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +15,23 @@ import java.util.List;
 public class WeatherService {
     private static final Duration CACHE_DURATION = Duration.ofMinutes(30);
     private final OpenMeteoClient client;
+    private final MetNoClient fallbackClient;
     private final WeatherLocationService locationService;
     private volatile WeatherForecastResponse cachedForecast;
     private volatile String cachedLocationKey;
 
-    public WeatherService(OpenMeteoClient client, WeatherLocationService locationService) {
+    public WeatherService(
+            OpenMeteoClient client,
+            MetNoClient fallbackClient,
+            WeatherLocationService locationService
+    ) {
         this.client = client;
+        this.fallbackClient = fallbackClient;
         this.locationService = locationService;
+    }
+
+    WeatherService(OpenMeteoClient client, WeatherLocationService locationService) {
+        this(client, null, locationService);
     }
 
     public WeatherForecastResponse forecast() {
@@ -33,11 +44,8 @@ public class WeatherService {
             current = cachedForecast;
             if (isFresh(current) && locationKey.equals(cachedLocationKey)) return current;
             try {
-                var source = client.fetch(
-                        location.latitude().doubleValue(),
-                        location.longitude().doubleValue(),
-                        location.timezone()
-                );
+                ForecastSource forecastSource = fetch(location);
+                var source = forecastSource.forecast();
                 if (source == null || source.current() == null || source.daily() == null) {
                     throw new IllegalStateException("Resposta meteorológica incompleta");
                 }
@@ -46,7 +54,7 @@ public class WeatherService {
                         location.label(), source.current().temperature(),
                         source.current().apparentTemperature(), source.current().weatherCode(),
                         condition(source.current().weatherCode()), days, alerts(days),
-                        "Open-Meteo", OpenMeteoClient.SOURCE_URL,
+                        forecastSource.name(), forecastSource.url(),
                         OffsetDateTime.now(ZoneOffset.UTC), false
                 );
                 cachedForecast = response;
@@ -57,6 +65,36 @@ public class WeatherService {
                 throw new ExternalServiceException(
                         "A previsão do tempo está temporariamente indisponível", exception);
             }
+        }
+    }
+
+    private ForecastSource fetch(WeatherLocationResponse location) {
+        try {
+            return new ForecastSource(
+                    client.fetch(
+                            location.latitude().doubleValue(),
+                            location.longitude().doubleValue(),
+                            location.timezone()
+                    ),
+                    "Open-Meteo",
+                    OpenMeteoClient.SOURCE_URL
+            );
+        } catch (Exception primaryFailure) {
+            if (fallbackClient == null) {
+                throw new IllegalStateException(
+                        "Fonte meteorológica principal indisponível",
+                        primaryFailure
+                );
+            }
+            return new ForecastSource(
+                    fallbackClient.fetch(
+                            location.latitude().doubleValue(),
+                            location.longitude().doubleValue(),
+                            location.timezone()
+                    ),
+                    "MET Norway",
+                    MetNoClient.SOURCE_URL
+            );
         }
     }
 
@@ -105,5 +143,12 @@ public class WeatherService {
     private boolean isFresh(WeatherForecastResponse response) {
         return response != null && response.fetchedAt().plus(CACHE_DURATION)
                 .isAfter(OffsetDateTime.now(ZoneOffset.UTC));
+    }
+
+    private record ForecastSource(
+            br.com.agrogestor.weather.client.OpenMeteoResponse forecast,
+            String name,
+            String url
+    ) {
     }
 }

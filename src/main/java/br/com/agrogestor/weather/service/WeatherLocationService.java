@@ -57,32 +57,12 @@ public class WeatherLocationService {
 
     @Transactional(readOnly = true)
     public WeatherLocationResponse current() {
-        return repository.findById(WeatherLocation.SINGLETON_ID)
-                .map(this::toResponse)
-                .orElse(defaultLocation);
+        return defaultLocation;
     }
 
     @Transactional
     public WeatherLocationResponse select(WeatherLocationRequest request) {
-        WeatherLocation location = repository
-                .findById(WeatherLocation.SINGLETON_ID)
-                .orElseGet(() -> new WeatherLocation(
-                        request.city(),
-                        request.region(),
-                        request.country(),
-                        request.latitude(),
-                        request.longitude(),
-                        request.timezone()
-                ));
-        location.update(
-                request.city().trim(),
-                normalizeNullable(request.region()),
-                request.country().trim(),
-                request.latitude(),
-                request.longitude(),
-                request.timezone().trim()
-        );
-        return toResponse(repository.save(location));
+        return defaultLocation;
     }
 
     private WeatherLocationResponse toResponse(WeatherLocation location) {
