@@ -1800,7 +1800,6 @@ p {
   .expense-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
 }
 
 @media (max-width: 900px) {
@@ -1815,7 +1814,6 @@ p {
   .page {
     padding: 38px 26px 60px;
   }
-
 }
 
 @media (max-width: 720px) {
@@ -4270,6 +4268,93 @@ body {
   font-size: 0.82rem;
 }
 
+.section-heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.season-closing-panel {
+  background: linear-gradient(180deg, #fffdf0, #fff) !important;
+}
+
+.season-closing-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid #e7dfb9;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.season-closing-grid > div {
+  padding: 12px;
+  border-right: 1px solid #e7dfb9;
+}
+
+.season-closing-grid > div:last-child {
+  border-right: 0;
+}
+
+.season-closing-grid span,
+.season-closing-grid strong {
+  display: block;
+}
+
+.season-closing-grid span {
+  color: #6f6b4a;
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.season-closing-grid strong {
+  margin-top: 4px;
+  color: #173f19;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.season-closing-result {
+  background: #f1f7e8;
+}
+
+.season-closing-result--negative {
+  background: #fff0ec;
+}
+
+.season-closing-result--negative strong {
+  color: #9f2d20;
+}
+
+.season-price-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.season-price-form label span {
+  font-size: 0.66rem;
+}
+
+.season-harvest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.season-harvest-list span {
+  padding: 6px 9px;
+  color: #173f19;
+  border: 1px solid #dce7d8;
+  border-radius: 999px;
+  background: #f6faf4;
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
 .planting-detail__columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4334,8 +4419,19 @@ body {
   }
 
   .planting-detail__columns,
-  .quick-expense-form {
+  .quick-expense-form,
+  .season-closing-grid,
+  .season-price-form {
     grid-template-columns: 1fr;
+  }
+
+  .season-closing-grid > div {
+    border-right: 0;
+    border-bottom: 1px solid #e7dfb9;
+  }
+
+  .season-closing-grid > div:last-child {
+    border-bottom: 0;
   }
 
   .quick-actions {

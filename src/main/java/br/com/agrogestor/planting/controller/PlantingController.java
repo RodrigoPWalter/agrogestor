@@ -2,6 +2,7 @@ package br.com.agrogestor.planting.controller;
 
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
+import br.com.agrogestor.planting.dto.SeasonClosingResponse;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.service.PlantingService;
 import br.com.agrogestor.shared.dto.PageResponse;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -96,6 +98,15 @@ public class PlantingController {
     @Operation(summary = "Reativar um plantio finalizado")
     public PlantingResponse reactivate(@PathVariable UUID id) {
         return service.reactivate(id);
+    }
+
+    @GetMapping("/{id}/season-closing")
+    @Operation(summary = "Consultar fechamento financeiro da safra")
+    public SeasonClosingResponse seasonClosing(
+            @PathVariable UUID id,
+            @RequestParam(required = false) BigDecimal salePricePerUnit
+    ) {
+        return service.seasonClosing(id, salePricePerUnit);
     }
 
     @GetMapping("/harvests")

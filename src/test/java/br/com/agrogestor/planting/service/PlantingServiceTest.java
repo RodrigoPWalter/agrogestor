@@ -1,5 +1,11 @@
 package br.com.agrogestor.planting.service;
 
+import br.com.agrogestor.diary.repository.FieldDiaryRepository;
+import br.com.agrogestor.diary.entity.ActivityType;
+import br.com.agrogestor.diary.entity.FieldDiaryEntry;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
+import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
@@ -33,11 +39,17 @@ class PlantingServiceTest {
     @Mock
     private PlantingRepository repository;
 
+    @Mock
+    private ExpenseRepository expenseRepository;
+
+    @Mock
+    private FieldDiaryRepository diaryRepository;
+
     private PlantingService service;
 
     @BeforeEach
     void setUp() {
-        service = new PlantingService(repository);
+        service = new PlantingService(repository, expenseRepository, diaryRepository);
     }
 
     @Test
@@ -120,6 +132,28 @@ class PlantingServiceTest {
         assertThat(response.completedAt()).isNull();
     }
 
+    @Test
+    void shouldBuildSeasonClosingWithRevenueEstimate() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(expenseRepository.summarizeByCategory(id)).thenReturn(List.of(
+                expenseProjection(ExpenseCategory.SEEDS, "3000.00"),
+                expenseProjection(ExpenseCategory.FUEL, "2000.00")
+        ));
+        when(expenseRepository.countByPlantingId(id)).thenReturn(2L);
+        when(diaryRepository.findByPlantingIdAndActivityType(id, ActivityType.HARVEST))
+                .thenReturn(List.of(harvestEntry("Sacas", "120.000")));
+
+        var closing = service.seasonClosing(id, new BigDecimal("70.00"));
+
+        assertThat(closing.totalExpenses()).isEqualByComparingTo("5000.00");
+        assertThat(closing.expensePerHectare()).isEqualByComparingTo("270.27");
+        assertThat(closing.mainHarvestQuantity()).isEqualByComparingTo("120.000");
+        assertThat(closing.estimatedRevenue()).isEqualByComparingTo("8400.00");
+        assertThat(closing.estimatedResult()).isEqualByComparingTo("3400.00");
+        assertThat(closing.expensesByCategory()).hasSize(2);
+    }
+
     private PlantingRequest request(String crop, String observations) {
         return new PlantingRequest(
                 crop,
@@ -142,5 +176,36 @@ class PlantingServiceTest {
                 new BigDecimal("925.000"),
                 "Talhão norte"
         );
+    }
+
+    private ExpenseCategoryTotalProjection expenseProjection(
+            ExpenseCategory category,
+            String total
+    ) {
+        return new ExpenseCategoryTotalProjection() {
+            @Override
+            public ExpenseCategory getCategory() {
+                return category;
+            }
+
+            @Override
+            public BigDecimal getTotal() {
+                return new BigDecimal(total);
+            }
+        };
+    }
+
+    private FieldDiaryEntry harvestEntry(String unit, String quantity) {
+        FieldDiaryEntry entry = new FieldDiaryEntry(
+                planting(),
+                LocalDate.of(2026, 2, 10),
+                ActivityType.HARVEST,
+                "Colheita",
+                null,
+                null,
+                null
+        );
+        entry.updateDetails(null, null, null, null, new BigDecimal(quantity), unit);
+        return entry;
     }
 }

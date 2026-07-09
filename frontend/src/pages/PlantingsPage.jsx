@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   CheckCircle2,
   Edit3,
@@ -334,9 +335,9 @@ export function PlantingsPage() {
                 {view === "history" && (
                   <button
                     className="button button--primary"
-                    onClick={() => handleReactivate(planting)}
+                    onClick={() => setSelectedPlanting(planting)}
                   >
-                    Reativar plantio
+                    <BarChart3 size={17} /> Ver fechamento
                   </button>
                 )}
               </div>

@@ -43,6 +43,13 @@ export const api = {
     request(`/api/v1/plantings/${id}/finish`, { method: "PATCH" }),
   reactivatePlanting: (id) =>
     request(`/api/v1/plantings/${id}/reactivate`, { method: "PATCH" }),
+  getSeasonClosing: (id, salePricePerUnit) => {
+    const query =
+      salePricePerUnit && Number(salePricePerUnit) > 0
+        ? `?salePricePerUnit=${encodeURIComponent(salePricePerUnit)}`
+        : "";
+    return request(`/api/v1/plantings/${id}/season-closing${query}`);
+  },
 
   getExpenses: (plantingId) => {
     const query = plantingId

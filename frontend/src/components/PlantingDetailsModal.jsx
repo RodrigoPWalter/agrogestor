@@ -1,10 +1,12 @@
 import {
+  BarChart3,
   BookOpenText,
   CheckCircle2,
   CloudRain,
   Plus,
   ReceiptText,
   RotateCcw,
+  TrendingUp,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -37,21 +39,25 @@ export function PlantingDetailsModal({
   const [error, setError] = useState("");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expense, setExpense] = useState(emptyExpense);
+  const [salePrice, setSalePrice] = useState("");
+  const [closingLoading, setClosingLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [summary, expenses, diary, rainfall] = await Promise.all([
+      const [summary, expenses, diary, rainfall, closing] = await Promise.all([
         api.getExpenseSummary(planting.id),
         api.getExpenses(planting.id),
         api.getDiaryEntries(planting.id),
         api.getRainfallByPlanting(planting.id).catch(() => []),
+        api.getSeasonClosing(planting.id),
       ]);
       setData({
         summary,
         expenses: expenses.content,
         diary: diary.content,
         rainfall,
+        closing,
       });
       setError("");
     } catch (requestError) {
@@ -81,6 +87,20 @@ export function PlantingDetailsModal({
       setError(requestError.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function updateClosing(event) {
+    event.preventDefault();
+    setClosingLoading(true);
+    try {
+      const closing = await api.getSeasonClosing(planting.id, salePrice);
+      setData((current) => ({ ...current, closing }));
+      setError("");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setClosingLoading(false);
     }
   }
 
@@ -135,6 +155,92 @@ export function PlantingDetailsModal({
                   </strong>
                 </div>
               </div>
+            </section>
+
+            <section className="season-closing-panel">
+              <div className="section-heading">
+                <div>
+                  <h3>
+                    <BarChart3 size={17} /> Fechamento de safra
+                  </h3>
+                  <p>
+                    Custo total vs. produÃ§Ã£o registrada no diÃ¡rio de
+                    colheita.
+                  </p>
+                </div>
+              </div>
+
+              <div className="season-closing-grid">
+                <div>
+                  <span>Custo total</span>
+                  <strong>{formatCurrency(data.closing.totalExpenses)}</strong>
+                </div>
+                <div>
+                  <span>Custo por hectare</span>
+                  <strong>
+                    {formatCurrency(data.closing.expensePerHectare)}
+                  </strong>
+                </div>
+                <div>
+                  <span>ProduÃ§Ã£o registrada</span>
+                  <strong>
+                    {formatNumber(data.closing.mainHarvestQuantity, 3)}{" "}
+                    {data.closing.mainHarvestUnit || "un."}
+                  </strong>
+                </div>
+                <div
+                  className={
+                    Number(data.closing.estimatedResult || 0) < 0
+                      ? "season-closing-result season-closing-result--negative"
+                      : "season-closing-result"
+                  }
+                >
+                  <span>Resultado estimado</span>
+                  <strong>
+                    {data.closing.revenueEstimated
+                      ? formatCurrency(data.closing.estimatedResult)
+                      : "Informe o preÃ§o"}
+                  </strong>
+                </div>
+              </div>
+
+              <form className="season-price-form" onSubmit={updateClosing}>
+                <label>
+                  <span>
+                    PreÃ§o recebido por {data.closing.mainHarvestUnit || "un."}
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Ex.: 70,00"
+                    value={salePrice}
+                    onChange={(event) => setSalePrice(event.target.value)}
+                  />
+                </label>
+                <button
+                  className="button button--primary"
+                  disabled={closingLoading}
+                >
+                  <TrendingUp size={17} />{" "}
+                  {closingLoading ? "Calculando..." : "Atualizar resultado"}
+                </button>
+              </form>
+
+              {data.closing.harvestTotals.length === 0 ? (
+                <p className="muted-copy">
+                  Ainda nÃ£o hÃ¡ colheita registrada no diÃ¡rio para este
+                  plantio.
+                </p>
+              ) : data.closing.harvestTotals.length > 1 ? (
+                <div className="season-harvest-list">
+                  {data.closing.harvestTotals.map((item) => (
+                    <span key={item.unit || "sem-unidade"}>
+                      {formatNumber(item.quantity, 3)} {item.unit || "un."}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </section>
 
             <section>
