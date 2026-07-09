@@ -33,8 +33,6 @@ levar alguns segundos enquanto o serviço é iniciado.
   datas de plantio, com separação entre cultivos ativos e histórico de colheitas.
 - **Gestão de Gastos:** Lançamento de despesas por plantio, consolidação de custos e
   cálculo do custo por hectare.
-- **Estimativas Agrícolas:** Projeções de produção, faturamento e lucro, além de cálculos
-  de semeadura por metro, hectare e peso de mil sementes.
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com
   movimentações de entrada e saída, validade, unidade de medida e alertas de estoque
   mínimo.
@@ -44,8 +42,6 @@ levar alguns segundos enquanto o serviço é iniciado.
   manutenção e acompanhamento das próximas revisões.
 - **Registro Pluviométrico:** Lançamento manual das chuvas medidas na propriedade e
   acompanhamento do volume acumulado.
-- **Previsão do Tempo:** Consulta meteorológica por cidade selecionada, com previsão de
-  chuva, temperatura e alertas climáticos.
 - **Mercado Agrícola:** Cotações de soja, milho, trigo e Diesel, incluindo histórico de
   variação dos preços.
 
@@ -160,15 +156,6 @@ APP_ADMIN_PASSWORD=uma-senha-forte
 Quando a tabela de usuários está vazia, o sistema cria o administrador inicial com essas
 configurações. Os valores padrão existem somente para facilitar a execução local.
 
-Quando nenhuma localização tiver sido escolhida pela interface, a previsão do tempo
-utiliza os seguintes valores de configuração:
-
-```text
-WEATHER_LATITUDE=-27.6736
-WEATHER_LONGITUDE=-53.8056
-WEATHER_LOCATION_NAME=Campo Novo - RS
-```
-
 ## Arquitetura da API
 
 O backend adota uma arquitetura modular orientada aos domínios do sistema. Cada módulo
@@ -185,9 +172,6 @@ versionados pelo prefixo `/api/v1`.
 | Manutenções | `/api/v1/maintenances` |
 | Diário da lavoura | `/api/v1/field-diary` |
 | Chuvas | `/api/v1/rainfall` |
-| Estimativa de produção | `/api/v1/production-estimates` |
-| Estimativa de semeadura | `/api/v1/seeding-estimates` |
-| Clima | `/api/v1/weather` |
 | Cotações | `/api/v1/commodity-quotes` |
 
 O PostgreSQL é a fonte de verdade da aplicação. O Flyway controla a evolução do schema,

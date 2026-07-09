@@ -25,7 +25,7 @@ httpClient.interceptors.response.use(
   (error) => {
     if (error.code === "ECONNABORTED") {
       return Promise.reject(
-        new Error("A previsão demorou para responder. Tente novamente."),
+        new Error("A solicitação demorou para responder. Tente novamente."),
       );
     }
     const response = error.response;

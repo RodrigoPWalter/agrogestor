@@ -63,8 +63,8 @@ Guarda uma leitura do pluviômetro por data, em milímetros.
 
 ### `weather_location`
 
-Mantém a cidade escolhida para a previsão. É uma configuração única enquanto o sistema
-ainda trabalha com uma propriedade.
+Tabela mantida apenas por compatibilidade com migrações antigas. O módulo de previsão do
+tempo está pausado e a aplicação não consulta esses dados no fluxo atual.
 
 ### `usuarios`
 

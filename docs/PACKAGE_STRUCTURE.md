@@ -11,14 +11,6 @@ br.com.agrogestor
 │   ├── entity
 │   ├── repository
 │   └── service
-├── production
-│   ├── controller
-│   ├── dto
-│   └── service
-├── seeding
-│   ├── controller
-│   ├── dto
-│   └── service
 ├── expense
 │   ├── controller
 │   ├── dto
@@ -42,11 +34,6 @@ br.com.agrogestor
 │   ├── entity
 │   ├── repository
 │   └── service
-├── weather
-│   ├── client
-│   ├── controller
-│   ├── dto
-│   └── service
 ├── diary
 │   ├── controller
 │   ├── dto
@@ -66,9 +53,6 @@ br.com.agrogestor
 
 Cada novo módulo seguirá o mesmo desenho de `planting`. Por exemplo, gastos ficarão em
 `expense`, estoque em `inventory` e máquinas em `machine`.
-
-O módulo `production` não possui Entity nem Repository porque a estimativa é um cálculo
-instantâneo e não precisa ser armazenada nesta fase.
 
 O módulo `quotation` consulta a fonte externa, transforma os dados em um contrato próprio
 e mantém uma cópia temporária para reduzir acessos e continuar exibindo a última cotação

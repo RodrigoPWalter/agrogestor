@@ -38,7 +38,3 @@ agrogestor:
       name: ${APP_ADMIN_NAME:Administrador}
       email: ${APP_ADMIN_EMAIL:admin@agrogestor.local}
       password: ${APP_ADMIN_PASSWORD:AgroGestor@2026}
-  weather:
-    latitude: ${WEATHER_LATITUDE:-27.49972}
-    longitude: ${WEATHER_LONGITUDE:-54.10111}
-    location-name: ${WEATHER_LOCATION_NAME:Crissiumal - RS}

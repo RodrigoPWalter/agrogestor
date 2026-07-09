@@ -1,6 +1,5 @@
 import {
   BookOpenText,
-  Calculator,
   CloudRain,
   Ellipsis,
   ChevronDown,
@@ -32,7 +31,6 @@ const navigation = [
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
   { to: "/diario", label: "Diário", icon: BookOpenText },
   { to: "/chuvas", label: "Chuvas", icon: CloudRain },
-  { to: "/calculadora", label: "Calculadora", icon: Calculator },
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
   { to: "/instalar", label: "Instalar", icon: Download },
 ];

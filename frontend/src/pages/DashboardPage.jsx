@@ -1,20 +1,17 @@
 import {
   ArrowRight,
   BookOpenText,
-  Calculator,
   CircleDollarSign,
-  CloudRain,
-  Droplets,
   ExternalLink,
   Gauge,
   LandPlot,
   LoaderCircle,
   Plus,
   RefreshCw,
-  ThermometerSun,
   ReceiptText,
   Sprout,
   TrendingUp,
+  Warehouse,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -26,20 +23,23 @@ import { formatCurrency, formatDate, formatNumber } from "../utils/formatters";
 export function DashboardPage() {
   const [plantings, setPlantings] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [inventoryProducts, setInventoryProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [commodityQuotes, setCommodityQuotes] = useState(null);
   const [quotesLoading, setQuotesLoading] = useState(true);
   const [quotesError, setQuotesError] = useState("");
-  const [weather, setWeather] = useState(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
-  const [weatherError, setWeatherError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.getPlantings(), api.getExpenses()])
-      .then(([plantingPage, expensePage]) => {
+    Promise.all([
+      api.getPlantings(),
+      api.getExpenses(),
+      api.getInventoryProducts(),
+    ])
+      .then(([plantingPage, expensePage, products]) => {
         setPlantings(plantingPage.content);
         setExpenses(expensePage.content);
+        setInventoryProducts(products);
       })
       .catch((requestError) => setError(requestError.message))
       .finally(() => setLoading(false));
@@ -59,20 +59,6 @@ export function DashboardPage() {
     loadCommodityQuotes();
   }, []);
 
-  function loadWeather() {
-    setWeatherLoading(true);
-    setWeatherError("");
-    api
-      .getWeatherForecast()
-      .then(setWeather)
-      .catch((requestError) => setWeatherError(requestError.message))
-      .finally(() => setWeatherLoading(false));
-  }
-
-  useEffect(() => {
-    loadWeather();
-  }, []);
-
   const metrics = useMemo(() => {
     const hectares = plantings.reduce(
       (total, planting) => total + Number(planting.plantedAreaHectares),
@@ -82,14 +68,19 @@ export function DashboardPage() {
       (total, expense) => total + Number(expense.amount),
       0,
     );
-    const currentHarvest =
-      [...new Set(plantings.map((item) => item.harvest))].sort().reverse()[0] ||
-      "—";
-
     const costPerHectare = hectares > 0 ? totalExpenses / hectares : 0;
+    const lowStockProducts = inventoryProducts.filter(
+      (product) => product.lowStock,
+    ).length;
 
-    return { hectares, totalExpenses, costPerHectare, currentHarvest };
-  }, [plantings, expenses]);
+    return {
+      hectares,
+      totalExpenses,
+      costPerHectare,
+      inventoryCount: inventoryProducts.length,
+      lowStockProducts,
+    };
+  }, [plantings, expenses, inventoryProducts]);
 
   if (loading) {
     return (
@@ -104,7 +95,7 @@ export function DashboardPage() {
       <PageHeader
         eyebrow="Resumo operacional"
         title="Visão geral da propriedade"
-        description="Indicadores consolidados da safra e informações para a operação diária."
+        description="Indicadores consolidados da safra, custos e estoque para a operação diária."
         action={
           <Link className="button button--primary" to="/plantios">
             <Plus size={18} /> Novo plantio
@@ -128,6 +119,7 @@ export function DashboardPage() {
             </span>
           </div>
         </article>
+
         <article className="metric-card metric-card--gold">
           <span className="metric-card__icon">
             <CircleDollarSign size={22} />
@@ -138,16 +130,23 @@ export function DashboardPage() {
             <span>{expenses.length} lançamentos</span>
           </div>
         </article>
+
         <article className="metric-card metric-card--blue">
           <span className="metric-card__icon">
-            <Sprout size={22} />
+            <Warehouse size={22} />
           </span>
           <div>
-            <small>Safra mais recente</small>
-            <strong>{metrics.currentHarvest}</strong>
-            <span>Histórico organizado</span>
+            <small>Produtos em estoque</small>
+            <strong>{metrics.inventoryCount}</strong>
+            <span>
+              {metrics.lowStockProducts}{" "}
+              {metrics.lowStockProducts === 1
+                ? "alerta de estoque"
+                : "alertas de estoque"}
+            </span>
           </div>
         </article>
+
         <article className="metric-card metric-card--neutral">
           <span className="metric-card__icon">
             <Gauge size={22} />
@@ -160,80 +159,111 @@ export function DashboardPage() {
         </article>
       </section>
 
-      <section className="weather-panel" aria-labelledby="weather-title">
-        {weatherLoading ? (
-          <div className="weather-status">
-            <LoaderCircle className="spin" /> Buscando a previsão...
+      <div className="dashboard-grid dashboard-grid--balanced">
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <span className="eyebrow">Acesso rápido</span>
+              <h2>Atalhos de trabalho</h2>
+            </div>
           </div>
-        ) : weatherError ? (
-          <div className="weather-status">
-            <span>{weatherError}</span>
-            <button className="button button--ghost" onClick={loadWeather}>
-              <RefreshCw size={16} /> Tentar novamente
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="weather-current">
-              <span className="weather-current__icon">
-                <ThermometerSun size={30} />
+          <div className="quick-actions">
+            <Link to="/plantios" className="quick-action">
+              <span className="quick-action__icon quick-action__icon--green">
+                <Sprout />
               </span>
               <div>
-                <span className="eyebrow">Clima na propriedade</span>
-                <h2 id="weather-title">{weather.location}</h2>
-                <p>
-                  {weather.currentCondition} · Sensação de{" "}
-                  {formatNumber(weather.apparentTemperature, 1)}°C
-                </p>
-                <span className="weather-location-fixed">
-                  Localização fixa da propriedade
-                </span>
+                <strong>Gerenciar plantios</strong>
+                <small>Cadastre e acompanhe as safras</small>
               </div>
-              <strong>{formatNumber(weather.currentTemperature, 1)}°</strong>
-            </div>
-            <div className="weather-days">
-              {weather.days.map((day, index) => (
-                <article key={day.date}>
-                  <strong>
-                    {index === 0
-                      ? "Hoje"
-                      : new Intl.DateTimeFormat("pt-BR", {
-                          weekday: "short",
-                        }).format(new Date(`${day.date}T12:00:00`))}
-                  </strong>
-                  <span>
-                    <CloudRain size={16} /> {day.rainProbability}%
-                  </span>
-                  <span>
-                    <Droplets size={16} />{" "}
-                    {formatNumber(day.expectedRainMillimeters, 1)} mm
-                  </span>
-                  <small>
-                    {formatNumber(day.minimumTemperature, 0)}° /{" "}
-                    {formatNumber(day.maximumTemperature, 0)}°
-                  </small>
-                </article>
-              ))}
-            </div>
-            {weather.alerts.length > 0 && (
-              <div className="weather-alerts">
-                {weather.alerts.map((alert) => (
-                  <span key={alert.type}>{alert.message}</span>
-                ))}
+              <ArrowRight size={19} />
+            </Link>
+
+            <Link to="/gastos" className="quick-action">
+              <span className="quick-action__icon quick-action__icon--blue">
+                <ReceiptText />
+              </span>
+              <div>
+                <strong>Registrar gasto</strong>
+                <small>Controle custos por plantio</small>
               </div>
-            )}
-            <a
-              className="weather-source"
-              href={weather.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Previsão por {weather.sourceName}
-              {weather.stale ? " · última atualização disponível" : ""}
-            </a>
-          </>
-        )}
-      </section>
+              <ArrowRight size={19} />
+            </Link>
+
+            <Link to="/estoque" className="quick-action">
+              <span className="quick-action__icon quick-action__icon--gold">
+                <Warehouse />
+              </span>
+              <div>
+                <strong>Atualizar estoque</strong>
+                <small>Acompanhe entradas e baixas de produtos</small>
+              </div>
+              <ArrowRight size={19} />
+            </Link>
+
+            <Link to="/diario" className="quick-action">
+              <span className="quick-action__icon quick-action__icon--green">
+                <BookOpenText />
+              </span>
+              <div>
+                <strong>Atualizar diário</strong>
+                <small>Registre acontecimentos da propriedade</small>
+              </div>
+              <ArrowRight size={19} />
+            </Link>
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <span className="eyebrow">Controle de insumos</span>
+              <h2>Estoque em atenção</h2>
+            </div>
+            <Link to="/estoque" className="text-link">
+              Ver estoque
+            </Link>
+          </div>
+
+          {inventoryProducts.length === 0 ? (
+            <div className="compact-empty">
+              <Warehouse size={28} />
+              <p>Nenhum produto cadastrado ainda.</p>
+            </div>
+          ) : (
+            <div className="data-table-wrapper">
+              <table className="data-table dashboard-inventory-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Tipo</th>
+                    <th>Saldo</th>
+                    <th>Validade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventoryProducts.slice(0, 5).map((product) => (
+                    <tr key={product.id}>
+                      <td>
+                        <span className="table-primary">{product.name}</span>
+                      </td>
+                      <td>{product.type}</td>
+                      <td className="numeric-value">
+                        {formatNumber(product.quantity, 3)} {product.unitName}
+                      </td>
+                      <td>
+                        {product.expirationDate
+                          ? formatDate(product.expirationDate)
+                          : "Sem data"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
 
       <section
         className="panel quotation-panel"
@@ -241,10 +271,8 @@ export function DashboardPage() {
       >
         <div className="panel__header quotation-panel__header">
           <div>
-            <div>
-              <span className="eyebrow">Mercado agrícola</span>
-              <h2 id="quotation-title">Cotações e variação de mercado</h2>
-            </div>
+            <span className="eyebrow">Mercado agrícola</span>
+            <h2 id="quotation-title">Cotações e variação de mercado</h2>
           </div>
           {commodityQuotes && (
             <a
@@ -337,57 +365,6 @@ export function DashboardPage() {
         <section className="panel">
           <div className="panel__header">
             <div>
-              <span className="eyebrow">Acesso rápido</span>
-              <h2>O que você quer fazer?</h2>
-            </div>
-          </div>
-          <div className="quick-actions">
-            <Link to="/plantios" className="quick-action">
-              <span className="quick-action__icon quick-action__icon--green">
-                <Sprout />
-              </span>
-              <div>
-                <strong>Gerenciar plantios</strong>
-                <small>Cadastre e acompanhe as safras</small>
-              </div>
-              <ArrowRight size={19} />
-            </Link>
-            <Link to="/calculadora" className="quick-action">
-              <span className="quick-action__icon quick-action__icon--gold">
-                <Calculator />
-              </span>
-              <div>
-                <strong>Calcular produção</strong>
-                <small>Estime faturamento e lucro</small>
-              </div>
-              <ArrowRight size={19} />
-            </Link>
-            <Link to="/gastos" className="quick-action">
-              <span className="quick-action__icon quick-action__icon--blue">
-                <ReceiptText />
-              </span>
-              <div>
-                <strong>Registrar gasto</strong>
-                <small>Controle custos por plantio</small>
-              </div>
-              <ArrowRight size={19} />
-            </Link>
-            <Link to="/diario" className="quick-action">
-              <span className="quick-action__icon quick-action__icon--green">
-                <BookOpenText />
-              </span>
-              <div>
-                <strong>Atualizar diário</strong>
-                <small>Registre atividades realizadas no campo</small>
-              </div>
-              <ArrowRight size={19} />
-            </Link>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel__header">
-            <div>
               <span className="eyebrow">Mais recentes</span>
               <h2>Últimos plantios</h2>
             </div>
@@ -431,6 +408,54 @@ export function DashboardPage() {
             </div>
           )}
         </section>
+
+        <section className="panel">
+          <div className="panel__header">
+            <div>
+              <span className="eyebrow">Finanças</span>
+              <h2>Últimos gastos</h2>
+            </div>
+            <Link to="/gastos" className="text-link">
+              Ver gastos
+            </Link>
+          </div>
+
+          {expenses.length === 0 ? (
+            <div className="compact-empty">
+              <ReceiptText size={28} />
+              <p>Nenhum gasto registrado ainda.</p>
+            </div>
+          ) : (
+            <div className="data-table-wrapper">
+              <table className="data-table dashboard-expense-table">
+                <thead>
+                  <tr>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Data</th>
+                    <th>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expenses.slice(0, 5).map((expense) => (
+                    <tr key={expense.id}>
+                      <td>
+                        <span className="table-primary">
+                          {expense.description}
+                        </span>
+                      </td>
+                      <td>{expense.category}</td>
+                      <td>{formatDate(expense.expenseDate)}</td>
+                      <td className="numeric-value">
+                        {formatCurrency(expense.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
 
       <section className="tip-banner">
@@ -440,8 +465,8 @@ export function DashboardPage() {
         <div>
           <strong>Dica do AgroGestor</strong>
           <p>
-            Registre os gastos sempre que eles acontecerem. Assim, o custo por
-            hectare fica confiável.
+            Registre os gastos e movimentações de estoque no mesmo dia. Isso
+            deixa os números da safra bem mais confiáveis.
           </p>
         </div>
       </section>

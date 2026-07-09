@@ -20,18 +20,6 @@ export const api = {
       data: credentials,
     }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
-  getWeatherForecast: () =>
-    request("/api/v1/weather/forecast", { timeout: 25_000 }),
-  searchWeatherLocations: (query) =>
-    request(
-      `/api/v1/weather/locations/search?query=${encodeURIComponent(query)}`,
-    ),
-  selectWeatherLocation: (data) =>
-    request("/api/v1/weather/location", {
-      method: "PUT",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data),
-    }),
   getPlantings: () =>
     request("/api/v1/plantings?status=ACTIVE&page=0&size=100"),
   getAllPlantings: () => request("/api/v1/plantings?page=0&size=100"),
@@ -55,19 +43,6 @@ export const api = {
     request(`/api/v1/plantings/${id}/finish`, { method: "PATCH" }),
   reactivatePlanting: (id) =>
     request(`/api/v1/plantings/${id}/reactivate`, { method: "PATCH" }),
-
-  calculateProduction: (data) =>
-    request("/api/v1/production-estimates/calculate", {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data),
-    }),
-  calculateSeeding: (data) =>
-    request("/api/v1/seeding-estimates/calculate", {
-      method: "POST",
-      headers: JSON_HEADERS,
-      body: JSON.stringify(data),
-    }),
 
   getExpenses: (plantingId) => {
     const query = plantingId
