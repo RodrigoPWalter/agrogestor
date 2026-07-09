@@ -6,7 +6,22 @@ import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import "./styles.css";
 
-registerSW({ immediate: true });
+const updateServiceWorker = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    updateServiceWorker(true);
+  },
+  onRegisteredSW(_swUrl, registration) {
+    if (!registration) return;
+
+    setInterval(
+      () => {
+        registration.update();
+      },
+      10 * 60 * 1000,
+    );
+  },
+});
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

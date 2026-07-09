@@ -19,6 +19,13 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: false,
+      cleanupOutdatedCaches: true,
+      workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: "/index.html",
+      },
       includeAssets: [
         "icons/agrogestor-icon.svg",
         "icons/apple-touch-icon-180x180.png",
