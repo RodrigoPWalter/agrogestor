@@ -1,170 +1,95 @@
 # AgroGestor
 
-
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=20232A)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 
-## Visão Geral
+![Screenshot do Sistema](link_da_imagem_aqui)
 
-O AgroGestor é uma plataforma de gestão rural desenvolvida para centralizar informações
-operacionais, financeiras e agronômicas de propriedades familiares. O sistema integra o
-planejamento das safras, o controle de custos, o estoque de insumos, o diário de
-atividades, a manutenção de máquinas e dados externos relevantes em uma única aplicação.
+AgroGestor é um sistema de gestão rural familiar desenvolvido para centralizar informações de plantio, custos, estoque, diário da lavoura, chuvas e manutenção de máquinas em uma única aplicação. O projeto nasceu de uma necessidade prática: reduzir registros soltos em caderno, planilhas e mensagens, transformando a rotina da propriedade em dados mais confiáveis para tomada de decisão.
 
-Sua motivação é prática: substituir registros dispersos por informações estruturadas e
-confiáveis, acessíveis durante o planejamento e a execução das atividades no campo.
+O foco do sistema é ser simples o suficiente para uso no campo e estruturado o bastante para evoluir como uma aplicação real, com API REST, autenticação, banco versionado, frontend responsivo e suporte a instalação como PWA.
 
-## Aplicação Publicada
+## Aplicação publicada
 
-O AgroGestor está disponível como PWA em:
+- Frontend: [https://agrogestor-rodrigowalter.onrender.com](https://agrogestor-rodrigowalter.onrender.com)
+- API/Swagger: [https://agrogestor-api-rodrigowalter.onrender.com/swagger-ui.html](https://agrogestor-api-rodrigowalter.onrender.com/swagger-ui.html)
 
-**https://agrogestor-rodrigowalter.onrender.com**
+O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito pode suspender serviços sem uso, o primeiro acesso depois de um período parado pode levar alguns segundos. Para reduzir esse impacto, o Dashboard mantém um cache local dos últimos dados carregados e reaproveita as cotações do mercado durante o mesmo dia.
 
-O ambiente utiliza Render para a interface e a API, além de PostgreSQL gerenciado pelo
-Neon. Como a API está no plano gratuito, o primeiro acesso após um período sem uso pode
-levar alguns segundos enquanto o serviço é iniciado.
+## Funcionalidades principais
 
-## Funcionalidades Principais
+- **Autenticação com JWT:** Login protegido, sessão no frontend e envio automático do token nas requisições privadas.
+- **Controle de Plantios:** Cadastro de culturas, safras, área plantada, variedade, data de plantio e status da safra.
+- **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
+- **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
+- **Gestão de Gastos:** Lançamento de despesas por plantio, cálculo de totais e visão consolidada dos custos.
+- **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, validade e alerta de estoque baixo.
+- **Diário da Lavoura:** Registro de acontecimentos da propriedade com plantio opcional, múltiplos produtos e integração com estoque.
+- **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
+- **Máquinas e Manutenções:** Cadastro da frota, horímetro, manutenções preventivas/corretivas e custos.
+- **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
+- **PWA:** Manifesto, service worker e tela de instruções para instalação no Android e iPhone.
 
-- **Controle de Plantios:** Registro de culturas, safras, áreas, variedades, sementes e
-  datas de plantio, com separação entre cultivos ativos e histórico de colheitas.
-- **Gestão de Gastos:** Lançamento de despesas por plantio, consolidação de custos e
-  cálculo do custo por hectare.
-- **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com
-  movimentações de entrada e saída, validade, unidade de medida e alertas de estoque
-  mínimo.
-- **Diário da Lavoura:** Histórico de atividades por plantio, com suporte a múltiplos
-  produtos e baixa automática dos insumos aplicados no estoque.
-- **Máquinas e Manutenções:** Cadastro de maquinário, controle de horímetro, custos de
-  manutenção e acompanhamento das próximas revisões.
-- **Registro Pluviométrico:** Lançamento manual das chuvas medidas na propriedade e
-  acompanhamento do volume acumulado.
-- **Mercado Agrícola:** Cotações de soja, milho, trigo e Diesel, incluindo histórico de
-  variação dos preços.
-
-## Stack Tecnológica
+## Stack
 
 ### Frontend
 
 - React 19
 - React Router
 - Vite 8
+- Vite Plugin PWA
 - Vitest e Testing Library
-- CSS responsivo e Lucide Icons
+- CSS responsivo com foco em uso mobile
 
 ### Backend
 
 - Java 21
 - Spring Boot 3.5
 - Spring Web
+- Spring Security
 - Spring Data JPA
 - Bean Validation
+- Flyway
 - SpringDoc OpenAPI
-- Jsoup para integração com cotações
+- Jsoup para leitura das cotações agrícolas
 
-### Infraestrutura e Persistência
+### Infraestrutura
 
 - PostgreSQL
-- Flyway para versionamento do banco de dados
-- Docker Compose para o ambiente local
-- Maven Wrapper e npm
-- Open-Meteo para dados meteorológicos
-- Cotricampo como fonte das cotações agrícolas
+- Docker Compose para banco local
+- Dockerfile para deploy da API
+- Render para publicação do frontend e backend
+- Neon/PostgreSQL gerenciado no ambiente publicado
 
-## Executando o Projeto Localmente
+## Arquitetura
 
-### Pré-requisitos
-
-- Java 21
-- Node.js 24 ou superior
-- Docker e Docker Compose, ou uma instalação local do PostgreSQL
-
-### Banco de Dados e Backend
-
-Na raiz do projeto, inicie o PostgreSQL e a API:
-
-```powershell
-docker compose up -d
-.\mvnw.cmd spring-boot:run
-```
-
-As migrações do Flyway são executadas automaticamente durante a inicialização.
-
-### Frontend
-
-Em outro terminal:
-
-```powershell
-cd frontend
-npm.cmd install
-npm.cmd run dev
-```
-
-A interface estará disponível em <http://localhost:5173> e a documentação interativa da
-API em <http://localhost:8080/swagger-ui.html>.
-
-O frontend usa o proxy do Vite durante o desenvolvimento. Para apontar a interface para
-uma API publicada em outra origem, copie `frontend/.env.example` para
-`frontend/.env.local` e preencha:
+O backend é organizado por módulos de domínio. Cada módulo mantém seus próprios controllers, DTOs, entidades, repositories e services, evitando pacotes genéricos grandes demais e facilitando a evolução das regras de negócio.
 
 ```text
-VITE_API_URL=https://api.exemplo.com
+br.com.agrogestor
+├── auth
+├── diary
+├── expense
+├── inventory
+├── machine
+├── planting
+├── quotation
+├── rainfall
+└── shared
 ```
 
-Não inclua uma barra no final da URL. Quando a variável fica vazia, as requisições
-continuam usando a mesma origem e o proxy local.
+O frontend segue uma organização por páginas, componentes reutilizáveis, contexto de autenticação e camada centralizada de API. As chamadas HTTP passam por um cliente comum, responsável por anexar o token e tratar expiração de sessão.
 
-### PWA e Instalação no Celular
+## Rotas principais da API
 
-O manifesto e o service worker são gerados no build de produção. Para validar localmente:
-
-```powershell
-cd frontend
-npm.cmd run build
-npm.cmd run preview -- --host
-```
-
-No computador, abra <http://localhost:4173> para conferir o manifesto e o service worker.
-Para instalar no celular, publique o frontend em um endereço com HTTPS; um endereço HTTP
-comum da rede local permite visualizar a interface, mas não é considerado um contexto
-seguro para registrar o service worker. O menu **Instalar** dentro do AgroGestor contém
-as instruções para Android e iPhone.
-
-### Configuração sem Docker
-
-Crie um banco chamado `agrogestor` e configure as variáveis de ambiente:
-
-```text
-DB_URL=jdbc:postgresql://localhost:5432/agrogestor
-DB_USERNAME=agrogestor
-DB_PASSWORD=agrogestor
-```
-
-Para autenticação, substitua as credenciais e a chave usadas no ambiente local:
-
-```text
-JWT_SECRET=uma-chave-com-pelo-menos-32-caracteres
-JWT_EXPIRATION_MINUTES=480
-APP_ADMIN_NAME=Administrador
-APP_ADMIN_EMAIL=admin@agrogestor.local
-APP_ADMIN_PASSWORD=uma-senha-forte
-```
-
-Quando a tabela de usuários está vazia, o sistema cria o administrador inicial com essas
-configurações. Os valores padrão existem somente para facilitar a execução local.
-
-## Arquitetura da API
-
-O backend adota uma arquitetura modular orientada aos domínios do sistema. Cada módulo
-concentra seus controllers, DTOs, entidades, repositories e services, reduzindo o
-acoplamento entre regras de negócio. Os recursos HTTP seguem o padrão REST e são
-versionados pelo prefixo `/api/v1`.
+Todos os endpoints são versionados com o prefixo `/api/v1`.
 
 | Domínio | Rota base |
 |---|---|
+| Autenticação | `/api/v1/auth` |
 | Plantios | `/api/v1/plantings` |
 | Gastos | `/api/v1/expenses` |
 | Estoque | `/api/v1/inventory/products` |
@@ -174,20 +99,104 @@ versionados pelo prefixo `/api/v1`.
 | Chuvas | `/api/v1/rainfall` |
 | Cotações | `/api/v1/commodity-quotes` |
 
-O PostgreSQL é a fonte de verdade da aplicação. O Flyway controla a evolução do schema,
-enquanto o Hibernate valida a compatibilidade entre as entidades e a estrutura do banco.
-Durante o desenvolvimento, o Vite encaminha as requisições iniciadas por `/api` para o
-backend na porta `8080`.
+## Executando localmente
 
-## Testes e Validação
+### Pré-requisitos
 
-Execute os testes automatizados do backend:
+- Java 21
+- Node.js 24 ou superior
+- Docker e Docker Compose
+
+### 1. Subir o banco
+
+Na raiz do projeto:
+
+```powershell
+docker compose up -d
+```
+
+### 2. Iniciar a API
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+A API ficará disponível em:
+
+- [http://localhost:8080](http://localhost:8080)
+- [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+
+As migrations do Flyway são executadas automaticamente na inicialização.
+
+### 3. Iniciar o frontend
+
+Em outro terminal:
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+A interface ficará disponível em [http://localhost:5173](http://localhost:5173).
+
+Durante o desenvolvimento, o Vite encaminha as chamadas iniciadas por `/api` para o backend local. Para apontar o frontend para uma API publicada, copie `frontend/.env.example` para `frontend/.env.local` e configure:
+
+```text
+VITE_API_URL=https://api.exemplo.com
+```
+
+Não use barra no final da URL.
+
+## Variáveis de ambiente
+
+### Backend
+
+```text
+DB_URL=jdbc:postgresql://localhost:5432/agrogestor
+DB_USERNAME=agrogestor
+DB_PASSWORD=agrogestor
+JWT_SECRET=uma-chave-com-pelo-menos-32-caracteres
+JWT_EXPIRATION_MINUTES=480
+JWT_ISSUER=https://agrogestor.local
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+APP_ADMIN_ENABLED=true
+APP_ADMIN_NAME=Administrador
+APP_ADMIN_EMAIL=admin@agrogestor.local
+APP_ADMIN_PASSWORD=uma-senha-forte
+```
+
+Quando a tabela de usuários está vazia, o sistema cria um administrador inicial usando as variáveis `APP_ADMIN_*`. Esse recurso facilita o primeiro acesso em ambiente local ou recém-publicado.
+
+### Frontend
+
+```text
+VITE_API_URL=
+```
+
+Vazio em desenvolvimento local com proxy do Vite. Preenchido em produção para apontar para a API publicada.
+
+## PWA
+
+O frontend possui manifesto, ícones e service worker configurados. Para validar uma versão de produção local:
+
+```powershell
+cd frontend
+npm.cmd run build
+npm.cmd run preview -- --host
+```
+
+Em produção, o app pode ser instalado no celular pela opção do navegador “Adicionar à tela inicial” ou “Instalar app”. A tela **Instalar** dentro do AgroGestor traz instruções rápidas para Android e iPhone.
+
+## Testes
+
+Backend:
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-Execute os testes e a compilação de produção do frontend:
+Frontend:
 
 ```powershell
 cd frontend
@@ -195,14 +204,21 @@ npm.cmd test
 npm.cmd run build
 ```
 
-## Documentação Complementar
+## Observações técnicas
+
+- As migrations antigas de clima foram preservadas por compatibilidade com bancos já criados, mas a previsão do tempo não faz parte do fluxo atual da aplicação.
+- O módulo de cotações consulta a Cotricampo e mantém fallback/cache no backend; o frontend também evita recarregar as cotações mais de uma vez por dia.
+- O projeto evita expor entidades diretamente na API, usando DTOs para entrada e saída.
+- Serviços que alteram mais de uma tabela usam transações para preservar consistência.
+
+## Documentação complementar
 
 - [Modelo do banco de dados](docs/DATABASE_MODEL.md)
 - [Estrutura de pacotes](docs/PACKAGE_STRUCTURE.md)
 
-## Evolução do Projeto
+## Próximos passos sugeridos
 
-Os próximos ciclos de desenvolvimento devem incluir autenticação, usuários e suporte a
-múltiplas propriedades. Essa evolução permitirá isolar os dados por organização,
-associar configurações climáticas a cada fazenda e preparar a aplicação para implantação
-em ambientes compartilhados.
+- Melhorar o suporte offline com fila local de lançamentos e sincronização posterior.
+- Criar backup/exportação de dados da propriedade.
+- Evoluir permissões por usuário e suporte a múltiplas propriedades.
+- Adicionar relatórios em PDF para fechamento de safra.

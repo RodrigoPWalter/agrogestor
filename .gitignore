@@ -1,5 +1,30 @@
+# Java / Maven
 target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Node / Vite
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Ambiente local
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+frontend/.env.local
+
+# IDEs
 .idea/
 *.iml
-.env
+
+# Logs e arquivos temporários
 *.log
+work/
+tmp/
+temp/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

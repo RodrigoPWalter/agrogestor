@@ -1,11 +1,21 @@
-# Estrutura recomendada de pacotes
+# Estrutura de pacotes
+
+O backend do AgroGestor é organizado por módulos de domínio. A intenção é manter perto os arquivos que mudam juntos: controller, DTOs, entidades, repositories e services de cada parte do sistema.
 
 ```text
 br.com.agrogestor
 ├── AgroGestorApplication.java
+├── auth
+│   ├── config
+│   ├── controller
+│   ├── dto
+│   ├── entity
+│   ├── exception
+│   ├── repository
+│   ├── security
+│   └── service
 ├── config
-│   └── OpenApiConfig.java
-├── planting
+├── diary
 │   ├── controller
 │   ├── dto
 │   ├── entity
@@ -16,11 +26,6 @@ br.com.agrogestor
 │   ├── dto
 │   ├── entity
 │   ├── repository
-│   └── service
-├── quotation
-│   ├── client
-│   ├── controller
-│   ├── dto
 │   └── service
 ├── inventory
 │   ├── controller
@@ -34,11 +39,16 @@ br.com.agrogestor
 │   ├── entity
 │   ├── repository
 │   └── service
-├── diary
+├── planting
 │   ├── controller
 │   ├── dto
 │   ├── entity
 │   ├── repository
+│   └── service
+├── quotation
+│   ├── client
+│   ├── controller
+│   ├── dto
 │   └── service
 ├── rainfall
 │   ├── controller
@@ -51,19 +61,27 @@ br.com.agrogestor
     └── exception
 ```
 
-Cada novo módulo seguirá o mesmo desenho de `planting`. Por exemplo, gastos ficarão em
-`expense`, estoque em `inventory` e máquinas em `machine`.
+## Papel de cada camada
 
-O módulo `quotation` consulta a fonte externa, transforma os dados em um contrato próprio
-e mantém uma cópia temporária para reduzir acessos e continuar exibindo a última cotação
-caso a fonte fique momentaneamente indisponível.
+- **Controller:** recebe a requisição HTTP, valida contratos básicos e delega para o service.
+- **DTO:** define o contrato público da API. Entidades não são expostas diretamente.
+- **Entity:** representa o estado persistido e concentra invariantes simples do domínio.
+- **Repository:** isola consultas e operações de persistência.
+- **Service:** concentra regras de negócio, transações e integração entre módulos.
+- **shared:** guarda apenas recursos realmente comuns, como paginação e tratamento de exceções.
 
-- **Controller:** traduz HTTP para chamadas do sistema; não contém regra de negócio.
-- **Service:** concentra regras, transações, normalização e coordena repositórios.
-- **Repository:** somente acesso aos dados.
-- **Entity:** representa a tabela e protege o estado do domínio.
-- **DTO:** define o contrato público da API, sem expor a Entity.
-- **shared:** código realmente compartilhado, como erros e paginação.
+## Convenções do projeto
 
-Organizar por módulo deixa tudo que muda junto no mesmo lugar e evita pacotes globais
-enormes quando a aplicação crescer.
+- Novas funcionalidades devem nascer dentro do módulo de domínio correspondente.
+- Operações que atualizam mais de uma tabela devem ficar em services transacionais.
+- Integrações externas devem ficar em `client`, deixando o restante da aplicação protegido de detalhes da fonte.
+- Mensagens de erro voltadas ao usuário devem ser claras e específicas.
+- Migrations do Flyway não devem ser editadas depois de publicadas; crie uma nova migration para evoluir o banco.
+
+## Observações por módulo
+
+- `auth` cuida de login, usuário inicial, JWT e filtros do Spring Security.
+- `diary` funciona como central de acontecimentos da propriedade e pode disparar efeitos em estoque, chuva ou manutenção.
+- `inventory` controla o saldo dos produtos e impede baixa maior do que a quantidade disponível.
+- `planting` concentra o ciclo da safra, incluindo finalização, reativação e fechamento.
+- `quotation` lê cotações agrícolas e mantém fallback para evitar falha completa quando a fonte externa oscila.
