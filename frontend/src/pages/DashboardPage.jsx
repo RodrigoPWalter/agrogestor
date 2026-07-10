@@ -16,18 +16,80 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import { ErrorBanner, LoadingState } from "../components/Feedback";
+import { ErrorBanner } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
 import { formatCurrency, formatDate, formatNumber } from "../utils/formatters";
 
+const DASHBOARD_CACHE_KEY = "agrogestor:dashboard-cache:v1";
+
+function readDashboardCache() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawCache = window.localStorage.getItem(DASHBOARD_CACHE_KEY);
+    return rawCache ? JSON.parse(rawCache) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDashboardCache(nextCache) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const currentCache = readDashboardCache() ?? {};
+    window.localStorage.setItem(
+      DASHBOARD_CACHE_KEY,
+      JSON.stringify({
+        ...currentCache,
+        ...nextCache,
+        savedAt: new Date().toISOString(),
+      }),
+    );
+  } catch {
+    // Se o celular estiver sem espaço para salvar cache, o app segue online.
+  }
+}
+
+function isSameLocalDay(dateValue) {
+  if (!dateValue) {
+    return false;
+  }
+
+  const checkedDate = new Date(dateValue);
+  const today = new Date();
+
+  return (
+    checkedDate.getFullYear() === today.getFullYear() &&
+    checkedDate.getMonth() === today.getMonth() &&
+    checkedDate.getDate() === today.getDate()
+  );
+}
+
 export function DashboardPage() {
-  const [plantings, setPlantings] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [inventoryProducts, setInventoryProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [cachedDashboard] = useState(() => readDashboardCache());
+  const [plantings, setPlantings] = useState(
+    () => cachedDashboard?.plantings ?? [],
+  );
+  const [expenses, setExpenses] = useState(
+    () => cachedDashboard?.expenses ?? [],
+  );
+  const [inventoryProducts, setInventoryProducts] = useState(
+    () => cachedDashboard?.inventoryProducts ?? [],
+  );
+  const [loading, setLoading] = useState(() => !cachedDashboard);
+  const [usingCache, setUsingCache] = useState(() => Boolean(cachedDashboard));
   const [error, setError] = useState("");
-  const [commodityQuotes, setCommodityQuotes] = useState(null);
-  const [quotesLoading, setQuotesLoading] = useState(true);
+  const [commodityQuotes, setCommodityQuotes] = useState(
+    () => cachedDashboard?.commodityQuotes ?? null,
+  );
+  const [quotesLoading, setQuotesLoading] = useState(
+    () => !cachedDashboard?.commodityQuotes,
+  );
   const [quotesError, setQuotesError] = useState("");
 
   useEffect(() => {
@@ -37,21 +99,66 @@ export function DashboardPage() {
       api.getInventoryProducts(),
     ])
       .then(([plantingPage, expensePage, products]) => {
-        setPlantings(plantingPage.content);
-        setExpenses(expensePage.content);
-        setInventoryProducts(products);
-      })
-      .catch((requestError) => setError(requestError.message))
-      .finally(() => setLoading(false));
-  }, []);
+        const nextPlantings = plantingPage.content;
+        const nextExpenses = expensePage.content;
+        const nextInventoryProducts = products;
 
-  function loadCommodityQuotes() {
-    setQuotesLoading(true);
+        setPlantings(nextPlantings);
+        setExpenses(nextExpenses);
+        setInventoryProducts(products);
+        setUsingCache(false);
+        writeDashboardCache({
+          plantings: nextPlantings,
+          expenses: nextExpenses,
+          inventoryProducts: nextInventoryProducts,
+        });
+      })
+      .catch((requestError) => {
+        setError(
+          cachedDashboard
+            ? "Mostrando os últimos dados salvos. O servidor pode estar acordando."
+            : requestError.message,
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [cachedDashboard]);
+
+  function loadCommodityQuotes({ force = false } = {}) {
+    const currentCache = readDashboardCache();
+    const cachedQuotes = currentCache?.commodityQuotes;
+
+    if (
+      !force &&
+      cachedQuotes &&
+      isSameLocalDay(currentCache?.commodityQuotesSavedAt)
+    ) {
+      setCommodityQuotes(cachedQuotes);
+      setQuotesLoading(false);
+      return;
+    }
+
+    setQuotesLoading(!cachedQuotes);
     setQuotesError("");
     api
       .getCommodityQuotes()
-      .then(setCommodityQuotes)
-      .catch((requestError) => setQuotesError(requestError.message))
+      .then((quotes) => {
+        setCommodityQuotes(quotes);
+        writeDashboardCache({
+          commodityQuotes: quotes,
+          commodityQuotesSavedAt: new Date().toISOString(),
+        });
+      })
+      .catch((requestError) => {
+        if (cachedQuotes) {
+          setCommodityQuotes(cachedQuotes);
+          setQuotesError(
+            "Cotações antigas salvas. Tentaremos atualizar depois.",
+          );
+          return;
+        }
+
+        setQuotesError(requestError.message);
+      })
       .finally(() => setQuotesLoading(false));
   }
 
@@ -82,14 +189,6 @@ export function DashboardPage() {
     };
   }, [plantings, expenses, inventoryProducts]);
 
-  if (loading) {
-    return (
-      <div className="page">
-        <LoadingState label="Organizando a propriedade..." />
-      </div>
-    );
-  }
-
   return (
     <div className="page">
       <PageHeader
@@ -104,6 +203,22 @@ export function DashboardPage() {
       />
 
       <ErrorBanner message={error} />
+
+      {(loading || usingCache) && (
+        <section className="connection-note" aria-live="polite">
+          <LoaderCircle className={loading ? "spin" : ""} size={18} />
+          <div>
+            <strong>
+              {loading ? "Acordando o servidor..." : "Dados salvos no aparelho"}
+            </strong>
+            <span>
+              {loading
+                ? "O painel já está disponível enquanto buscamos os dados mais recentes."
+                : "Assim que a conexão responder, o AgroGestor atualiza os números automaticamente."}
+            </span>
+          </div>
+        </section>
+      )}
 
       <section className="metric-grid" aria-label="Indicadores principais">
         <article className="metric-card metric-card--green">
@@ -297,7 +412,7 @@ export function DashboardPage() {
             <button
               className="button button--ghost"
               type="button"
-              onClick={loadCommodityQuotes}
+              onClick={() => loadCommodityQuotes({ force: true })}
             >
               <RefreshCw size={16} /> Tentar novamente
             </button>

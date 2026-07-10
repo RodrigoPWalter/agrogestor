@@ -233,6 +233,35 @@ p {
   line-height: 1.55;
 }
 
+.connection-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -10px 0 22px;
+  padding: 12px 14px;
+  color: #264033;
+  border: 1px solid #d9e3d8;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-soft);
+}
+
+.connection-note strong,
+.connection-note span {
+  display: block;
+}
+
+.connection-note strong {
+  margin-bottom: 2px;
+  color: var(--green-950);
+  font-size: 0.82rem;
+}
+
+.connection-note span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
 .eyebrow {
   color: var(--green-700);
   font-size: 0.7rem;
