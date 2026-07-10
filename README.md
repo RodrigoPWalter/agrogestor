@@ -216,9 +216,4 @@ npm.cmd run build
 - [Modelo do banco de dados](docs/DATABASE_MODEL.md)
 - [Estrutura de pacotes](docs/PACKAGE_STRUCTURE.md)
 
-## Próximos passos sugeridos
 
-- Melhorar o suporte offline com fila local de lançamentos e sincronização posterior.
-- Criar backup/exportação de dados da propriedade.
-- Evoluir permissões por usuário e suporte a múltiplas propriedades.
-- Adicionar relatórios em PDF para fechamento de safra.
