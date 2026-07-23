@@ -3,9 +3,11 @@ import { getAccessToken } from "../auth/session";
 
 export const AUTH_EXPIRED_EVENT = "agrogestor:auth-expired";
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
+const requestTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS) || 60_000;
 
 export const httpClient = axios.create({
   baseURL: apiBaseUrl || undefined,
+  timeout: requestTimeout,
   headers: {
     Accept: "application/json",
   },

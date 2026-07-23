@@ -1,6 +1,7 @@
 import { httpClient } from "./httpClient";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
+const DEFAULT_PAGE_SIZE = 100;
 
 async function request(path, options = {}) {
   const { body, data, ...config } = options;
@@ -13,6 +14,59 @@ async function request(path, options = {}) {
   return response.status === 204 ? null : response.data;
 }
 
+function withQueryParams(path, params = {}) {
+  const query = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  });
+
+  const separator = path.includes("?") ? "&" : "?";
+  return query.size > 0 ? `${path}${separator}${query.toString()}` : path;
+}
+
+async function requestAllPages(path, params = {}) {
+  const firstPage = await request(
+    withQueryParams(path, {
+      ...params,
+      page: 0,
+      size: DEFAULT_PAGE_SIZE,
+    }),
+  );
+
+  if (!firstPage || firstPage.totalPages <= 1) {
+    return firstPage;
+  }
+
+  const remainingRequests = Array.from(
+    { length: firstPage.totalPages - 1 },
+    (_, index) =>
+      request(
+        withQueryParams(path, {
+          ...params,
+          page: index + 1,
+          size: DEFAULT_PAGE_SIZE,
+        }),
+      ),
+  );
+  const remainingPages = await Promise.all(remainingRequests);
+  const content = [
+    ...firstPage.content,
+    ...remainingPages.flatMap((page) => page.content),
+  ];
+
+  return {
+    ...firstPage,
+    content,
+    size: content.length,
+    totalElements: content.length,
+    totalPages: 1,
+    last: true,
+  };
+}
+
 export const api = {
   login: (credentials) =>
     request("/api/v1/auth/login", {
@@ -21,10 +75,10 @@ export const api = {
     }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getPlantings: () =>
-    request("/api/v1/plantings?status=ACTIVE&page=0&size=100"),
-  getAllPlantings: () => request("/api/v1/plantings?page=0&size=100"),
+    requestAllPages("/api/v1/plantings", { status: "ACTIVE" }),
+  getAllPlantings: () => requestAllPages("/api/v1/plantings"),
   getPlantingHistory: () =>
-    request("/api/v1/plantings?status=HARVESTED&page=0&size=100"),
+    requestAllPages("/api/v1/plantings", { status: "HARVESTED" }),
   createPlanting: (data) =>
     request("/api/v1/plantings", {
       method: "POST",
@@ -51,12 +105,8 @@ export const api = {
     return request(`/api/v1/plantings/${id}/season-closing${query}`);
   },
 
-  getExpenses: (plantingId) => {
-    const query = plantingId
-      ? `?plantingId=${plantingId}&size=100`
-      : "?size=100";
-    return request(`/api/v1/expenses${query}`);
-  },
+  getExpenses: (plantingId) =>
+    requestAllPages("/api/v1/expenses", { plantingId }),
   createExpense: (data) =>
     request("/api/v1/expenses", {
       method: "POST",
@@ -130,12 +180,8 @@ export const api = {
   deleteMaintenance: (id) =>
     request(`/api/v1/maintenances/${id}`, { method: "DELETE" }),
 
-  getDiaryEntries: (plantingId) => {
-    const query = plantingId
-      ? `?plantingId=${plantingId}&size=100`
-      : "?size=100";
-    return request(`/api/v1/field-diary${query}`);
-  },
+  getDiaryEntries: (plantingId) =>
+    requestAllPages("/api/v1/field-diary", { plantingId }),
   createDiaryEntry: (data) =>
     request("/api/v1/field-diary", {
       method: "POST",
