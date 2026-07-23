@@ -1,4 +1,6 @@
 export const AUTH_STORAGE_KEY = "agrogestor.auth";
+export const APP_CACHE_KEY_PREFIX = "agrogestor:cache:";
+const LEGACY_CACHE_KEYS = ["agrogestor:dashboard-cache:v1"];
 
 function hasValidShape(session) {
   return (
@@ -34,9 +36,26 @@ export function saveSession(session) {
 }
 
 export function clearSession() {
+  clearAppCache();
   localStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
 export function getAccessToken() {
   return readSession()?.accessToken ?? null;
+}
+
+export function getCurrentUserCacheScope() {
+  return readSession()?.user.email.toLowerCase() ?? "anonymous";
+}
+
+export function buildUserCacheKey(name) {
+  return `${APP_CACHE_KEY_PREFIX}${getCurrentUserCacheScope()}:${name}`;
+}
+
+export function clearAppCache() {
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith(APP_CACHE_KEY_PREFIX))
+    .forEach((key) => localStorage.removeItem(key));
+
+  LEGACY_CACHE_KEYS.forEach((key) => localStorage.removeItem(key));
 }

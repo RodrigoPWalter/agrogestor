@@ -16,26 +16,31 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { buildUserCacheKey } from "../auth/session";
 import { ErrorBanner } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
 import { formatCurrency, formatDate, formatNumber } from "../utils/formatters";
 
-const DASHBOARD_CACHE_KEY = "agrogestor:dashboard-cache:v1";
+const DASHBOARD_CACHE_NAME = "dashboard:v1";
 
-function readDashboardCache() {
+function getDashboardCacheKey() {
+  return buildUserCacheKey(DASHBOARD_CACHE_NAME);
+}
+
+function readDashboardCache(cacheKey = getDashboardCacheKey()) {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    const rawCache = window.localStorage.getItem(DASHBOARD_CACHE_KEY);
+    const rawCache = window.localStorage.getItem(cacheKey);
     return rawCache ? JSON.parse(rawCache) : null;
   } catch {
     return null;
   }
 }
 
-function writeDashboardCache(nextCache) {
+function writeDashboardCache(nextCache, cacheKey = getDashboardCacheKey()) {
   if (typeof window === "undefined") {
     return;
   }
@@ -43,7 +48,7 @@ function writeDashboardCache(nextCache) {
   try {
     const currentCache = readDashboardCache() ?? {};
     window.localStorage.setItem(
-      DASHBOARD_CACHE_KEY,
+      cacheKey,
       JSON.stringify({
         ...currentCache,
         ...nextCache,
@@ -71,7 +76,10 @@ function isSameLocalDay(dateValue) {
 }
 
 export function DashboardPage() {
-  const [cachedDashboard] = useState(() => readDashboardCache());
+  const [dashboardCacheKey] = useState(() => getDashboardCacheKey());
+  const [cachedDashboard] = useState(() =>
+    readDashboardCache(dashboardCacheKey),
+  );
   const [plantings, setPlantings] = useState(
     () => cachedDashboard?.plantings ?? [],
   );
@@ -107,11 +115,14 @@ export function DashboardPage() {
         setExpenses(nextExpenses);
         setInventoryProducts(products);
         setUsingCache(false);
-        writeDashboardCache({
-          plantings: nextPlantings,
-          expenses: nextExpenses,
-          inventoryProducts: nextInventoryProducts,
-        });
+        writeDashboardCache(
+          {
+            plantings: nextPlantings,
+            expenses: nextExpenses,
+            inventoryProducts: nextInventoryProducts,
+          },
+          dashboardCacheKey,
+        );
       })
       .catch((requestError) => {
         setError(
@@ -121,10 +132,10 @@ export function DashboardPage() {
         );
       })
       .finally(() => setLoading(false));
-  }, [cachedDashboard]);
+  }, [cachedDashboard, dashboardCacheKey]);
 
   function loadCommodityQuotes({ force = false } = {}) {
-    const currentCache = readDashboardCache();
+    const currentCache = readDashboardCache(dashboardCacheKey);
     const cachedQuotes = currentCache?.commodityQuotes;
 
     if (
@@ -143,10 +154,13 @@ export function DashboardPage() {
       .getCommodityQuotes()
       .then((quotes) => {
         setCommodityQuotes(quotes);
-        writeDashboardCache({
-          commodityQuotes: quotes,
-          commodityQuotesSavedAt: new Date().toISOString(),
-        });
+        writeDashboardCache(
+          {
+            commodityQuotes: quotes,
+            commodityQuotesSavedAt: new Date().toISOString(),
+          },
+          dashboardCacheKey,
+        );
       })
       .catch((requestError) => {
         if (cachedQuotes) {
@@ -164,7 +178,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     loadCommodityQuotes();
-  }, []);
+  }, [dashboardCacheKey]);
 
   const metrics = useMemo(() => {
     const hectares = plantings.reduce(
