@@ -16,64 +16,15 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
-import { buildUserCacheKey } from "../auth/session";
 import { ErrorBanner } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
+import {
+  getDashboardCacheKey,
+  isSameLocalDay,
+  readDashboardCache,
+  writeDashboardCache,
+} from "../utils/dashboardCache";
 import { formatCurrency, formatDate, formatNumber } from "../utils/formatters";
-
-const DASHBOARD_CACHE_NAME = "dashboard:v1";
-
-function getDashboardCacheKey() {
-  return buildUserCacheKey(DASHBOARD_CACHE_NAME);
-}
-
-function readDashboardCache(cacheKey = getDashboardCacheKey()) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const rawCache = window.localStorage.getItem(cacheKey);
-    return rawCache ? JSON.parse(rawCache) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeDashboardCache(nextCache, cacheKey = getDashboardCacheKey()) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const currentCache = readDashboardCache() ?? {};
-    window.localStorage.setItem(
-      cacheKey,
-      JSON.stringify({
-        ...currentCache,
-        ...nextCache,
-        savedAt: new Date().toISOString(),
-      }),
-    );
-  } catch {
-    // Se o celular estiver sem espaço para salvar cache, o app segue online.
-  }
-}
-
-function isSameLocalDay(dateValue) {
-  if (!dateValue) {
-    return false;
-  }
-
-  const checkedDate = new Date(dateValue);
-  const today = new Date();
-
-  return (
-    checkedDate.getFullYear() === today.getFullYear() &&
-    checkedDate.getMonth() === today.getMonth() &&
-    checkedDate.getDate() === today.getDate()
-  );
-}
 
 export function DashboardPage() {
   const [dashboardCacheKey] = useState(() => getDashboardCacheKey());

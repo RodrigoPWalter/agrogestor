@@ -29,7 +29,6 @@ import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -55,7 +54,6 @@ public class FieldDiaryService {
     private final MaintenanceRepository maintenanceRepository;
     private final ExpenseRepository expenseRepository;
 
-    @Autowired
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
             PlantingRepository plantingRepository,
@@ -76,17 +74,6 @@ public class FieldDiaryService {
         this.machineRepository = machineRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.expenseRepository = expenseRepository;
-    }
-
-    FieldDiaryService(
-            FieldDiaryRepository diaryRepository,
-            PlantingRepository plantingRepository,
-            FieldDiaryProductRepository diaryProductRepository,
-            InventoryProductRepository inventoryRepository,
-            InventoryMovementRepository movementRepository
-    ) {
-        this(diaryRepository, plantingRepository, diaryProductRepository,
-                inventoryRepository, movementRepository, null, null, null, null);
     }
 
     @Transactional
