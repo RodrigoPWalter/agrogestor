@@ -5,6 +5,7 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=20232A)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+[![CI](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml/badge.svg)](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml)
 
 ![Screenshot do Sistema](link_da_imagem_aqui)
 
@@ -87,17 +88,17 @@ O frontend segue uma organização por páginas, componentes reutilizáveis, con
 
 Todos os endpoints são versionados com o prefixo `/api/v1`.
 
-| Domínio | Rota base |
-|---|---|
-| Autenticação | `/api/v1/auth` |
-| Plantios | `/api/v1/plantings` |
-| Gastos | `/api/v1/expenses` |
-| Estoque | `/api/v1/inventory/products` |
-| Máquinas | `/api/v1/machines` |
-| Manutenções | `/api/v1/maintenances` |
-| Diário da lavoura | `/api/v1/field-diary` |
-| Chuvas | `/api/v1/rainfall` |
-| Cotações | `/api/v1/commodity-quotes` |
+| Domínio           | Rota base                    |
+| ----------------- | ---------------------------- |
+| Autenticação      | `/api/v1/auth`               |
+| Plantios          | `/api/v1/plantings`          |
+| Gastos            | `/api/v1/expenses`           |
+| Estoque           | `/api/v1/inventory/products` |
+| Máquinas          | `/api/v1/machines`           |
+| Manutenções       | `/api/v1/maintenances`       |
+| Diário da lavoura | `/api/v1/field-diary`        |
+| Chuvas            | `/api/v1/rainfall`           |
+| Cotações          | `/api/v1/commodity-quotes`   |
 
 ## Executando localmente
 
@@ -172,6 +173,7 @@ Quando a tabela de usuários está vazia, o sistema cria um administrador inicia
 
 ```text
 VITE_API_URL=
+VITE_API_TIMEOUT_MS=60000
 ```
 
 Vazio em desenvolvimento local com proxy do Vite. Preenchido em produção para apontar para a API publicada.
@@ -210,10 +212,14 @@ npm.cmd run build
 - O módulo de cotações consulta a Cotricampo e mantém fallback/cache no backend; o frontend também evita recarregar as cotações mais de uma vez por dia.
 - O projeto evita expor entidades diretamente na API, usando DTOs para entrada e saída.
 - Serviços que alteram mais de uma tabela usam transações para preservar consistência.
+- O CI executa testes do backend, testes do frontend, build de produção e auditoria das dependências de produção do frontend.
+- O repositório ainda não define uma licença de uso. Antes de aceitar contribuições ou liberar reutilização por terceiros, escolha uma licença adequada para o objetivo do projeto.
 
 ## Documentação complementar
 
 - [Modelo do banco de dados](docs/DATABASE_MODEL.md)
 - [Estrutura de pacotes](docs/PACKAGE_STRUCTURE.md)
+- [Política de segurança](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 
