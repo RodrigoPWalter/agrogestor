@@ -8,6 +8,22 @@ O backup local do AgroGestor guarda três partes independentes:
 
 Os arquivos são criados, por padrão, em `Documentos\AgroGestor-Backups`. Cada execução usa uma pasta com data e horário, portanto um backup anterior não é sobrescrito.
 
+## Criar um backup somente dos dados
+
+Este é o modo recomendado para a rotina do AgroGestor, porque o código já permanece no GitHub. O arquivo gerado contém plantios, gastos, estoque, diário, chuvas, máquinas, manutenções e usuários.
+
+No PowerShell, a partir da raiz do projeto:
+
+```powershell
+.\scripts\backup-local.ps1 `
+  -OnlyDatabase `
+  -DatabaseHost "servidor-do-banco" `
+  -DatabaseName "nome-do-banco" `
+  -DatabaseUser "usuario-do-banco"
+```
+
+As pastas desse modo começam com `dados_`, facilitando a identificação.
+
 ## Criar um backup completo
 
 No PowerShell, a partir da raiz do projeto:
