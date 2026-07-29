@@ -1,32 +1,87 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PrivateRoute, PublicOnlyRoute } from "./auth/RouteGuards";
 import { AppLayout } from "./components/AppLayout";
-import { DashboardPage } from "./pages/DashboardPage";
-import { FieldDiaryPage } from "./pages/FieldDiaryPage";
-import { ExpensesPage } from "./pages/ExpensesPage";
-import { PlantingsPage } from "./pages/PlantingsPage";
-import { InventoryPage } from "./pages/InventoryPage";
-import { MachinesPage } from "./pages/MachinesPage";
-import { RainfallPage } from "./pages/RainfallPage";
-import { LoginPage } from "./pages/LoginPage";
-import { InstallAppPage } from "./pages/InstallAppPage";
+import { LoadingState } from "./components/Feedback";
+
+const DashboardPage = lazy(() =>
+  import("./pages/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+const FieldDiaryPage = lazy(() =>
+  import("./pages/FieldDiaryPage").then((module) => ({
+    default: module.FieldDiaryPage,
+  })),
+);
+const ExpensesPage = lazy(() =>
+  import("./pages/ExpensesPage").then((module) => ({
+    default: module.ExpensesPage,
+  })),
+);
+const PlantingsPage = lazy(() =>
+  import("./pages/PlantingsPage").then((module) => ({
+    default: module.PlantingsPage,
+  })),
+);
+const InventoryPage = lazy(() =>
+  import("./pages/InventoryPage").then((module) => ({
+    default: module.InventoryPage,
+  })),
+);
+const MachinesPage = lazy(() =>
+  import("./pages/MachinesPage").then((module) => ({
+    default: module.MachinesPage,
+  })),
+);
+const RainfallPage = lazy(() =>
+  import("./pages/RainfallPage").then((module) => ({
+    default: module.RainfallPage,
+  })),
+);
+const LoginPage = lazy(() =>
+  import("./pages/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+const InstallAppPage = lazy(() =>
+  import("./pages/InstallAppPage").then((module) => ({
+    default: module.InstallAppPage,
+  })),
+);
+
+function PageLoader() {
+  return (
+    <div className="page page--loading">
+      <LoadingState label="Abrindo módulo..." />
+    </div>
+  );
+}
+
+function lazyPage(PageComponent) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <PageComponent />
+    </Suspense>
+  );
+}
 
 export default function App() {
   return (
     <Routes>
       <Route element={<PublicOnlyRoute />}>
-        <Route path="login" element={<LoginPage />} />
+        <Route path="login" element={lazyPage(LoginPage)} />
       </Route>
       <Route element={<PrivateRoute />}>
         <Route element={<AppLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="plantios" element={<PlantingsPage />} />
-          <Route path="gastos" element={<ExpensesPage />} />
-          <Route path="estoque" element={<InventoryPage />} />
-          <Route path="maquinas" element={<MachinesPage />} />
-          <Route path="diario" element={<FieldDiaryPage />} />
-          <Route path="chuvas" element={<RainfallPage />} />
-          <Route path="instalar" element={<InstallAppPage />} />
+          <Route index element={lazyPage(DashboardPage)} />
+          <Route path="plantios" element={lazyPage(PlantingsPage)} />
+          <Route path="gastos" element={lazyPage(ExpensesPage)} />
+          <Route path="estoque" element={lazyPage(InventoryPage)} />
+          <Route path="maquinas" element={lazyPage(MachinesPage)} />
+          <Route path="diario" element={lazyPage(FieldDiaryPage)} />
+          <Route path="chuvas" element={lazyPage(RainfallPage)} />
+          <Route path="instalar" element={lazyPage(InstallAppPage)} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

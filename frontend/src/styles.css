@@ -210,6 +210,12 @@ p {
   padding: 46px 44px 64px;
 }
 
+.page--loading {
+  display: grid;
+  min-height: 52vh;
+  place-items: center;
+}
+
 .page-header {
   display: flex;
   align-items: flex-end;

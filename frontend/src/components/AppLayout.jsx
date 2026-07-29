@@ -14,7 +14,7 @@ import {
   Download,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -58,6 +58,11 @@ export function AppLayout() {
     .join("")
     .toUpperCase();
   const roleLabel = user?.role === "ADMIN" ? "Administrador" : "Usuário";
+
+  useEffect(() => {
+    setMoreMenuOpen(false);
+    setProfileMenuOpen(false);
+  }, [location.pathname]);
 
   return (
     <div className="app-shell app-shell--horizontal">
