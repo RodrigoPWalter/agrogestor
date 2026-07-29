@@ -7,11 +7,12 @@ import { readSession } from "./session";
 vi.mock("../api/client", () => ({
   api: {
     login: vi.fn(),
+    updateProfile: vi.fn(),
   },
 }));
 
 function AuthConsumer() {
-  const { isAuthenticated, login, logout, user } = useAuth();
+  const { isAuthenticated, login, logout, updateProfile, user } = useAuth();
 
   return (
     <>
@@ -30,6 +31,19 @@ function AuthConsumer() {
       <button type="button" onClick={logout}>
         Sair
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          updateProfile({
+            nome: "Rodrigo Walter",
+            email: "rodrigo@agro.local",
+            senhaAtual: "senha-antiga",
+            novaSenha: "senha-nova",
+          })
+        }
+      >
+        Atualizar perfil
+      </button>
     </>
   );
 }
@@ -38,6 +52,7 @@ describe("AuthProvider", () => {
   beforeEach(() => {
     localStorage.clear();
     api.login.mockReset();
+    api.updateProfile.mockReset();
   });
 
   it("autentica, mantém a sessão e permite sair", async () => {
@@ -70,5 +85,45 @@ describe("AuthProvider", () => {
 
     expect(screen.getByText("Visitante")).toBeInTheDocument();
     expect(readSession()).toBeNull();
+  });
+
+  it("substitui a sessÃ£o depois de atualizar o perfil", async () => {
+    localStorage.setItem(
+      "agrogestor.auth",
+      JSON.stringify({
+        accessToken: "jwt-antigo",
+        tokenType: "Bearer",
+        expiresAt: Date.now() + 60_000,
+        user: {
+          nome: "Rodrigo",
+          email: "antigo@agro.local",
+          role: "ADMIN",
+        },
+      }),
+    );
+    api.updateProfile.mockResolvedValue({
+      accessToken: "jwt-novo",
+      tokenType: "Bearer",
+      expiresIn: 3600,
+      user: {
+        nome: "Rodrigo Walter",
+        email: "rodrigo@agro.local",
+        role: "ADMIN",
+      },
+    });
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar perfil" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Rodrigo Walter")).toBeInTheDocument();
+    });
+    expect(readSession()?.accessToken).toBe("jwt-novo");
+    expect(readSession()?.user.email).toBe("rodrigo@agro.local");
   });
 });

@@ -2,10 +2,13 @@ package br.com.agrogestor.auth.controller;
 
 import br.com.agrogestor.auth.dto.LoginRequest;
 import br.com.agrogestor.auth.dto.LoginResponse;
+import br.com.agrogestor.auth.dto.ProfileUpdateRequest;
 import br.com.agrogestor.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,5 +28,15 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request
     ) {
         return ResponseEntity.ok(service.login(request));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<LoginResponse> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody ProfileUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                service.updateProfile(authentication.getName(), request)
+        );
     }
 }

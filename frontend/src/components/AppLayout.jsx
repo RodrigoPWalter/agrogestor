@@ -11,11 +11,13 @@ import {
   Warehouse,
   Wifi,
   LogOut,
+  KeyRound,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { ProfileSettingsModal } from "./ProfileSettingsModal";
 
 const navigation = [
   {
@@ -44,7 +46,8 @@ const moreNavigation = navigation.filter(
 export function AppLayout() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
+  const { user, logout, updateProfile } = useAuth();
   const location = useLocation();
   const moreMenuActive = moreNavigation.some(({ to }) =>
     location.pathname.startsWith(to),
@@ -121,6 +124,17 @@ export function AppLayout() {
                       <small>{user?.email}</small>
                     </span>
                   </div>
+                  <button
+                    className="profile-dropdown__settings"
+                    type="button"
+                    onClick={() => {
+                      setProfileMenuOpen(false);
+                      setProfileSettingsOpen(true);
+                    }}
+                  >
+                    <KeyRound size={15} />
+                    Alterar acesso
+                  </button>
                   <button type="button" onClick={logout}>
                     <LogOut size={15} />
                     Sair da conta
@@ -135,6 +149,14 @@ export function AppLayout() {
       <main className="main-content main-content--horizontal">
         <Outlet />
       </main>
+
+      {profileSettingsOpen && (
+        <ProfileSettingsModal
+          user={user}
+          onSave={updateProfile}
+          onClose={() => setProfileSettingsOpen(false)}
+        />
+      )}
 
       {moreMenuOpen && (
         <>

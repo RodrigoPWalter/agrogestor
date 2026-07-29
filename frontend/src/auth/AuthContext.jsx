@@ -10,12 +10,22 @@ import { api } from "../api/client";
 import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import {
   AUTH_STORAGE_KEY,
+  clearAppCache,
   clearSession,
   readSession,
   saveSession,
 } from "./session";
 
 const AuthContext = createContext(null);
+
+function createSession(response) {
+  return {
+    accessToken: response.accessToken,
+    tokenType: response.tokenType,
+    expiresAt: Date.now() + response.expiresIn * 1000,
+    user: response.user,
+  };
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(readSession);
@@ -27,13 +37,18 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (credentials) => {
     const response = await api.login(credentials);
-    const nextSession = {
-      accessToken: response.accessToken,
-      tokenType: response.tokenType,
-      expiresAt: Date.now() + response.expiresIn * 1000,
-      user: response.user,
-    };
+    const nextSession = createSession(response);
 
+    saveSession(nextSession);
+    setSession(nextSession);
+    return response.user;
+  }, []);
+
+  const updateProfile = useCallback(async (data) => {
+    const response = await api.updateProfile(data);
+    const nextSession = createSession(response);
+
+    clearAppCache();
     saveSession(nextSession);
     setSession(nextSession);
     return response.user;
@@ -63,8 +78,9 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(session),
       login,
       logout,
+      updateProfile,
     }),
-    [login, logout, session],
+    [login, logout, session, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

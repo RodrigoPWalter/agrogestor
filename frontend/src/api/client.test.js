@@ -67,4 +67,22 @@ describe("cliente da API", () => {
       }),
     );
   });
+
+  it("envia a alteração de perfil pela rota autenticada", async () => {
+    const data = {
+      nome: "Rodrigo",
+      email: "rodrigo@agro.local",
+      senhaAtual: "senha-atual",
+      novaSenha: null,
+    };
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: {} });
+
+    await api.updateProfile(data);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/auth/profile",
+      method: "PUT",
+      data,
+    });
+  });
 });

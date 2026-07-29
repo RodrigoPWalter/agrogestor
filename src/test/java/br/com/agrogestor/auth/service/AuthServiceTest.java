@@ -1,15 +1,18 @@
 package br.com.agrogestor.auth.service;
 
 import br.com.agrogestor.auth.dto.LoginRequest;
+import br.com.agrogestor.auth.dto.ProfileUpdateRequest;
 import br.com.agrogestor.auth.entity.Usuario;
 import br.com.agrogestor.auth.entity.UsuarioRole;
 import br.com.agrogestor.auth.exception.InvalidCredentialsException;
 import br.com.agrogestor.auth.repository.UsuarioRepository;
 import br.com.agrogestor.auth.security.JwtTokenService;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
@@ -27,6 +30,7 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
     private UsuarioRepository repository;
     private JwtTokenService tokenService;
+    private PasswordEncoder passwordEncoder;
     private AuthService service;
 
     @BeforeEach
@@ -34,7 +38,13 @@ class AuthServiceTest {
         authenticationManager = mock(AuthenticationManager.class);
         repository = mock(UsuarioRepository.class);
         tokenService = mock(JwtTokenService.class);
-        service = new AuthService(authenticationManager, repository, tokenService);
+        passwordEncoder = mock(PasswordEncoder.class);
+        service = new AuthService(
+                authenticationManager,
+                repository,
+                tokenService,
+                passwordEncoder
+        );
     }
 
     @Test
@@ -68,6 +78,55 @@ class AuthServiceTest {
         )))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("E-mail ou senha inválidos");
+    }
+
+    @Test
+    void shouldUpdateProfileAndReturnAValidSession() {
+        Usuario usuario = usuario();
+        when(repository.findByEmailIgnoreCase("admin@agrogestor.local"))
+                .thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("senha-atual", "hash")).thenReturn(true);
+        when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
+        when(repository.save(usuario)).thenReturn(usuario);
+        when(tokenService.generate(usuario)).thenReturn("novo-jwt");
+        when(tokenService.expiresInSeconds()).thenReturn(3600L);
+
+        var response = service.updateProfile(
+                "admin@agrogestor.local",
+                new ProfileUpdateRequest(
+                        "Rodrigo",
+                        " RODRIGO@AGRO.LOCAL ",
+                        "senha-atual",
+                        "nova-senha"
+                )
+        );
+
+        assertThat(usuario.getNome()).isEqualTo("Rodrigo");
+        assertThat(usuario.getEmail()).isEqualTo("rodrigo@agro.local");
+        assertThat(usuario.getSenhaHash()).isEqualTo("novo-hash");
+        assertThat(response.accessToken()).isEqualTo("novo-jwt");
+        assertThat(response.user().email()).isEqualTo("rodrigo@agro.local");
+    }
+
+    @Test
+    void shouldRejectProfileUpdateWhenCurrentPasswordIsWrong() {
+        Usuario usuario = usuario();
+        when(repository.findByEmailIgnoreCase("admin@agrogestor.local"))
+                .thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches("senha-incorreta", "hash"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> service.updateProfile(
+                "admin@agrogestor.local",
+                new ProfileUpdateRequest(
+                        "Administrador",
+                        "admin@agrogestor.local",
+                        "senha-incorreta",
+                        null
+                )
+        ))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("A senha atual está incorreta");
     }
 
     private Usuario usuario() {

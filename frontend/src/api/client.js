@@ -73,6 +73,11 @@ export const api = {
       method: "POST",
       data: credentials,
     }),
+  updateProfile: (data) =>
+    request("/api/v1/auth/profile", {
+      method: "PUT",
+      data,
+    }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getPlantings: () =>
     requestAllPages("/api/v1/plantings", { status: "ACTIVE" }),

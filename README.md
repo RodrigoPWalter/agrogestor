@@ -33,6 +33,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro, manutenções preventivas/corretivas e custos.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
 - **PWA:** Manifesto e service worker para instalação pelo navegador no Android e iPhone.
+- **Acesso protegido:** Login com JWT e alteração de nome, e-mail e senha pelo menu do perfil.
 
 ## Stack
 
