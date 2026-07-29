@@ -12,6 +12,8 @@ Os arquivos são criados, por padrão, em `Documentos\AgroGestor-Backups`. Cada 
 
 Este é o modo recomendado para a rotina do AgroGestor, porque o código já permanece no GitHub. O arquivo gerado contém plantios, gastos, estoque, diário, chuvas, máquinas, manutenções e usuários.
 
+No Windows, abra `scripts\fazer-backup-dados.cmd` com dois cliques e informe a senha do banco quando solicitado. O atalho criado na Área de Trabalho executa esse mesmo arquivo.
+
 No PowerShell, a partir da raiz do projeto:
 
 ```powershell
