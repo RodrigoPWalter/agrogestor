@@ -32,7 +32,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro, manutenções preventivas/corretivas e custos.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
-- **PWA:** Manifesto, service worker e tela de instruções para instalação no Android e iPhone.
+- **PWA:** Manifesto e service worker para instalação pelo navegador no Android e iPhone.
 
 ## Stack
 
@@ -188,7 +188,7 @@ npm.cmd run build
 npm.cmd run preview -- --host
 ```
 
-Em produção, o app pode ser instalado no celular pela opção do navegador “Adicionar à tela inicial” ou “Instalar app”. A tela **Instalar** dentro do AgroGestor traz instruções rápidas para Android e iPhone.
+Em produção, o app pode ser instalado no celular pela opção do navegador “Adicionar à tela inicial” ou “Instalar app”.
 
 ## Testes
 

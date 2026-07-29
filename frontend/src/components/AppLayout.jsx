@@ -11,7 +11,6 @@ import {
   Warehouse,
   Wifi,
   LogOut,
-  Download,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -32,7 +31,6 @@ const navigation = [
   { to: "/diario", label: "Diário", icon: BookOpenText },
   { to: "/chuvas", label: "Chuvas", icon: CloudRain },
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
-  { to: "/instalar", label: "Instalar", icon: Download },
 ];
 
 const primaryMobilePaths = new Set(["/", "/plantios", "/diario", "/gastos"]);

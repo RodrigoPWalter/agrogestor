@@ -44,11 +44,6 @@ const LoginPage = lazy(() =>
     default: module.LoginPage,
   })),
 );
-const InstallAppPage = lazy(() =>
-  import("./pages/InstallAppPage").then((module) => ({
-    default: module.InstallAppPage,
-  })),
-);
 
 function PageLoader() {
   return (
@@ -81,7 +76,6 @@ export default function App() {
           <Route path="maquinas" element={lazyPage(MachinesPage)} />
           <Route path="diario" element={lazyPage(FieldDiaryPage)} />
           <Route path="chuvas" element={lazyPage(RainfallPage)} />
-          <Route path="instalar" element={lazyPage(InstallAppPage)} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
