@@ -56,23 +56,26 @@ export function ExpensesPage() {
       });
   }, []);
 
-  const loadExpenseData = useCallback(async (plantingId) => {
-    if (!plantingId) return;
-    setLoading(true);
-    try {
-      const [expensePage, expenseSummary] = await Promise.all([
-        api.getExpenses(plantingId),
-        api.getExpenseSummary(plantingId),
-      ]);
-      setExpenses(expensePage.content);
-      setSummary(expenseSummary);
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadExpenseData = useCallback(
+    async (plantingId, { showLoading = true } = {}) => {
+      if (!plantingId) return;
+      if (showLoading) setLoading(true);
+      try {
+        const [expensePage, expenseSummary] = await Promise.all([
+          api.getExpenses(plantingId),
+          api.getExpenseSummary(plantingId),
+        ]);
+        setExpenses(expensePage.content);
+        setSummary(expenseSummary);
+        setError("");
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     loadExpenseData(selectedPlantingId);
@@ -136,7 +139,7 @@ export function ExpensesPage() {
       if (form.plantingId !== selectedPlantingId) {
         setSelectedPlantingId(form.plantingId);
       } else {
-        await loadExpenseData(selectedPlantingId);
+        await loadExpenseData(selectedPlantingId, { showLoading: false });
       }
     } catch (requestError) {
       setError(requestError.message);
@@ -151,7 +154,7 @@ export function ExpensesPage() {
     try {
       await api.deleteExpense(expense.id);
       setSuccess("Gasto excluído.");
-      await loadExpenseData(selectedPlantingId);
+      await loadExpenseData(selectedPlantingId, { showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }

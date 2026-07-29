@@ -82,4 +82,44 @@ describe("ExpensesPage", () => {
       expect(screen.getByText("Adubo de base")).toBeInTheDocument();
     });
   });
+
+  it("mantém a tabela visível enquanto atualiza após uma exclusão", async () => {
+    let finishRefresh;
+    api.deleteExpense.mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(
+      <MemoryRouter>
+        <ExpensesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Adubo de base")).toBeInTheDocument();
+
+    api.getExpenses.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = () => resolve({ content: [] });
+        }),
+    );
+    api.getExpenseSummary.mockResolvedValueOnce({
+      totalExpenses: 0,
+      expensePerHectare: 0,
+      expenseCount: 0,
+      categories: [],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir gasto" }));
+
+    await waitFor(() => expect(api.deleteExpense).toHaveBeenCalledOnce());
+    expect(screen.getByText("Adubo de base")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Calculando os gastos..."),
+    ).not.toBeInTheDocument();
+
+    finishRefresh();
+    await waitFor(() =>
+      expect(screen.queryByText("Adubo de base")).not.toBeInTheDocument(),
+    );
+  });
 });

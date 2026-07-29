@@ -64,18 +64,21 @@ export function FieldDiaryPage() {
   const [form, setForm] = useState(emptyForm());
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const loadEntries = useCallback(async (plantingId) => {
-    setLoading(true);
-    try {
-      const page = await api.getDiaryEntries(plantingId);
-      setEntries(page.content);
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadEntries = useCallback(
+    async (plantingId, { showLoading = true } = {}) => {
+      if (showLoading) setLoading(true);
+      try {
+        const page = await api.getDiaryEntries(plantingId);
+        setEntries(page.content);
+        setError("");
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     api
@@ -184,7 +187,7 @@ export function FieldDiaryPage() {
         );
       }
       setModalOpen(false);
-      await loadEntries(selectedPlantingId);
+      await loadEntries(selectedPlantingId, { showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -198,7 +201,7 @@ export function FieldDiaryPage() {
     try {
       await api.deleteDiaryEntry(entry.id);
       setSuccess("Registro excluído e produtos devolvidos ao estoque.");
-      await loadEntries(selectedPlantingId);
+      await loadEntries(selectedPlantingId, { showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }
