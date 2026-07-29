@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getAccessToken } from "../auth/session";
+import { markApiReachable, markApiUnavailable } from "./connectionStatus";
 
 export const AUTH_EXPIRED_EVENT = "agrogestor:auth-expired";
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
@@ -23,8 +24,17 @@ httpClient.interceptors.request.use((config) => {
 });
 
 httpClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    markApiReachable();
+    return response;
+  },
   (error) => {
+    if (error.response) {
+      markApiReachable();
+    } else {
+      markApiUnavailable();
+    }
+
     if (error.code === "ECONNABORTED") {
       return Promise.reject(
         new Error("A solicitação demorou para responder. Tente novamente."),

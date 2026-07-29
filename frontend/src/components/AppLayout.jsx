@@ -3,6 +3,7 @@ import {
   CloudRain,
   Ellipsis,
   ChevronDown,
+  LoaderCircle,
   LayoutDashboard,
   Leaf,
   ReceiptText,
@@ -10,12 +11,18 @@ import {
   Tractor,
   Warehouse,
   Wifi,
+  WifiOff,
   LogOut,
   KeyRound,
   UserRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  CONNECTION_STATUS,
+  getConnectionStatus,
+  subscribeConnectionStatus,
+} from "../api/connectionStatus";
 import { useAuth } from "../auth/AuthContext";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
 
@@ -48,6 +55,10 @@ export function AppLayout() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const { user, logout, updateProfile } = useAuth();
+  const connectionStatus = useSyncExternalStore(
+    subscribeConnectionStatus,
+    getConnectionStatus,
+  );
   const location = useLocation();
   const moreMenuActive = moreNavigation.some(({ to }) =>
     location.pathname.startsWith(to),
@@ -59,6 +70,25 @@ export function AppLayout() {
     .join("")
     .toUpperCase();
   const roleLabel = user?.role === "ADMIN" ? "Administrador" : "Usuário";
+  const connectionPresentation = {
+    [CONNECTION_STATUS.CHECKING]: {
+      label: "Conectando...",
+      icon: LoaderCircle,
+    },
+    [CONNECTION_STATUS.CONNECTED]: {
+      label: "Sistema conectado",
+      icon: Wifi,
+    },
+    [CONNECTION_STATUS.OFFLINE]: {
+      label: "Sem internet",
+      icon: WifiOff,
+    },
+    [CONNECTION_STATUS.UNAVAILABLE]: {
+      label: "Servidor indisponível",
+      icon: WifiOff,
+    },
+  }[connectionStatus];
+  const ConnectionIcon = connectionPresentation.icon;
 
   useEffect(() => {
     setMoreMenuOpen(false);
@@ -96,9 +126,19 @@ export function AppLayout() {
           </nav>
 
           <div className="app-header__actions">
-            <div className="connection-status">
-              <Wifi size={14} />
-              <span>Sistema conectado</span>
+            <div
+              className={`connection-status connection-status--${connectionStatus}`}
+              aria-live="polite"
+            >
+              <ConnectionIcon
+                className={
+                  connectionStatus === CONNECTION_STATUS.CHECKING
+                    ? "spin"
+                    : undefined
+                }
+                size={14}
+              />
+              <span>{connectionPresentation.label}</span>
             </div>
             <div className="profile-menu">
               <button

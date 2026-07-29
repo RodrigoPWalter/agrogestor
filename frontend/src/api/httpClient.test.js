@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { clearSession, saveSession } from "../auth/session";
+import {
+  CONNECTION_STATUS,
+  getConnectionStatus,
+  resetConnectionStatus,
+} from "./connectionStatus";
 import { httpClient } from "./httpClient";
 
 describe("cliente HTTP", () => {
   beforeEach(() => {
     clearSession();
+    resetConnectionStatus();
   });
 
   it("envia o token da sessão no cabeçalho Authorization", async () => {
@@ -30,6 +36,7 @@ describe("cliente HTTP", () => {
     });
 
     expect(requestConfig.headers.Authorization).toBe("Bearer jwt-assinado");
+    expect(getConnectionStatus()).toBe(CONNECTION_STATUS.CONNECTED);
   });
 
   it("não envia Authorization quando não há sessão", async () => {

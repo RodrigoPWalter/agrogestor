@@ -116,6 +116,20 @@
   color: var(--machine-yellow);
 }
 
+.connection-status--offline,
+.connection-status--unavailable {
+  color: #fecaca;
+}
+
+.connection-status--offline svg,
+.connection-status--unavailable svg {
+  color: #f87171;
+}
+
+.connection-status--checking svg {
+  color: #fde68a;
+}
+
 .header-profile {
   display: flex;
   align-items: center;
