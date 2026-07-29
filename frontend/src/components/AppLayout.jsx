@@ -24,6 +24,10 @@ import {
   subscribeConnectionStatus,
 } from "../api/connectionStatus";
 import { useAuth } from "../auth/AuthContext";
+import {
+  preloadPrivatePage,
+  schedulePrivatePagesPreload,
+} from "../routes/pageLoaders";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
 
 const navigation = [
@@ -95,6 +99,12 @@ export function AppLayout() {
     setProfileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => schedulePrivatePagesPreload(), []);
+
+  function preloadNavigationTarget(path) {
+    preloadPrivatePage(path);
+  }
+
   return (
     <div className="app-shell app-shell--horizontal">
       <header className="app-header">
@@ -116,6 +126,8 @@ export function AppLayout() {
                 key={to}
                 to={to}
                 end={end}
+                onPointerEnter={() => preloadNavigationTarget(to)}
+                onFocus={() => preloadNavigationTarget(to)}
                 className={({ isActive }) =>
                   `desktop-navigation__item ${isActive ? "is-active" : ""}`
                 }
@@ -217,6 +229,9 @@ export function AppLayout() {
                   key={to}
                   to={to}
                   onClick={() => setMoreMenuOpen(false)}
+                  onPointerEnter={() => preloadNavigationTarget(to)}
+                  onFocus={() => preloadNavigationTarget(to)}
+                  onTouchStart={() => preloadNavigationTarget(to)}
                   className={({ isActive }) => (isActive ? "is-active" : "")}
                 >
                   <Icon size={20} />
@@ -235,6 +250,9 @@ export function AppLayout() {
             to={to}
             end={end}
             onClick={() => setMoreMenuOpen(false)}
+            onPointerEnter={() => preloadNavigationTarget(to)}
+            onFocus={() => preloadNavigationTarget(to)}
+            onTouchStart={() => preloadNavigationTarget(to)}
             className={({ isActive }) => (isActive ? "is-active" : "")}
           >
             <Icon size={20} />

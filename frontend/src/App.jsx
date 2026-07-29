@@ -3,47 +3,16 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { PrivateRoute, PublicOnlyRoute } from "./auth/RouteGuards";
 import { AppLayout } from "./components/AppLayout";
 import { LoadingState } from "./components/Feedback";
+import { loginPageLoader, privatePageLoaders } from "./routes/pageLoaders";
 
-const DashboardPage = lazy(() =>
-  import("./pages/DashboardPage").then((module) => ({
-    default: module.DashboardPage,
-  })),
-);
-const FieldDiaryPage = lazy(() =>
-  import("./pages/FieldDiaryPage").then((module) => ({
-    default: module.FieldDiaryPage,
-  })),
-);
-const ExpensesPage = lazy(() =>
-  import("./pages/ExpensesPage").then((module) => ({
-    default: module.ExpensesPage,
-  })),
-);
-const PlantingsPage = lazy(() =>
-  import("./pages/PlantingsPage").then((module) => ({
-    default: module.PlantingsPage,
-  })),
-);
-const InventoryPage = lazy(() =>
-  import("./pages/InventoryPage").then((module) => ({
-    default: module.InventoryPage,
-  })),
-);
-const MachinesPage = lazy(() =>
-  import("./pages/MachinesPage").then((module) => ({
-    default: module.MachinesPage,
-  })),
-);
-const RainfallPage = lazy(() =>
-  import("./pages/RainfallPage").then((module) => ({
-    default: module.RainfallPage,
-  })),
-);
-const LoginPage = lazy(() =>
-  import("./pages/LoginPage").then((module) => ({
-    default: module.LoginPage,
-  })),
-);
+const DashboardPage = lazy(privatePageLoaders["/"]);
+const FieldDiaryPage = lazy(privatePageLoaders["/diario"]);
+const ExpensesPage = lazy(privatePageLoaders["/gastos"]);
+const PlantingsPage = lazy(privatePageLoaders["/plantios"]);
+const InventoryPage = lazy(privatePageLoaders["/estoque"]);
+const MachinesPage = lazy(privatePageLoaders["/maquinas"]);
+const RainfallPage = lazy(privatePageLoaders["/chuvas"]);
+const LoginPage = lazy(loginPageLoader);
 
 function PageLoader() {
   return (
