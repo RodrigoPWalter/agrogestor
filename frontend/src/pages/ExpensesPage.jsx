@@ -1,39 +1,18 @@
-import {
-  CircleDollarSign,
-  Edit3,
-  LandPlot,
-  Plus,
-  ReceiptText,
-  Search,
-  Tags,
-  Trash2,
-} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { ExpenseCategoryBreakdown } from "../components/expenses/ExpenseCategoryBreakdown";
+import { ExpenseFormModal } from "../components/expenses/ExpenseFormModal";
+import { ExpenseSummary } from "../components/expenses/ExpenseSummary";
+import { ExpenseTable } from "../components/expenses/ExpenseTable";
+import { ExpensesHeader } from "../components/expenses/ExpensesHeader";
 import {
   EmptyState,
   ErrorBanner,
   LoadingState,
   SuccessBanner,
 } from "../components/Feedback";
-import { Modal } from "../components/Modal";
-import {
-  formatCurrency,
-  formatDate,
-  formatNumber,
-  toInputDate,
-} from "../utils/formatters";
-
-const categories = [
-  { value: "SEEDS", label: "Sementes" },
-  { value: "FERTILIZERS", label: "Fertilizantes" },
-  { value: "PESTICIDES", label: "Defensivos" },
-  { value: "FUEL", label: "Combustível" },
-  { value: "MAINTENANCE", label: "Manutenção" },
-  { value: "LABOR", label: "Mão de obra" },
-  { value: "OTHER", label: "Outros" },
-];
+import { toInputDate } from "../utils/formatters";
 
 function newExpenseForm(plantingId = "") {
   return {
@@ -180,34 +159,14 @@ export function ExpensesPage() {
 
   return (
     <div className="page">
-      <header className="expenses-page-header">
-        <div>
-          <span className="eyebrow">Controle financeiro</span>
-          <h1>Gastos por plantio</h1>
-          <p>
-            Acompanhe os lançamentos e o custo consolidado de cada operação.
-          </p>
-        </div>
-        {plantings.length > 0 && (
-          <label className="expenses-context-selector">
-            <span>Gastos do plantio:</span>
-            <select
-              value={selectedPlantingId}
-              onChange={(event) => {
-                setSelectedPlantingId(event.target.value);
-                setSearchQuery("");
-              }}
-            >
-              {plantings.map((planting) => (
-                <option key={planting.id} value={planting.id}>
-                  {planting.crop} — {planting.harvest} ·{" "}
-                  {formatNumber(planting.plantedAreaHectares)} ha
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </header>
+      <ExpensesHeader
+        plantings={plantings}
+        selectedPlantingId={selectedPlantingId}
+        onPlantingChange={(event) => {
+          setSelectedPlantingId(event.target.value);
+          setSearchQuery("");
+        }}
+      />
 
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
@@ -228,179 +187,23 @@ export function ExpensesPage() {
             <LoadingState label="Calculando os gastos..." />
           ) : (
             <>
-              <section
-                className="expense-summary-strip"
-                aria-label="Resumo financeiro do plantio"
-              >
-                <article className="expense-summary-item expense-summary-item--financial">
-                  <span>
-                    <CircleDollarSign size={21} />
-                  </span>
-                  <div>
-                    <small>Total registrado</small>
-                    <strong>{formatCurrency(summary?.totalExpenses)}</strong>
-                  </div>
-                </article>
-                <article className="expense-summary-item expense-summary-item--financial">
-                  <span>
-                    <LandPlot size={21} />
-                  </span>
-                  <div>
-                    <small>Custo por hectare</small>
-                    <strong>
-                      {formatCurrency(summary?.expensePerHectare)}
-                    </strong>
-                  </div>
-                </article>
-                <article className="expense-summary-item">
-                  <span>
-                    <ReceiptText size={21} />
-                  </span>
-                  <div>
-                    <small>Lançamentos</small>
-                    <strong>{expenses.length}</strong>
-                  </div>
-                </article>
-                <article className="expense-summary-item">
-                  <span>
-                    <Tags size={21} />
-                  </span>
-                  <div>
-                    <small>Categorias usadas</small>
-                    <strong>{summary?.categories?.length || 0}</strong>
-                  </div>
-                </article>
-              </section>
+              <ExpenseSummary
+                summary={summary}
+                expenseCount={expenses.length}
+              />
 
               <div className="expenses-layout">
-                <section className="panel expense-history-panel">
-                  <div className="panel__header">
-                    <div>
-                      <span className="eyebrow">Histórico</span>
-                      <h2>Gastos registrados</h2>
-                    </div>
-                    <span className="record-count">
-                      {filteredExpenses.length} de {expenses.length} itens
-                    </span>
-                  </div>
-
-                  <div className="expenses-table-toolbar">
-                    <label className="expenses-search">
-                      <Search size={16} />
-                      <span className="sr-only">Pesquisar gastos</span>
-                      <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(event) => setSearchQuery(event.target.value)}
-                        placeholder="Pesquisar descrição ou categoria"
-                      />
-                    </label>
-                    <button
-                      className="button button--primary"
-                      onClick={openCreate}
-                      disabled={!selectedPlantingId}
-                    >
-                      <Plus size={17} /> Registrar gasto
-                    </button>
-                  </div>
-
-                  {expenses.length === 0 ? (
-                    <EmptyState
-                      title="Nenhum gasto neste plantio"
-                      description="Registre a primeira despesa para começar o controle."
-                    />
-                  ) : (
-                    <div className="expense-table-wrapper">
-                      <table className="expense-data-table">
-                        <thead>
-                          <tr>
-                            <th>Data</th>
-                            <th>Descrição</th>
-                            <th>Categoria</th>
-                            <th className="expense-table-value">Valor</th>
-                            <th className="expense-table-actions">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredExpenses.length === 0 ? (
-                            <tr>
-                              <td className="expense-table-empty" colSpan="5">
-                                Nenhum lançamento corresponde à pesquisa.
-                              </td>
-                            </tr>
-                          ) : (
-                            filteredExpenses.map((expense) => (
-                              <tr key={expense.id}>
-                                <td>{formatDate(expense.expenseDate)}</td>
-                                <td>
-                                  <strong className="expense-description">
-                                    {expense.description}
-                                  </strong>
-                                </td>
-                                <td>{expense.categoryDisplayName}</td>
-                                <td className="expense-table-value">
-                                  {formatCurrency(expense.amount)}
-                                </td>
-                                <td className="expense-table-actions">
-                                  <div>
-                                    <button
-                                      className="icon-button"
-                                      onClick={() => openEdit(expense)}
-                                      aria-label="Editar gasto"
-                                    >
-                                      <Edit3 size={16} />
-                                    </button>
-                                    <button
-                                      className="icon-button icon-button--danger"
-                                      onClick={() => handleDelete(expense)}
-                                      aria-label="Excluir gasto"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </section>
-
-                <section className="panel expense-category-panel">
-                  <div className="panel__header">
-                    <div>
-                      <span className="eyebrow">Distribuição</span>
-                      <h2>Gastos por categoria</h2>
-                    </div>
-                  </div>
-                  {!summary?.categories?.length ? (
-                    <div className="compact-empty">
-                      <Tags size={28} />
-                      <p>As categorias aparecerão aqui.</p>
-                    </div>
-                  ) : (
-                    <div className="category-breakdown">
-                      {summary.categories.map((category) => (
-                        <article key={category.category}>
-                          <div className="category-breakdown__row">
-                            <div>
-                              <strong>{category.categoryDisplayName}</strong>
-                              <small>{formatCurrency(category.total)}</small>
-                            </div>
-                            <span>{formatNumber(category.percentage)}%</span>
-                          </div>
-                          <div className="progress-track">
-                            <span
-                              style={{ width: `${category.percentage}%` }}
-                            />
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
+                <ExpenseTable
+                  expenses={expenses}
+                  filteredExpenses={filteredExpenses}
+                  searchQuery={searchQuery}
+                  selectedPlantingId={selectedPlantingId}
+                  onSearchChange={(event) => setSearchQuery(event.target.value)}
+                  onCreate={openCreate}
+                  onEdit={openEdit}
+                  onDelete={handleDelete}
+                />
+                <ExpenseCategoryBreakdown categories={summary?.categories} />
               </div>
             </>
           )}
@@ -408,118 +211,15 @@ export function ExpensesPage() {
       )}
 
       {modalOpen && (
-        <Modal
-          title={editing ? "Editar gasto" : "Registrar gasto"}
-          description="Informe o valor e a categoria para manter o custo atualizado."
+        <ExpenseFormModal
+          editing={Boolean(editing)}
+          form={form}
+          plantings={plantings}
+          saving={saving}
+          onChange={setForm}
           onClose={() => setModalOpen(false)}
-        >
-          <form className="form" onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label className="form-grid__full">
-                <span>Plantio relacionado</span>
-                <select
-                  required
-                  value={form.plantingId}
-                  onChange={(event) =>
-                    setForm({ ...form, plantingId: event.target.value })
-                  }
-                >
-                  {plantings.map((planting) => (
-                    <option key={planting.id} value={planting.id}>
-                      {planting.crop} — {planting.harvest}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="form-grid__full">
-                <span>Descrição</span>
-                <input
-                  required
-                  maxLength="160"
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm({ ...form, description: event.target.value })
-                  }
-                  placeholder="Ex.: Adubo de base"
-                />
-              </label>
-              <label>
-                <span>Categoria</span>
-                <select
-                  required
-                  value={form.category}
-                  onChange={(event) =>
-                    setForm({ ...form, category: event.target.value })
-                  }
-                >
-                  {categories.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Valor (R$)</span>
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={form.amount}
-                  onChange={(event) =>
-                    setForm({ ...form, amount: event.target.value })
-                  }
-                  placeholder="2.500,00"
-                />
-              </label>
-              <label>
-                <span>Data do gasto</span>
-                <input
-                  required
-                  type="date"
-                  value={form.expenseDate}
-                  onChange={(event) =>
-                    setForm({ ...form, expenseDate: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                <span>
-                  Observações <small>(opcional)</small>
-                </span>
-                <input
-                  maxLength="1000"
-                  value={form.observations}
-                  onChange={(event) =>
-                    setForm({ ...form, observations: event.target.value })
-                  }
-                  placeholder="Ex.: Compra à vista"
-                />
-              </label>
-            </div>
-            <div className="form-actions">
-              <button
-                type="button"
-                className="button button--ghost"
-                onClick={() => setModalOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="button button--primary"
-                disabled={saving}
-              >
-                {saving
-                  ? "Salvando..."
-                  : editing
-                    ? "Salvar alterações"
-                    : "Registrar gasto"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onSubmit={handleSubmit}
+        />
       )}
     </div>
   );
