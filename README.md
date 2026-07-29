@@ -7,7 +7,7 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 [![CI](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml/badge.svg)](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml)
 
-![Screenshot do Sistema](link_da_imagem_aqui)
+
 
 AgroGestor é um sistema de gestão rural familiar desenvolvido para centralizar informações de plantio, custos, estoque, diário da lavoura, chuvas e manutenção de máquinas em uma única aplicação. O projeto nasceu de uma necessidade prática: reduzir registros soltos em caderno, planilhas e mensagens, transformando a rotina da propriedade em dados mais confiáveis para tomada de decisão.
 
