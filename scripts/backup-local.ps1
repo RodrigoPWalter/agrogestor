@@ -27,6 +27,8 @@ function Find-PgDump {
     }
 
     $knownPaths = @(
+        'C:\Program Files\PostgreSQL\18\bin\pg_dump.exe',
+        'C:\Program Files\PostgreSQL\18\pgAdmin 4\runtime\pg_dump.exe',
         'C:\Program Files\PostgreSQL\17\bin\pg_dump.exe',
         'C:\Program Files\PostgreSQL\17\pgAdmin 4\runtime\pg_dump.exe',
         'C:\Program Files\PostgreSQL\16\bin\pg_dump.exe'
