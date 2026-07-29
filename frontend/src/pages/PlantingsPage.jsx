@@ -1,14 +1,4 @@
-import {
-  BarChart3,
-  CalendarDays,
-  CheckCircle2,
-  Edit3,
-  History,
-  Plus,
-  Search,
-  Sprout,
-  Trash2,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import {
@@ -17,11 +7,12 @@ import {
   LoadingState,
   SuccessBanner,
 } from "../components/Feedback";
-import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { PlantingDetailsModal } from "../components/PlantingDetailsModal";
-import { PlantingSummaryCard } from "../components/PlantingSummaryCard";
-import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
+import { PlantingFormModal } from "../components/plantings/PlantingFormModal";
+import { PlantingList } from "../components/plantings/PlantingList";
+import { PlantingsToolbar } from "../components/plantings/PlantingsToolbar";
+import { toInputDate } from "../utils/formatters";
 
 const emptyForm = {
   crop: "",
@@ -196,35 +187,13 @@ export function PlantingsPage() {
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
-      <div className="planting-tabs">
-        <button
-          className={view === "active" ? "is-active" : ""}
-          onClick={() => setView("active")}
-        >
-          <Sprout size={17} /> Plantios ativos
-        </button>
-        <button
-          className={view === "history" ? "is-active" : ""}
-          onClick={() => setView("history")}
-        >
-          <History size={17} /> Histórico de safras
-        </button>
-      </div>
-
-      <div className="toolbar">
-        <label className="search-box">
-          <Search size={19} />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar por cultura, safra ou variedade"
-          />
-        </label>
-        <span className="record-count">
-          {filteredPlantings.length}{" "}
-          {filteredPlantings.length === 1 ? "registro" : "registros"}
-        </span>
-      </div>
+      <PlantingsToolbar
+        view={view}
+        search={search}
+        recordCount={filteredPlantings.length}
+        onViewChange={setView}
+        onSearchChange={(event) => setSearch(event.target.value)}
+      />
 
       {loading ? (
         <LoadingState />
@@ -249,101 +218,16 @@ export function PlantingsPage() {
           }
         />
       ) : (
-        <div className="data-card-grid">
-          {filteredPlantings.map((planting) => (
-            <article key={planting.id} className="data-card">
-              <div className="data-card__header">
-                <span className="crop-avatar crop-avatar--large">
-                  <Sprout size={22} />
-                </span>
-                <div>
-                  <h2>{planting.crop}</h2>
-                  <span className="badge">{planting.harvest}</span>
-                </div>
-                <div className="card-actions">
-                  {view === "active" && (
-                    <button
-                      className="icon-button icon-button--success"
-                      onClick={() => handleFinish(planting)}
-                      aria-label="Finalizar plantio"
-                    >
-                      <CheckCircle2 size={18} />
-                    </button>
-                  )}
-                  {view === "history" && (
-                    <button
-                      className="icon-button icon-button--success"
-                      onClick={() => handleReactivate(planting)}
-                      aria-label="Reativar plantio"
-                    >
-                      <History size={18} />
-                    </button>
-                  )}
-                  <button
-                    className="icon-button"
-                    onClick={() => openEdit(planting)}
-                    aria-label="Editar plantio"
-                  >
-                    <Edit3 size={18} />
-                  </button>
-                  <button
-                    className="icon-button icon-button--danger"
-                    onClick={() => handleDelete(planting)}
-                    aria-label="Excluir plantio"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-              <div className="data-card__metric">
-                <strong>{formatNumber(planting.plantedAreaHectares)} ha</strong>
-                <span>Área plantada</span>
-              </div>
-              <PlantingSummaryCard summary={summaries[planting.id]} />
-              <dl className="details-list">
-                {planting.completedAt && (
-                  <div>
-                    <dt>Finalizado</dt>
-                    <dd>{formatDate(planting.completedAt.slice(0, 10))}</dd>
-                  </div>
-                )}
-                <div>
-                  <dt>Variedade</dt>
-                  <dd>{planting.seedVariety}</dd>
-                </div>
-                <div>
-                  <dt>Sementes</dt>
-                  <dd>{formatNumber(planting.seedQuantity, 3)}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <CalendarDays size={15} /> Data
-                  </dt>
-                  <dd>{formatDate(planting.plantingDate)}</dd>
-                </div>
-              </dl>
-              {planting.observations && (
-                <p className="card-note">{planting.observations}</p>
-              )}
-              <div className="planting-card-actions">
-                <button
-                  className="button button--ghost"
-                  onClick={() => setSelectedPlanting(planting)}
-                >
-                  Abrir plantio
-                </button>
-                {view === "history" && (
-                  <button
-                    className="button button--primary"
-                    onClick={() => setSelectedPlanting(planting)}
-                  >
-                    <BarChart3 size={17} /> Ver fechamento
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+        <PlantingList
+          plantings={filteredPlantings}
+          summaries={summaries}
+          view={view}
+          onOpen={setSelectedPlanting}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+          onFinish={handleFinish}
+          onReactivate={handleReactivate}
+        />
       )}
 
       {selectedPlanting && (
@@ -357,129 +241,14 @@ export function PlantingsPage() {
       )}
 
       {modalOpen && (
-        <Modal
-          title={editing ? "Editar plantio" : "Novo plantio"}
-          description="Preencha os dados principais da lavoura."
+        <PlantingFormModal
+          editing={Boolean(editing)}
+          form={form}
+          saving={saving}
+          onChange={setForm}
           onClose={() => setModalOpen(false)}
-        >
-          <form className="form" onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label>
-                <span>Cultura</span>
-                <input
-                  required
-                  maxLength="80"
-                  value={form.crop}
-                  onChange={(event) =>
-                    setForm({ ...form, crop: event.target.value })
-                  }
-                  placeholder="Ex.: Soja"
-                />
-              </label>
-              <label>
-                <span>Safra</span>
-                <input
-                  required
-                  pattern="(\d{4}|\d{4}/\d{4})"
-                  title="Use apenas um ano, como 2026, ou o formato 2026/2027"
-                  value={form.harvest}
-                  onChange={(event) =>
-                    setForm({ ...form, harvest: event.target.value })
-                  }
-                  placeholder="2026 ou 2026/2027"
-                />
-              </label>
-              <label>
-                <span>Área plantada (ha)</span>
-                <input
-                  required
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={form.plantedAreaHectares}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      plantedAreaHectares: event.target.value,
-                    })
-                  }
-                  placeholder="18,50"
-                />
-              </label>
-              <label>
-                <span>Data do plantio</span>
-                <input
-                  required
-                  type="date"
-                  value={form.plantingDate}
-                  onChange={(event) =>
-                    setForm({ ...form, plantingDate: event.target.value })
-                  }
-                />
-              </label>
-              <label>
-                <span>Variedade da semente</span>
-                <input
-                  required
-                  maxLength="120"
-                  value={form.seedVariety}
-                  onChange={(event) =>
-                    setForm({ ...form, seedVariety: event.target.value })
-                  }
-                  placeholder="Ex.: BRS 284"
-                />
-              </label>
-              <label>
-                <span>Quantidade de sementes</span>
-                <input
-                  required
-                  type="number"
-                  min="0.001"
-                  step="0.001"
-                  value={form.seedQuantity}
-                  onChange={(event) =>
-                    setForm({ ...form, seedQuantity: event.target.value })
-                  }
-                  placeholder="925"
-                />
-              </label>
-              <label className="form-grid__full">
-                <span>
-                  Observações <small>(opcional)</small>
-                </span>
-                <textarea
-                  maxLength="1000"
-                  rows="3"
-                  value={form.observations}
-                  onChange={(event) =>
-                    setForm({ ...form, observations: event.target.value })
-                  }
-                  placeholder="Ex.: Talhão norte"
-                />
-              </label>
-            </div>
-            <div className="form-actions">
-              <button
-                type="button"
-                className="button button--ghost"
-                onClick={() => setModalOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="button button--primary"
-                disabled={saving}
-              >
-                {saving
-                  ? "Salvando..."
-                  : editing
-                    ? "Salvar alterações"
-                    : "Cadastrar plantio"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onSubmit={handleSubmit}
+        />
       )}
     </div>
   );
