@@ -1,13 +1,4 @@
-import {
-  AlertTriangle,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Edit3,
-  PackagePlus,
-  Plus,
-  Trash2,
-  Warehouse,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import {
@@ -16,20 +7,12 @@ import {
   LoadingState,
   SuccessBanner,
 } from "../components/Feedback";
-import { Modal } from "../components/Modal";
+import { InventoryMovementModal } from "../components/inventory/InventoryMovementModal";
+import { InventoryProductList } from "../components/inventory/InventoryProductList";
+import { InventorySummary } from "../components/inventory/InventorySummary";
+import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
-import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
-
-const productTypes = [
-  { value: "SEED", label: "Semente" },
-  { value: "FERTILIZER", label: "Fertilizante" },
-  { value: "PESTICIDE", label: "Defensivo" },
-];
-const units = [
-  { value: "LITER", label: "Litros (L)" },
-  { value: "KILOGRAM", label: "Quilogramas (Kg)" },
-  { value: "UNIT", label: "Unidades" },
-];
+import { toInputDate } from "../utils/formatters";
 
 const emptyProduct = {
   name: "",
@@ -193,35 +176,7 @@ export function InventoryPage() {
       <ErrorBanner message={error} />
       <SuccessBanner message={success} />
 
-      <section className="module-summary-grid">
-        <article>
-          <span>
-            <Warehouse />
-          </span>
-          <div>
-            <small>Produtos cadastrados</small>
-            <strong>{summary.total}</strong>
-          </div>
-        </article>
-        <article className={summary.low ? "summary-warning" : ""}>
-          <span>
-            <AlertTriangle />
-          </span>
-          <div>
-            <small>Estoque baixo</small>
-            <strong>{summary.low}</strong>
-          </div>
-        </article>
-        <article className={summary.expired ? "summary-danger" : ""}>
-          <span>
-            <PackagePlus />
-          </span>
-          <div>
-            <small>Validade vencida</small>
-            <strong>{summary.expired}</strong>
-          </div>
-        </article>
-      </section>
+      <InventorySummary summary={summary} />
 
       {loading ? (
         <LoadingState label="Conferindo o estoque..." />
@@ -236,286 +191,35 @@ export function InventoryPage() {
           }
         />
       ) : (
-        <section className="data-card-grid">
-          {products.map((product) => (
-            <article
-              className={`data-card inventory-card ${product.lowStock ? "inventory-card--low" : ""}`}
-              key={product.id}
-            >
-              <div className="data-card__header">
-                <span className="crop-avatar">
-                  {product.productTypeName.slice(0, 2).toUpperCase()}
-                </span>
-                <div>
-                  <h2>{product.name}</h2>
-                  <span className="badge">{product.productTypeName}</span>
-                </div>
-                <div className="card-actions">
-                  <button
-                    className="icon-button"
-                    onClick={() => openEdit(product)}
-                    aria-label="Editar produto"
-                  >
-                    <Edit3 size={17} />
-                  </button>
-                  <button
-                    className="icon-button icon-button--danger"
-                    onClick={() => removeProduct(product)}
-                    aria-label="Excluir produto"
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
-              </div>
-              <div className="data-card__metric">
-                <strong>
-                  {formatNumber(product.quantity, 3)} {product.unitName}
-                </strong>
-                <span>Saldo disponível</span>
-              </div>
-              <dl className="details-list">
-                <div>
-                  <dt>Estoque mínimo</dt>
-                  <dd>
-                    {formatNumber(product.minimumStock, 3)} {product.unitName}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Validade</dt>
-                  <dd>
-                    {product.expirationDate
-                      ? formatDate(product.expirationDate)
-                      : "Não informada"}
-                  </dd>
-                </div>
-              </dl>
-              {(product.lowStock || product.expired) && (
-                <p className="card-alert">
-                  <AlertTriangle size={15} />{" "}
-                  {product.expired
-                    ? "Produto vencido"
-                    : "Estoque abaixo do mínimo"}
-                </p>
-              )}
-              <button
-                className="button button--ghost button--wide"
-                onClick={() => openMovement(product)}
-              >
-                <ArrowDownToLine size={17} /> Movimentar estoque
-              </button>
-            </article>
-          ))}
-        </section>
+        <InventoryProductList
+          products={products}
+          onEdit={openEdit}
+          onDelete={removeProduct}
+          onMovement={openMovement}
+        />
       )}
 
       {productModal && (
-        <Modal
-          title={editing ? "Editar produto" : "Novo produto"}
-          description="Informe os dados de controle do insumo."
+        <ProductFormModal
+          editing={Boolean(editing)}
+          form={form}
+          saving={saving}
+          onChange={setForm}
           onClose={() => setProductModal(false)}
-        >
-          <form className="form" onSubmit={submitProduct}>
-            <div className="form-grid">
-              <label className="form-grid__full">
-                <span>Nome do produto</span>
-                <input
-                  required
-                  maxLength="140"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ex.: Herbicida glifosato"
-                />
-              </label>
-              <label>
-                <span>Tipo</span>
-                <select
-                  value={form.productType}
-                  onChange={(e) =>
-                    setForm({ ...form, productType: e.target.value })
-                  }
-                >
-                  {productTypes.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Unidade</span>
-                <select
-                  value={form.unit}
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })}
-                >
-                  {units.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>{editing ? "Saldo atual" : "Quantidade inicial"}</span>
-                <input
-                  required
-                  disabled={Boolean(editing)}
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={form.initialQuantity}
-                  onChange={(e) =>
-                    setForm({ ...form, initialQuantity: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                <span>Alerta abaixo de</span>
-                <input
-                  required
-                  type="number"
-                  min="0"
-                  step="0.001"
-                  value={form.minimumStock}
-                  onChange={(e) =>
-                    setForm({ ...form, minimumStock: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                <span>
-                  Data de validade <small>(opcional)</small>
-                </span>
-                <input
-                  type="date"
-                  value={form.expirationDate}
-                  onChange={(e) =>
-                    setForm({ ...form, expirationDate: e.target.value })
-                  }
-                />
-              </label>
-            </div>
-            <div className="form-actions">
-              <button
-                type="button"
-                className="button button--ghost"
-                onClick={() => setProductModal(false)}
-              >
-                Cancelar
-              </button>
-              <button className="button button--primary" disabled={saving}>
-                {saving ? "Salvando..." : "Salvar produto"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onSubmit={submitProduct}
+        />
       )}
 
-      {movementModal && (
-        <Modal
-          title={`Movimentar ${selected.name}`}
-          description={`Saldo atual: ${formatNumber(selected.quantity, 3)} ${selected.unitName}`}
+      {movementModal && selected && (
+        <InventoryMovementModal
+          product={selected}
+          movement={movement}
+          movements={movements}
+          saving={saving}
+          onChange={setMovement}
           onClose={() => setMovementModal(false)}
-        >
-          <form className="form" onSubmit={submitMovement}>
-            <div className="segmented-control inventory-movement-type">
-              <label
-                className={
-                  movement.movementType === "ENTRY" ? "is-selected" : ""
-                }
-              >
-                <input
-                  type="radio"
-                  checked={movement.movementType === "ENTRY"}
-                  onChange={() =>
-                    setMovement({ ...movement, movementType: "ENTRY" })
-                  }
-                />
-                <ArrowDownToLine size={17} /> Entrada
-              </label>
-              <label
-                className={
-                  movement.movementType === "EXIT" ? "is-selected" : ""
-                }
-              >
-                <input
-                  type="radio"
-                  checked={movement.movementType === "EXIT"}
-                  onChange={() =>
-                    setMovement({ ...movement, movementType: "EXIT" })
-                  }
-                />
-                <ArrowUpFromLine size={17} /> Saída
-              </label>
-            </div>
-            <div className="form-grid">
-              <label>
-                <span>Quantidade ({selected.unitName})</span>
-                <input
-                  required
-                  type="number"
-                  min="0.001"
-                  step="0.001"
-                  value={movement.quantity}
-                  onChange={(e) =>
-                    setMovement({ ...movement, quantity: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                <span>Data</span>
-                <input
-                  required
-                  type="date"
-                  value={movement.movementDate}
-                  onChange={(e) =>
-                    setMovement({ ...movement, movementDate: e.target.value })
-                  }
-                />
-              </label>
-              <label className="form-grid__full">
-                <span>
-                  Observação <small>(opcional)</small>
-                </span>
-                <input
-                  maxLength="500"
-                  value={movement.notes}
-                  onChange={(e) =>
-                    setMovement({ ...movement, notes: e.target.value })
-                  }
-                  placeholder="Ex.: Aplicação no talhão norte"
-                />
-              </label>
-            </div>
-            {movements.length > 0 && (
-              <div className="mini-history">
-                <strong>Movimentações recentes</strong>
-                {movements.slice(0, 4).map((item) => (
-                  <div key={item.id}>
-                    <span>
-                      {item.movementTypeName} · {formatDate(item.movementDate)}
-                    </span>
-                    <b>
-                      {formatNumber(item.quantity, 3)} {selected.unitName}
-                    </b>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="form-actions">
-              <button
-                type="button"
-                className="button button--ghost"
-                onClick={() => setMovementModal(false)}
-              >
-                Cancelar
-              </button>
-              <button className="button button--primary" disabled={saving}>
-                Registrar{" "}
-                {movement.movementType === "ENTRY" ? "entrada" : "saída"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onSubmit={submitMovement}
+        />
       )}
     </div>
   );
