@@ -171,8 +171,8 @@ export function ExpensesPage() {
         }}
       />
 
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
       {plantings.length === 0 && !loading ? (
         <EmptyState

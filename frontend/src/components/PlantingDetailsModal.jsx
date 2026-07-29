@@ -100,7 +100,7 @@ export function PlantingDetailsModal({
       onClose={onClose}
     >
       <div className="planting-detail">
-        <ErrorBanner message={error} />
+        <ErrorBanner message={error} onDismiss={() => setError("")} />
         {!data ? (
           <LoadingState label="Carregando o plantio..." />
         ) : (

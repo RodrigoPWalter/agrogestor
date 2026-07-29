@@ -159,7 +159,7 @@ export function DashboardPage() {
         }
       />
 
-      <ErrorBanner message={error} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
 
       {(loading || usingCache) && (
         <section className="connection-note" aria-live="polite">

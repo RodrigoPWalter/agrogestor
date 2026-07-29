@@ -1,4 +1,5 @@
-import { AlertCircle, Inbox, LoaderCircle } from "lucide-react";
+import { AlertCircle, Inbox, LoaderCircle, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 export function LoadingState({ label = "Carregando informações..." }) {
   return (
@@ -22,21 +23,67 @@ export function EmptyState({ title, description, action }) {
   );
 }
 
-export function ErrorBanner({ message }) {
+function AlertBanner({
+  message,
+  type,
+  role,
+  icon: Icon,
+  onDismiss,
+  autoDismiss,
+}) {
+  const dismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  useEffect(() => {
+    if (!message || !autoDismiss || !dismissRef.current) return undefined;
+
+    const timeoutId = window.setTimeout(() => dismissRef.current?.(), 5000);
+    return () => window.clearTimeout(timeoutId);
+  }, [autoDismiss, message]);
+
   if (!message) return null;
+
   return (
-    <div className="alert alert--error" role="alert">
-      <AlertCircle size={18} />
+    <div className={`alert alert--${type}`} role={role}>
+      {Icon && <Icon size={18} />}
       <span>{message}</span>
+      {onDismiss && (
+        <button
+          className="alert__close"
+          type="button"
+          onClick={onDismiss}
+          aria-label="Fechar aviso"
+        >
+          <X size={16} />
+        </button>
+      )}
     </div>
   );
 }
 
-export function SuccessBanner({ message }) {
-  if (!message) return null;
+export function ErrorBanner({ message, onDismiss }) {
   return (
-    <div className="alert alert--success" role="status">
-      <span>{message}</span>
-    </div>
+    <AlertBanner
+      message={message}
+      type="error"
+      role="alert"
+      icon={AlertCircle}
+      onDismiss={onDismiss}
+    />
+  );
+}
+
+export function SuccessBanner({ message, onDismiss }) {
+  return (
+    <AlertBanner
+      message={message}
+      type="success"
+      role="status"
+      onDismiss={onDismiss}
+      autoDismiss
+    />
   );
 }

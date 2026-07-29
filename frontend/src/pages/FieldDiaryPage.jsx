@@ -220,8 +220,8 @@ export function FieldDiaryPage() {
         }
       />
 
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
       <DiaryFilter
         plantings={plantings}
         selectedPlantingId={selectedPlantingId}

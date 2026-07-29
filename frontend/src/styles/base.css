@@ -1487,6 +1487,30 @@ p {
   font-weight: 650;
 }
 
+.alert > span {
+  flex: 1;
+}
+
+.alert__close {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin: -6px -7px -6px 0;
+  padding: 0;
+  place-items: center;
+  color: inherit;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.alert__close:hover,
+.alert__close:focus-visible {
+  background: rgba(255, 255, 255, 0.55);
+}
+
 .alert--error {
   color: #8b3030;
   border: 1px solid #f1c9c6;

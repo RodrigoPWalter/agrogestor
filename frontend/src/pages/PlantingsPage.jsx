@@ -181,8 +181,8 @@ export function PlantingsPage() {
         }
       />
 
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
       <PlantingsToolbar
         view={view}

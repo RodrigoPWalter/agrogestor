@@ -118,8 +118,8 @@ export function RainfallPage() {
           </button>
         }
       />
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
       <section className="module-summary-grid">
         <article>

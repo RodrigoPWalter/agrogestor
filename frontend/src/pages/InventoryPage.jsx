@@ -173,8 +173,8 @@ export function InventoryPage() {
           </button>
         }
       />
-      <ErrorBanner message={error} />
-      <SuccessBanner message={success} />
+      <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
       <InventorySummary summary={summary} />
 

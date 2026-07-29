@@ -57,8 +57,8 @@ export function ProfileSettingsModal({ user, onClose, onSave }) {
       onClose={onClose}
     >
       <form className="form profile-settings-form" onSubmit={submit}>
-        <ErrorBanner message={error} />
-        <SuccessBanner message={success} />
+        <ErrorBanner message={error} onDismiss={() => setError("")} />
+        <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
         <div className="form-grid">
           <label>
             <span>Nome exibido</span>
