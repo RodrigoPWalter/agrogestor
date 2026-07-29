@@ -13,6 +13,7 @@ import { PlantingFormModal } from "../components/plantings/PlantingFormModal";
 import { PlantingList } from "../components/plantings/PlantingList";
 import { PlantingsToolbar } from "../components/plantings/PlantingsToolbar";
 import { toInputDate } from "../utils/formatters";
+import { buildPlantingExpenseSummaries } from "../utils/plantingSummaries";
 
 const emptyForm = {
   crop: "",
@@ -41,21 +42,14 @@ export function PlantingsPage() {
   const loadPlantings = useCallback(async () => {
     setLoading(true);
     try {
-      const page =
-        view === "active"
-          ? await api.getPlantings()
-          : await api.getPlantingHistory();
+      const [page, expensePage] = await Promise.all([
+        view === "active" ? api.getPlantings() : api.getPlantingHistory(),
+        api.getExpenses(),
+      ]);
       setPlantings(page.content);
-      const results = await Promise.all(
-        page.content.map(async (planting) => {
-          try {
-            return [planting.id, await api.getExpenseSummary(planting.id)];
-          } catch {
-            return [planting.id, null];
-          }
-        }),
+      setSummaries(
+        buildPlantingExpenseSummaries(page.content, expensePage.content),
       );
-      setSummaries(Object.fromEntries(results));
       setError("");
     } catch (requestError) {
       setError(requestError.message);

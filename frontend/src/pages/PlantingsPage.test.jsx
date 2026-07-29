@@ -7,7 +7,7 @@ vi.mock("../api/client", () => ({
   api: {
     getPlantings: vi.fn(),
     getPlantingHistory: vi.fn(),
-    getExpenseSummary: vi.fn(),
+    getExpenses: vi.fn(),
     createPlanting: vi.fn(),
     updatePlanting: vi.fn(),
     deletePlanting: vi.fn(),
@@ -42,11 +42,14 @@ describe("PlantingsPage", () => {
     api.getPlantingHistory.mockResolvedValue({
       content: [harvestedPlanting],
     });
-    api.getExpenseSummary.mockResolvedValue({
-      totalExpenses: 1000,
-      expensePerHectare: 50,
-      expenseCount: 2,
-      categories: [],
+    api.getExpenses.mockResolvedValue({
+      content: [
+        {
+          id: "expense-1",
+          plantingId: activePlanting.id,
+          amount: 1000,
+        },
+      ],
     });
   });
 
@@ -54,7 +57,7 @@ describe("PlantingsPage", () => {
     render(<PlantingsPage />);
 
     expect(await screen.findByText("Trigo")).toBeInTheDocument();
-    expect(api.getExpenseSummary).toHaveBeenCalledWith(activePlanting.id);
+    expect(api.getExpenses).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
       screen.getByRole("button", { name: "Histórico de safras" }),
@@ -63,7 +66,7 @@ describe("PlantingsPage", () => {
     expect(await screen.findByText("Soja")).toBeInTheDocument();
     await waitFor(() => {
       expect(api.getPlantingHistory).toHaveBeenCalledTimes(1);
-      expect(api.getExpenseSummary).toHaveBeenCalledWith(harvestedPlanting.id);
+      expect(api.getExpenses).toHaveBeenCalledTimes(2);
     });
     expect(
       screen.getByRole("button", { name: "Reativar plantio" }),
