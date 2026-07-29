@@ -72,4 +72,34 @@ describe("PlantingsPage", () => {
       screen.getByRole("button", { name: "Reativar plantio" }),
     ).toBeInTheDocument();
   });
+
+  it("mantém os plantios visíveis enquanto atualiza após finalizar", async () => {
+    let finishRefresh;
+    api.finishPlanting.mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<PlantingsPage />);
+
+    expect(await screen.findByText("Trigo")).toBeInTheDocument();
+
+    api.getPlantings.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = () => resolve({ content: [] });
+        }),
+    );
+    api.getExpenses.mockResolvedValueOnce({ content: [] });
+
+    fireEvent.click(screen.getByRole("button", { name: "Finalizar plantio" }));
+
+    await waitFor(() =>
+      expect(api.finishPlanting).toHaveBeenCalledWith(activePlanting.id),
+    );
+    expect(screen.getByText("Trigo")).toBeInTheDocument();
+
+    finishRefresh();
+    expect(
+      await screen.findByText("Comece pelo primeiro plantio"),
+    ).toBeInTheDocument();
+  });
 });

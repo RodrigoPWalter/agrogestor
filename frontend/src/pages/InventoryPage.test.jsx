@@ -58,4 +58,34 @@ describe("InventoryPage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Movimentações recentes")).toBeInTheDocument();
   });
+
+  it("mantém o estoque visível enquanto atualiza após excluir", async () => {
+    let finishRefresh;
+    api.deleteInventoryProduct.mockResolvedValue();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(<InventoryPage />);
+
+    expect(await screen.findByText("Glifosato")).toBeInTheDocument();
+
+    api.getInventoryProducts.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRefresh = () => resolve([]);
+        }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir produto" }));
+
+    await waitFor(() =>
+      expect(api.deleteInventoryProduct).toHaveBeenCalledWith(product.id),
+    );
+    expect(screen.getByText("Glifosato")).toBeInTheDocument();
+    expect(
+      screen.queryByText("Conferindo o estoque..."),
+    ).not.toBeInTheDocument();
+
+    finishRefresh();
+    expect(await screen.findByText("Estoque vazio")).toBeInTheDocument();
+  });
 });

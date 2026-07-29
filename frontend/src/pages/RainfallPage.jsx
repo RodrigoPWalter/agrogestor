@@ -28,8 +28,8 @@ export function RainfallPage() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
-  async function loadData() {
-    setLoading(true);
+  async function loadData({ showLoading = true } = {}) {
+    if (showLoading) setLoading(true);
     try {
       const [items, totals] = await Promise.all([
         api.getRainfall(),
@@ -41,7 +41,7 @@ export function RainfallPage() {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
@@ -82,7 +82,7 @@ export function RainfallPage() {
         setSuccess("Chuva registrada.");
       }
       setModalOpen(false);
-      await loadData();
+      await loadData({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -100,7 +100,7 @@ export function RainfallPage() {
     try {
       await api.deleteRainfall(item.id);
       setSuccess("Medição excluída.");
-      await loadData();
+      await loadData({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }

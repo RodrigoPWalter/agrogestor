@@ -42,15 +42,15 @@ export function InventoryPage() {
   });
   const [movements, setMovements] = useState([]);
 
-  async function loadProducts() {
-    setLoading(true);
+  async function loadProducts({ showLoading = true } = {}) {
+    if (showLoading) setLoading(true);
     try {
       setProducts(await api.getInventoryProducts());
       setError("");
     } catch (requestError) {
       setError(requestError.message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
@@ -120,7 +120,7 @@ export function InventoryPage() {
         setSuccess("Produto adicionado ao estoque.");
       }
       setProductModal(false);
-      await loadProducts();
+      await loadProducts({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -141,7 +141,7 @@ export function InventoryPage() {
         `${movement.movementType === "ENTRY" ? "Entrada" : "Saída"} registrada.`,
       );
       setMovementModal(false);
-      await loadProducts();
+      await loadProducts({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -155,7 +155,7 @@ export function InventoryPage() {
     try {
       await api.deleteInventoryProduct(product.id);
       setSuccess("Produto excluído.");
-      await loadProducts();
+      await loadProducts({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }

@@ -46,8 +46,8 @@ export function MachinesPage() {
   const [machineForm, setMachineForm] = useState(emptyMachine);
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenance);
 
-  async function loadMachines() {
-    setLoading(true);
+  async function loadMachines({ showLoading = true } = {}) {
+    if (showLoading) setLoading(true);
     try {
       const data = await api.getMachines();
       setMachines(data);
@@ -60,7 +60,7 @@ export function MachinesPage() {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
@@ -147,7 +147,7 @@ export function MachinesPage() {
         setSuccess("Máquina cadastrada.");
       }
       setMachineModal(false);
-      await loadMachines();
+      await loadMachines({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -177,7 +177,7 @@ export function MachinesPage() {
         setSuccess("Manutenção registrada.");
       }
       setMaintenanceModal(false);
-      await loadMachines();
+      await loadMachines({ showLoading: false });
       await selectMachine(selectedMachine);
     } catch (requestError) {
       setError(requestError.message);
@@ -196,7 +196,7 @@ export function MachinesPage() {
       await api.deleteMachine(machine.id);
       if (selectedMachine?.id === machine.id) setSelectedMachine(null);
       setSuccess("Máquina excluída.");
-      await loadMachines();
+      await loadMachines({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -208,7 +208,7 @@ export function MachinesPage() {
     try {
       await api.deleteMaintenance(item.id);
       setSuccess("Manutenção excluída.");
-      await loadMachines();
+      await loadMachines({ showLoading: false });
       await selectMachine(selectedMachine);
     } catch (requestError) {
       setError(requestError.message);

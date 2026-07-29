@@ -39,24 +39,27 @@ export function PlantingsPage() {
   const [summaries, setSummaries] = useState({});
   const [selectedPlanting, setSelectedPlanting] = useState(null);
 
-  const loadPlantings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [page, expensePage] = await Promise.all([
-        view === "active" ? api.getPlantings() : api.getPlantingHistory(),
-        api.getExpenses(),
-      ]);
-      setPlantings(page.content);
-      setSummaries(
-        buildPlantingExpenseSummaries(page.content, expensePage.content),
-      );
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [view]);
+  const loadPlantings = useCallback(
+    async ({ showLoading = true } = {}) => {
+      if (showLoading) setLoading(true);
+      try {
+        const [page, expensePage] = await Promise.all([
+          view === "active" ? api.getPlantings() : api.getPlantingHistory(),
+          api.getExpenses(),
+        ]);
+        setPlantings(page.content);
+        setSummaries(
+          buildPlantingExpenseSummaries(page.content, expensePage.content),
+        );
+        setError("");
+      } catch (requestError) {
+        setError(requestError.message);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [view],
+  );
 
   useEffect(() => {
     loadPlantings();
@@ -113,7 +116,7 @@ export function PlantingsPage() {
         setSuccess("Plantio cadastrado com sucesso.");
       }
       setModalOpen(false);
-      await loadPlantings();
+      await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -127,7 +130,7 @@ export function PlantingsPage() {
     try {
       await api.deletePlanting(planting.id);
       setSuccess("Plantio excluído.");
-      await loadPlantings();
+      await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -142,7 +145,7 @@ export function PlantingsPage() {
       await api.finishPlanting(planting.id);
       setSelectedPlanting(null);
       setSuccess("Plantio finalizado e movido para o histórico.");
-      await loadPlantings();
+      await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -159,7 +162,7 @@ export function PlantingsPage() {
       await api.reactivatePlanting(planting.id);
       setSuccess("Plantio reativado e devolvido para a lista de ativos.");
       setSelectedPlanting(null);
-      await loadPlantings();
+      await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -230,7 +233,7 @@ export function PlantingsPage() {
           onClose={() => setSelectedPlanting(null)}
           onFinish={handleFinish}
           onReactivate={handleReactivate}
-          onChanged={loadPlantings}
+          onChanged={() => loadPlantings({ showLoading: false })}
         />
       )}
 
