@@ -90,8 +90,7 @@ export function FieldDiaryPage() {
       .getMachines()
       .then(setMachines)
       .catch(() => {});
-    loadEntries("");
-  }, [loadEntries]);
+  }, []);
 
   useEffect(() => {
     const quickType = searchParams.get("new");
