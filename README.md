@@ -220,5 +220,6 @@ npm.cmd run build
 - [Modelo do banco de dados](docs/DATABASE_MODEL.md)
 - [Estrutura de pacotes](docs/PACKAGE_STRUCTURE.md)
 - [Decisões arquiteturais](docs/DECISIONS.md)
+- [Backup e restauração](docs/BACKUP.md)
 - [Política de segurança](SECURITY.md)
 - [Changelog](CHANGELOG.md)
