@@ -125,8 +125,12 @@ export function DashboardPage() {
   }, [dashboardCacheKey]);
 
   const metrics = useMemo(() => {
-    const hectares = plantings.reduce(
+    const plantedHectares = plantings.reduce(
       (total, planting) => total + Number(planting.plantedAreaHectares),
+      0,
+    );
+    const plannedHectares = plantings.reduce(
+      (total, planting) => total + Number(planting.plannedAreaHectares),
       0,
     );
     const totalExpenses = expenses.reduce(
@@ -138,9 +142,9 @@ export function DashboardPage() {
     ).length;
 
     return {
-      hectares,
+      hectares: plantedHectares,
       totalExpenses,
-      costPerHectare: hectares > 0 ? totalExpenses / hectares : 0,
+      costPerHectare: plannedHectares > 0 ? totalExpenses / plannedHectares : 0,
       inventoryCount: inventoryProducts.length,
       lowStockProducts,
     };

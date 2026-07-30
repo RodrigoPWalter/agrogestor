@@ -56,7 +56,7 @@ export function DashboardMetrics({
         <div>
           <small>Custo médio por hectare</small>
           <strong>{formatCurrency(metrics.costPerHectare)}</strong>
-          <span>Considerando a área ativa</span>
+          <span>Considerando a área prevista ativa</span>
         </div>
       </article>
     </section>

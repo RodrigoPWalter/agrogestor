@@ -18,8 +18,9 @@ import { buildPlantingExpenseSummaries } from "../utils/plantingSummaries";
 const emptyForm = {
   crop: "",
   harvest: "",
-  plantedAreaHectares: "",
-  plantingDate: toInputDate(),
+  fieldName: "",
+  plannedAreaHectares: "",
+  startDate: toInputDate(),
   seedVariety: "",
   seedQuantity: "",
   observations: "",
@@ -77,7 +78,7 @@ export function PlantingsPage() {
 
   function openCreate() {
     setEditing(null);
-    setForm({ ...emptyForm, plantingDate: toInputDate() });
+    setForm({ ...emptyForm, startDate: toInputDate() });
     setModalOpen(true);
     setError("");
   }
@@ -87,8 +88,9 @@ export function PlantingsPage() {
     setForm({
       crop: planting.crop,
       harvest: planting.harvest,
-      plantedAreaHectares: planting.plantedAreaHectares,
-      plantingDate: planting.plantingDate,
+      fieldName: planting.fieldName || "",
+      plannedAreaHectares: planting.plannedAreaHectares,
+      startDate: planting.startDate,
       seedVariety: planting.seedVariety,
       seedQuantity: planting.seedQuantity,
       observations: planting.observations || "",
@@ -103,7 +105,8 @@ export function PlantingsPage() {
     setError("");
     const payload = {
       ...form,
-      plantedAreaHectares: Number(form.plantedAreaHectares),
+      fieldName: form.fieldName || null,
+      plannedAreaHectares: Number(form.plannedAreaHectares),
       seedQuantity: Number(form.seedQuantity),
       observations: form.observations || null,
     };
@@ -173,7 +176,7 @@ export function PlantingsPage() {
       <PageHeader
         eyebrow="Safras e culturas"
         title="Plantios"
-        description="Acompanhe tudo que foi plantado na propriedade."
+        description="Planeje a safra e acompanhe os hectares plantados a cada dia."
         action={
           <button className="button button--primary" onClick={openCreate}>
             <Plus size={18} /> Novo plantio

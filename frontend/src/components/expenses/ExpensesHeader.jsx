@@ -19,7 +19,7 @@ export function ExpensesHeader({
             {plantings.map((planting) => (
               <option key={planting.id} value={planting.id}>
                 {planting.crop} — {planting.harvest} ·{" "}
-                {formatNumber(planting.plantedAreaHectares)} ha
+                {formatNumber(planting.plannedAreaHectares)} ha previstos
               </option>
             ))}
           </select>

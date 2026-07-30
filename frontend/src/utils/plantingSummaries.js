@@ -16,7 +16,7 @@ export function buildPlantingExpenseSummaries(plantings, expenses) {
         totalExpenses: 0,
         expenseCount: 0,
       };
-      const area = Number(planting.plantedAreaHectares);
+      const area = Number(planting.plannedAreaHectares);
 
       return [
         planting.id,

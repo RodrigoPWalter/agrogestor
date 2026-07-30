@@ -5,8 +5,8 @@ describe("buildPlantingExpenseSummaries", () => {
   it("agrupa os gastos e calcula o custo por hectare de cada plantio", () => {
     const summaries = buildPlantingExpenseSummaries(
       [
-        { id: "planting-1", plantedAreaHectares: 20 },
-        { id: "planting-2", plantedAreaHectares: 10 },
+        { id: "planting-1", plannedAreaHectares: 20 },
+        { id: "planting-2", plannedAreaHectares: 10 },
       ],
       [
         { plantingId: "planting-1", amount: 1000 },

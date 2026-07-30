@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatNumber } from "../../utils/formatters";
 import { PlantingSummaryCard } from "../PlantingSummaryCard";
+import { PlantingProgressBar } from "./PlantingProgressBar";
 
 export function PlantingList({
   plantings,
@@ -68,15 +69,29 @@ export function PlantingList({
             </div>
           </div>
           <div className="data-card__metric">
-            <strong>{formatNumber(planting.plantedAreaHectares)} ha</strong>
-            <span>Área plantada</span>
+            <strong>
+              {formatNumber(planting.plantedAreaHectares)} de{" "}
+              {formatNumber(planting.plannedAreaHectares)} ha
+            </strong>
+            <span>Progresso da área prevista</span>
           </div>
+          <PlantingProgressBar
+            compact
+            percentage={planting.plantedPercentage}
+            statusName={planting.plantingProgressStatusName}
+          />
           <PlantingSummaryCard summary={summaries[planting.id]} />
           <dl className="details-list">
             {planting.completedAt && (
               <div>
                 <dt>Finalizado</dt>
                 <dd>{formatDate(planting.completedAt.slice(0, 10))}</dd>
+              </div>
+            )}
+            {planting.fieldName && (
+              <div>
+                <dt>Talhão ou área</dt>
+                <dd>{planting.fieldName}</dd>
               </div>
             )}
             <div>
@@ -91,7 +106,7 @@ export function PlantingList({
               <dt>
                 <CalendarDays size={15} /> Data
               </dt>
-              <dd>{formatDate(planting.plantingDate)}</dd>
+              <dd>{formatDate(planting.startDate)}</dd>
             </div>
           </dl>
           {planting.observations && (

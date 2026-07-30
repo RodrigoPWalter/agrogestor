@@ -11,16 +11,20 @@ export function PlantingOverview({ planting, summary, expenseCount }) {
         <h3>Resumo do plantio</h3>
         <div className="compact-list">
           <div>
-            <span>Área plantada</span>
-            <strong>{formatNumber(planting.plantedAreaHectares)} ha</strong>
+            <span>Área total prevista</span>
+            <strong>{formatNumber(planting.plannedAreaHectares)} ha</strong>
+          </div>
+          <div>
+            <span>Talhão ou área</span>
+            <strong>{planting.fieldName || "Não informado"}</strong>
           </div>
           <div>
             <span>Variedade</span>
             <strong>{planting.seedVariety}</strong>
           </div>
           <div>
-            <span>Data do plantio</span>
-            <strong>{formatDate(planting.plantingDate)}</strong>
+            <span>Início do ciclo</span>
+            <strong>{formatDate(planting.startDate)}</strong>
           </div>
         </div>
       </section>

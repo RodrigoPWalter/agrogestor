@@ -85,4 +85,37 @@ describe("cliente da API", () => {
       data,
     });
   });
+
+  it("envia uma nova etapa para o plantio informado", async () => {
+    const data = {
+      stepDate: "2026-07-30",
+      plantedAreaHectares: 5,
+      startTime: null,
+      endTime: null,
+      observations: null,
+    };
+    httpClient.request.mockResolvedValueOnce({ status: 201, data: {} });
+
+    await api.createPlantingStep("planting-1", data);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/plantings/planting-1/steps",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      data,
+    });
+  });
+
+  it("exclui somente a etapa vinculada ao plantio informado", async () => {
+    httpClient.request.mockResolvedValueOnce({ status: 204 });
+
+    await api.deletePlantingStep("planting-1", "step-1");
+
+    expect(httpClient.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/api/v1/plantings/planting-1/steps/step-1",
+        method: "DELETE",
+      }),
+    );
+  });
 });

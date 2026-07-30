@@ -19,6 +19,7 @@ const planting = {
   id: "planting-1",
   crop: "Trigo",
   harvest: "2026",
+  plannedAreaHectares: 20,
   plantedAreaHectares: 20,
 };
 

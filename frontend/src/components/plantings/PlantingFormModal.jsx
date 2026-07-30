@@ -42,26 +42,35 @@ export function PlantingFormModal({
             />
           </label>
           <label>
-            <span>Área plantada (ha)</span>
+            <span>Talhão ou área</span>
+            <input
+              maxLength="120"
+              value={form.fieldName}
+              onChange={(event) => update("fieldName", event.target.value)}
+              placeholder="Ex.: Talhão 2"
+            />
+          </label>
+          <label>
+            <span>Área total prevista (ha)</span>
             <input
               required
               type="number"
               min="0.01"
               step="0.01"
-              value={form.plantedAreaHectares}
+              value={form.plannedAreaHectares}
               onChange={(event) =>
-                update("plantedAreaHectares", event.target.value)
+                update("plannedAreaHectares", event.target.value)
               }
               placeholder="18,50"
             />
           </label>
           <label>
-            <span>Data do plantio</span>
+            <span>Data de início</span>
             <input
               required
               type="date"
-              value={form.plantingDate}
-              onChange={(event) => update("plantingDate", event.target.value)}
+              value={form.startDate}
+              onChange={(event) => update("startDate", event.target.value)}
             />
           </label>
           <label>

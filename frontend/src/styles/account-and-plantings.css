@@ -477,6 +477,227 @@
   font-size: 0.82rem;
 }
 
+.planting-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.planting-progress__track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe8dc;
+}
+
+.planting-progress__track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--machine-green), #62a744);
+  transition: width 240ms ease;
+}
+
+.planting-progress__caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.planting-progress__caption strong {
+  color: #204f1d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.planting-progress--compact {
+  margin: -3px 0 12px;
+}
+
+.planting-progress--compact .planting-progress__track {
+  height: 6px;
+}
+
+.planting-progress-section {
+  display: grid;
+  gap: 14px;
+}
+
+.planting-progress-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.planting-progress-section__header h3 {
+  margin-bottom: 0;
+}
+
+.planting-progress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+.planting-progress-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-right: 1px solid var(--line);
+}
+
+.planting-progress-summary > div:last-child {
+  border-right: 0;
+}
+
+.planting-progress-summary span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.planting-progress-summary strong {
+  color: #173f19;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+}
+
+.planting-progress-complete,
+.planting-step-empty {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  color: #285d29;
+  border: 1px solid #c8ddc4;
+  border-radius: 7px;
+  background: #eef6eb;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.planting-step-form {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #d9e4d5;
+  border-radius: 8px;
+  background: #f7faf5;
+}
+
+.planting-step-form__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.planting-step-form__header strong {
+  color: #173f19;
+  font-size: 0.76rem;
+}
+
+.planting-step-form__header small {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.planting-step-history {
+  display: grid;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.planting-step-history__title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #173f19;
+  font-size: 0.7rem;
+}
+
+.planting-step-history__title span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.planting-step-timeline {
+  display: grid;
+  padding-left: 7px;
+}
+
+.planting-step-timeline article {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+}
+
+.planting-step-timeline article:not(:last-child)::before {
+  position: absolute;
+  top: 12px;
+  bottom: -2px;
+  left: 5px;
+  width: 2px;
+  content: "";
+  background: #d7e4d3;
+}
+
+.planting-step-timeline__marker {
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border: 3px solid #dcebd8;
+  border-radius: 50%;
+  background: var(--machine-green);
+}
+
+.planting-step-timeline article > div {
+  padding: 10px 11px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.planting-step-timeline header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.planting-step-timeline header > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.planting-step-timeline header strong {
+  color: #173f19;
+  font-size: 0.72rem;
+}
+
+.planting-step-timeline header span,
+.planting-step-timeline small,
+.planting-step-timeline p {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.planting-step-timeline small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.planting-step-timeline p {
+  margin: 7px 0 0;
+}
+
 .section-heading p {
   margin: 3px 0 0;
   color: var(--muted);
@@ -630,8 +851,29 @@
   .planting-detail__columns,
   .quick-expense-form,
   .season-closing-grid,
-  .season-price-form {
+  .season-price-form,
+  .planting-progress-summary {
     grid-template-columns: 1fr;
+  }
+
+  .planting-progress-summary > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .planting-progress-summary > div:last-child {
+    border-bottom: 0;
+  }
+
+  .planting-progress-section__header,
+  .planting-step-form__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .planting-progress-section__header .button {
+    min-height: 46px;
+    justify-content: center;
   }
 
   .season-closing-grid > div {

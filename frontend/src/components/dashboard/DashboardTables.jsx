@@ -86,7 +86,7 @@ export function RecentPlantingsPanel({ plantings }) {
                 <th>Cultura</th>
                 <th>Safra</th>
                 <th>Área</th>
-                <th>Plantio</th>
+                <th>Início</th>
               </tr>
             </thead>
             <tbody>
@@ -98,9 +98,10 @@ export function RecentPlantingsPanel({ plantings }) {
                   </td>
                   <td>{planting.harvest}</td>
                   <td className="numeric-value">
-                    {formatNumber(planting.plantedAreaHectares)} ha
+                    {formatNumber(planting.plantedAreaHectares)} de{" "}
+                    {formatNumber(planting.plannedAreaHectares)} ha
                   </td>
-                  <td>{formatDate(planting.plantingDate)}</td>
+                  <td>{formatDate(planting.startDate)}</td>
                 </tr>
               ))}
             </tbody>

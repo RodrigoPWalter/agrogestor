@@ -20,8 +20,14 @@ const activePlanting = {
   id: "active-1",
   crop: "Trigo",
   harvest: "2026",
+  fieldName: "Talhão norte",
+  plannedAreaHectares: 20,
   plantedAreaHectares: 20,
-  plantingDate: "2026-07-10",
+  remainingAreaHectares: 0,
+  plantedPercentage: 100,
+  plantingProgressStatus: "COMPLETED",
+  plantingProgressStatusName: "Área totalmente plantada",
+  startDate: "2026-07-10",
   seedVariety: "BRS 284",
   seedQuantity: 900,
   observations: "",
@@ -101,5 +107,53 @@ describe("PlantingsPage", () => {
     expect(
       await screen.findByText("Comece pelo primeiro plantio"),
     ).toBeInTheDocument();
+  });
+
+  it("cadastra um plantio com área prevista e sem hectares executados", async () => {
+    api.createPlanting.mockResolvedValue({
+      ...activePlanting,
+      plantedAreaHectares: 0,
+      remainingAreaHectares: 20,
+      plantedPercentage: 0,
+    });
+
+    render(<PlantingsPage />);
+
+    expect(await screen.findByText("Trigo")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Novo plantio" }));
+
+    fireEvent.change(screen.getByLabelText("Cultura"), {
+      target: { value: "Soja" },
+    });
+    fireEvent.change(screen.getByLabelText("Safra"), {
+      target: { value: "2026/2027" },
+    });
+    fireEvent.change(screen.getByLabelText("Talhão ou área"), {
+      target: { value: "Talhão 3" },
+    });
+    fireEvent.change(screen.getByLabelText("Área total prevista (ha)"), {
+      target: { value: "30" },
+    });
+    fireEvent.change(screen.getByLabelText("Variedade da semente"), {
+      target: { value: "BRS 284" },
+    });
+    fireEvent.change(screen.getByLabelText("Quantidade de sementes"), {
+      target: { value: "1500" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cadastrar plantio" }));
+
+    await waitFor(() =>
+      expect(api.createPlanting).toHaveBeenCalledWith(
+        expect.objectContaining({
+          crop: "Soja",
+          harvest: "2026/2027",
+          fieldName: "Talhão 3",
+          plannedAreaHectares: 30,
+        }),
+      ),
+    );
+    expect(api.createPlanting.mock.calls[0][0]).not.toHaveProperty(
+      "plantedAreaHectares",
+    );
   });
 });

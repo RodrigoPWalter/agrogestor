@@ -102,6 +102,24 @@ export const api = {
     request(`/api/v1/plantings/${id}/finish`, { method: "PATCH" }),
   reactivatePlanting: (id) =>
     request(`/api/v1/plantings/${id}/reactivate`, { method: "PATCH" }),
+  getPlantingSteps: (plantingId) =>
+    request(`/api/v1/plantings/${plantingId}/steps`),
+  createPlantingStep: (plantingId, data) =>
+    request(`/api/v1/plantings/${plantingId}/steps`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updatePlantingStep: (plantingId, stepId, data) =>
+    request(`/api/v1/plantings/${plantingId}/steps/${stepId}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  deletePlantingStep: (plantingId, stepId) =>
+    request(`/api/v1/plantings/${plantingId}/steps/${stepId}`, {
+      method: "DELETE",
+    }),
   getSeasonClosing: (id, salePricePerUnit) => {
     const query =
       salePricePerUnit && Number(salePricePerUnit) > 0
