@@ -37,6 +37,9 @@ public class Planting {
     @Column(name = "planned_area_hectares", nullable = false, precision = 12, scale = 2)
     private BigDecimal plannedAreaHectares;
 
+    @Column(name = "row_spacing_centimeters", precision = 6, scale = 2)
+    private BigDecimal rowSpacingCentimeters;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -70,6 +73,7 @@ public class Planting {
             String harvest,
             String fieldName,
             BigDecimal plannedAreaHectares,
+            BigDecimal rowSpacingCentimeters,
             LocalDate startDate,
             String seedVariety,
             BigDecimal seedQuantity,
@@ -80,6 +84,30 @@ public class Planting {
                 harvest,
                 fieldName,
                 plannedAreaHectares,
+                rowSpacingCentimeters,
+                startDate,
+                seedVariety,
+                seedQuantity,
+                observations
+        );
+    }
+
+    public Planting(
+            String crop,
+            String harvest,
+            String fieldName,
+            BigDecimal plannedAreaHectares,
+            LocalDate startDate,
+            String seedVariety,
+            BigDecimal seedQuantity,
+            String observations
+    ) {
+        this(
+                crop,
+                harvest,
+                fieldName,
+                plannedAreaHectares,
+                null,
                 startDate,
                 seedVariety,
                 seedQuantity,
@@ -101,6 +129,7 @@ public class Planting {
                 harvest,
                 null,
                 plannedAreaHectares,
+                null,
                 startDate,
                 seedVariety,
                 seedQuantity,
@@ -113,6 +142,7 @@ public class Planting {
             String harvest,
             String fieldName,
             BigDecimal plannedAreaHectares,
+            BigDecimal rowSpacingCentimeters,
             LocalDate startDate,
             String seedVariety,
             BigDecimal seedQuantity,
@@ -122,6 +152,7 @@ public class Planting {
         this.harvest = harvest;
         this.fieldName = fieldName;
         this.plannedAreaHectares = plannedAreaHectares;
+        this.rowSpacingCentimeters = rowSpacingCentimeters;
         this.startDate = startDate;
         this.seedVariety = seedVariety;
         this.seedQuantity = seedQuantity;
@@ -174,6 +205,10 @@ public class Planting {
 
     public BigDecimal getPlannedAreaHectares() {
         return plannedAreaHectares;
+    }
+
+    public BigDecimal getRowSpacingCentimeters() {
+        return rowSpacingCentimeters;
     }
 
     public LocalDate getStartDate() {

@@ -40,6 +40,17 @@ class PlantingRequestValidationTest {
                 .contains("harvest");
     }
 
+    @Test
+    void shouldValidateOptionalRowSpacing() {
+        assertThat(validator.validate(requestWithRowSpacing("70"))).isEmpty();
+        assertThat(validator.validate(requestWithRowSpacing("0")))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .contains("rowSpacingCentimeters");
+        assertThat(validator.validate(requestWithRowSpacing("1000.01")))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .contains("rowSpacingCentimeters");
+    }
+
     private PlantingRequest validRequest(String harvest) {
         return new PlantingRequest(
                 "Trigo",
@@ -48,6 +59,20 @@ class PlantingRequestValidationTest {
                 LocalDate.of(2026, 7, 2),
                 "Brava",
                 new BigDecimal("200"),
+                null
+        );
+    }
+
+    private PlantingRequest requestWithRowSpacing(String value) {
+        return new PlantingRequest(
+                "Milho",
+                "2026",
+                "Talhão 1",
+                new BigDecimal("12.00"),
+                new BigDecimal(value),
+                LocalDate.of(2026, 7, 30),
+                "AG 8700",
+                new BigDecimal("10"),
                 null
         );
     }

@@ -13,6 +13,7 @@ public record PlantingResponse(
         String harvest,
         String fieldName,
         BigDecimal plannedAreaHectares,
+        BigDecimal rowSpacingCentimeters,
         BigDecimal plantedAreaHectares,
         BigDecimal remainingAreaHectares,
         BigDecimal plantedPercentage,

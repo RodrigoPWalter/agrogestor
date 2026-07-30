@@ -1,6 +1,7 @@
 package br.com.agrogestor.planting.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -32,6 +33,21 @@ public record PlantingRequest(
         @Digits(integer = 10, fraction = 2, message = "A área aceita até 10 inteiros e 2 decimais")
         BigDecimal plannedAreaHectares,
 
+        @DecimalMin(
+                value = "0.01",
+                message = "A distância entre linhas deve ser maior que zero"
+        )
+        @DecimalMax(
+                value = "1000",
+                message = "A distância entre linhas deve ser de no máximo 1000 cm"
+        )
+        @Digits(
+                integer = 4,
+                fraction = 2,
+                message = "A distância entre linhas aceita até 2 casas decimais"
+        )
+        BigDecimal rowSpacingCentimeters,
+
         @JsonAlias("plantingDate")
         @NotNull(message = "A data de início é obrigatória")
         LocalDate startDate,
@@ -62,6 +78,7 @@ public record PlantingRequest(
                 harvest,
                 null,
                 plannedAreaHectares,
+                null,
                 startDate,
                 seedVariety,
                 seedQuantity,

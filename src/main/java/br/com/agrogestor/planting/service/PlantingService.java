@@ -62,6 +62,7 @@ public class PlantingService {
                 request.harvest().trim(),
                 normalizeNullable(request.fieldName()),
                 request.plannedAreaHectares(),
+                scaleNullable(request.rowSpacingCentimeters(), 2),
                 request.startDate(),
                 normalize(request.seedVariety()),
                 request.seedQuantity(),
@@ -135,6 +136,7 @@ public class PlantingService {
                 request.harvest().trim(),
                 normalizeNullable(request.fieldName()),
                 request.plannedAreaHectares(),
+                scaleNullable(request.rowSpacingCentimeters(), 2),
                 request.startDate(),
                 normalize(request.seedVariety()),
                 request.seedQuantity(),
@@ -245,6 +247,7 @@ public class PlantingService {
                 planting.getHarvest(),
                 planting.getFieldName(),
                 area(plannedArea),
+                planting.getRowSpacingCentimeters(),
                 normalizedPlantedArea,
                 remainingArea,
                 plantedPercentage,
@@ -344,6 +347,10 @@ public class PlantingService {
         return value == null
                 ? BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
                 : value.setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal scaleNullable(BigDecimal value, int scale) {
+        return value == null ? null : value.setScale(scale, RoundingMode.HALF_UP);
     }
 
     private String normalize(String value) {

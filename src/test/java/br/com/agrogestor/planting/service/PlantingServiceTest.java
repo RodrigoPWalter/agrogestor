@@ -86,6 +86,28 @@ class PlantingServiceTest {
     }
 
     @Test
+    void shouldStoreRowSpacingInCentimeters() {
+        PlantingRequest request = new PlantingRequest(
+                "Milho",
+                "2026",
+                "Talhão 1",
+                new BigDecimal("12.00"),
+                new BigDecimal("70"),
+                LocalDate.of(2026, 7, 30),
+                "AG 8700",
+                new BigDecimal("10.000"),
+                null
+        );
+        when(repository.save(any(Planting.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.create(request);
+
+        assertThat(response.rowSpacingCentimeters())
+                .isEqualByComparingTo("70.00");
+    }
+
+    @Test
     void shouldFilterListByHarvest() {
         Planting planting = planting();
         when(repository.findByHarvestIgnoreCase(any(), any(Pageable.class)))
