@@ -25,7 +25,9 @@ Armazena nome, e-mail normalizado, hash da senha e perfil de acesso. O e-mail po
 
 ### `plantings`
 
-Guarda cultura, safra, talhão, área total prevista, data de início, variedade da semente, quantidade de sementes e status. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
+Guarda cultura, safra, talhão, área total prevista, distância entre linhas em centímetros, data de início, variedade da semente, quantidade de sementes e status. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
+
+A distância entre linhas é opcional para preservar os cadastros anteriores e atender culturas com diferentes configurações de semeadura.
 
 O campo de status separa plantios ativos de plantios colhidos, permitindo manter histórico sem apagar dados financeiros ou operacionais.
 
