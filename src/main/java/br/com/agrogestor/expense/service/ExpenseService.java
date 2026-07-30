@@ -125,7 +125,7 @@ public class ExpenseService {
         BigDecimal expensePerHectare = totalExpenses.signum() == 0
                 ? money(BigDecimal.ZERO)
                 : totalExpenses.divide(
-                        planting.getPlantedAreaHectares(),
+                        planting.getPlannedAreaHectares(),
                         MONEY_SCALE,
                         ROUNDING_MODE
                 );
@@ -134,7 +134,7 @@ public class ExpenseService {
                 planting.getId(),
                 planting.getCrop(),
                 planting.getHarvest(),
-                planting.getPlantedAreaHectares(),
+                planting.getPlannedAreaHectares(),
                 money(totalExpenses),
                 expensePerHectare,
                 expenseRepository.countByPlantingId(plantingId),

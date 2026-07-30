@@ -1,5 +1,6 @@
 package br.com.agrogestor.planting.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
@@ -22,13 +23,18 @@ public record PlantingRequest(
         )
         String harvest,
 
-        @NotNull(message = "A área plantada é obrigatória")
-        @DecimalMin(value = "0.01", message = "A área plantada deve ser maior que zero")
-        @Digits(integer = 10, fraction = 2, message = "A área aceita até 10 inteiros e 2 decimais")
-        BigDecimal plantedAreaHectares,
+        @Size(max = 120, message = "O talhão ou área deve ter no máximo 120 caracteres")
+        String fieldName,
 
-        @NotNull(message = "A data de plantio é obrigatória")
-        LocalDate plantingDate,
+        @JsonAlias("plantedAreaHectares")
+        @NotNull(message = "A área total prevista é obrigatória")
+        @DecimalMin(value = "0.01", message = "A área total prevista deve ser maior que zero")
+        @Digits(integer = 10, fraction = 2, message = "A área aceita até 10 inteiros e 2 decimais")
+        BigDecimal plannedAreaHectares,
+
+        @JsonAlias("plantingDate")
+        @NotNull(message = "A data de início é obrigatória")
+        LocalDate startDate,
 
         @NotBlank(message = "A variedade da semente é obrigatória")
         @Size(max = 120, message = "A variedade deve ter no máximo 120 caracteres")
@@ -42,4 +48,24 @@ public record PlantingRequest(
         @Size(max = 1000, message = "As observações devem ter no máximo 1000 caracteres")
         String observations
 ) {
+    public PlantingRequest(
+            String crop,
+            String harvest,
+            BigDecimal plannedAreaHectares,
+            LocalDate startDate,
+            String seedVariety,
+            BigDecimal seedQuantity,
+            String observations
+    ) {
+        this(
+                crop,
+                harvest,
+                null,
+                plannedAreaHectares,
+                startDate,
+                seedVariety,
+                seedQuantity,
+                observations
+        );
+    }
 }

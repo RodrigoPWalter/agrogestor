@@ -8,7 +8,10 @@ import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.repository.PlantingRepository;
+import br.com.agrogestor.planting.repository.PlantingStepRepository;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,11 +49,23 @@ class PlantingServiceTest {
     @Mock
     private FieldDiaryRepository diaryRepository;
 
+    @Mock
+    private PlantingStepRepository stepRepository;
+
     private PlantingService service;
 
     @BeforeEach
     void setUp() {
-        service = new PlantingService(repository, expenseRepository, diaryRepository);
+        lenient().when(stepRepository.sumAreaByPlantingId(any()))
+                .thenReturn(BigDecimal.ZERO);
+        lenient().when(stepRepository.sumAreasByPlantingIds(any()))
+                .thenReturn(List.of());
+        service = new PlantingService(
+                repository,
+                expenseRepository,
+                diaryRepository,
+                stepRepository
+        );
     }
 
     @Test
@@ -64,6 +80,9 @@ class PlantingServiceTest {
         assertThat(captor.getValue().getCrop()).isEqualTo("Soja precoce");
         assertThat(response.crop()).isEqualTo("Soja precoce");
         assertThat(response.observations()).isEqualTo("Talhão norte");
+        assertThat(response.plantedAreaHectares()).isEqualByComparingTo("0.00");
+        assertThat(response.plantingProgressStatus())
+                .isEqualTo(PlantingProgressStatus.NOT_STARTED);
     }
 
     @Test
@@ -106,6 +125,43 @@ class PlantingServiceTest {
 
         assertThat(response.crop()).isEqualTo("Milho");
         assertThat(response.observations()).isNull();
+    }
+
+    @Test
+    void shouldRejectPlannedAreaBelowAlreadyPlantedArea() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(stepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("20.00"));
+
+        PlantingRequest request = new PlantingRequest(
+                "Milho",
+                "2026/2027",
+                new BigDecimal("18.50"),
+                LocalDate.of(2026, 10, 15),
+                "BRS 284",
+                new BigDecimal("925.000"),
+                null
+        );
+
+        assertThatThrownBy(() -> service.update(id, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("20 hectares já plantados");
+    }
+
+    @Test
+    void shouldMarkProgressAsCompletedWhenPlantedAreaReachesPlan() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(stepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("18.50"));
+
+        var response = service.findById(id);
+
+        assertThat(response.plantedPercentage()).isEqualByComparingTo("100.00");
+        assertThat(response.remainingAreaHectares()).isEqualByComparingTo("0.00");
+        assertThat(response.plantingProgressStatus())
+                .isEqualTo(PlantingProgressStatus.COMPLETED);
     }
 
     @Test

@@ -8,7 +8,7 @@ public record PlantingExpenseSummaryResponse(
         UUID plantingId,
         String crop,
         String harvest,
-        BigDecimal plantedAreaHectares,
+        BigDecimal plannedAreaHectares,
         BigDecimal totalExpenses,
         BigDecimal expensePerHectare,
         long expenseCount,

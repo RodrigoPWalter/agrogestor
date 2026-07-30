@@ -31,11 +31,14 @@ public class Planting {
     @Column(nullable = false, length = 9)
     private String harvest;
 
-    @Column(name = "planted_area_hectares", nullable = false, precision = 12, scale = 2)
-    private BigDecimal plantedAreaHectares;
+    @Column(name = "field_name", length = 120)
+    private String fieldName;
 
-    @Column(name = "planting_date", nullable = false)
-    private LocalDate plantingDate;
+    @Column(name = "planned_area_hectares", nullable = false, precision = 12, scale = 2)
+    private BigDecimal plannedAreaHectares;
+
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
 
     @Column(name = "seed_variety", nullable = false, length = 120)
     private String seedVariety;
@@ -65,28 +68,61 @@ public class Planting {
     public Planting(
             String crop,
             String harvest,
-            BigDecimal plantedAreaHectares,
-            LocalDate plantingDate,
+            String fieldName,
+            BigDecimal plannedAreaHectares,
+            LocalDate startDate,
             String seedVariety,
             BigDecimal seedQuantity,
             String observations
     ) {
-        update(crop, harvest, plantedAreaHectares, plantingDate, seedVariety, seedQuantity, observations);
+        update(
+                crop,
+                harvest,
+                fieldName,
+                plannedAreaHectares,
+                startDate,
+                seedVariety,
+                seedQuantity,
+                observations
+        );
+    }
+
+    public Planting(
+            String crop,
+            String harvest,
+            BigDecimal plannedAreaHectares,
+            LocalDate startDate,
+            String seedVariety,
+            BigDecimal seedQuantity,
+            String observations
+    ) {
+        this(
+                crop,
+                harvest,
+                null,
+                plannedAreaHectares,
+                startDate,
+                seedVariety,
+                seedQuantity,
+                observations
+        );
     }
 
     public void update(
             String crop,
             String harvest,
-            BigDecimal plantedAreaHectares,
-            LocalDate plantingDate,
+            String fieldName,
+            BigDecimal plannedAreaHectares,
+            LocalDate startDate,
             String seedVariety,
             BigDecimal seedQuantity,
             String observations
     ) {
         this.crop = crop;
         this.harvest = harvest;
-        this.plantedAreaHectares = plantedAreaHectares;
-        this.plantingDate = plantingDate;
+        this.fieldName = fieldName;
+        this.plannedAreaHectares = plannedAreaHectares;
+        this.startDate = startDate;
         this.seedVariety = seedVariety;
         this.seedQuantity = seedQuantity;
         this.observations = observations;
@@ -132,12 +168,16 @@ public class Planting {
         return harvest;
     }
 
-    public BigDecimal getPlantedAreaHectares() {
-        return plantedAreaHectares;
+    public String getFieldName() {
+        return fieldName;
     }
 
-    public LocalDate getPlantingDate() {
-        return plantingDate;
+    public BigDecimal getPlannedAreaHectares() {
+        return plannedAreaHectares;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
     public String getSeedVariety() {
