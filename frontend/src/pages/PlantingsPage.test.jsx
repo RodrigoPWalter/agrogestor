@@ -22,6 +22,7 @@ const activePlanting = {
   harvest: "2026",
   fieldName: "Talhão norte",
   plannedAreaHectares: 20,
+  rowSpacingCentimeters: 70,
   plantedAreaHectares: 20,
   remainingAreaHectares: 0,
   plantedPercentage: 100,
@@ -134,6 +135,12 @@ describe("PlantingsPage", () => {
     fireEvent.change(screen.getByLabelText("Área total prevista (ha)"), {
       target: { value: "30" },
     });
+    fireEvent.change(
+      screen.getByLabelText("Distância entre linhas (cm) (opcional)"),
+      {
+        target: { value: "70" },
+      },
+    );
     fireEvent.change(screen.getByLabelText("Variedade da semente"), {
       target: { value: "BRS 284" },
     });
@@ -149,6 +156,7 @@ describe("PlantingsPage", () => {
           harvest: "2026/2027",
           fieldName: "Talhão 3",
           plannedAreaHectares: 30,
+          rowSpacingCentimeters: 70,
         }),
       ),
     );

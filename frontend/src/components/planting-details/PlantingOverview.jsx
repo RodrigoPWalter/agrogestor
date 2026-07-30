@@ -23,6 +23,14 @@ export function PlantingOverview({ planting, summary, expenseCount }) {
             <strong>{planting.seedVariety}</strong>
           </div>
           <div>
+            <span>Distância entre linhas</span>
+            <strong>
+              {planting.rowSpacingCentimeters != null
+                ? `${formatNumber(planting.rowSpacingCentimeters)} cm`
+                : "Não informado"}
+            </strong>
+          </div>
+          <div>
             <span>Início do ciclo</span>
             <strong>{formatDate(planting.startDate)}</strong>
           </div>

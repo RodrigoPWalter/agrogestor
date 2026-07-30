@@ -25,6 +25,7 @@ const planting = {
   harvest: "2026",
   fieldName: "Talhão norte",
   plannedAreaHectares: 20,
+  rowSpacingCentimeters: 70,
   plantedAreaHectares: 0,
   remainingAreaHectares: 20,
   plantedPercentage: 0,
@@ -83,6 +84,7 @@ describe("PlantingDetailsModal", () => {
       await screen.findByRole("heading", { name: "Resumo financeiro" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Fechamento de safra")).toBeInTheDocument();
+    expect(screen.getByText("70 cm")).toBeInTheDocument();
     expect(screen.getByText("Progresso do plantio")).toBeInTheDocument();
     expect(
       screen.getByText(/A semeadura ainda não começou/),

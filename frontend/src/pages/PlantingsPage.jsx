@@ -20,6 +20,7 @@ const emptyForm = {
   harvest: "",
   fieldName: "",
   plannedAreaHectares: "",
+  rowSpacingCentimeters: "",
   startDate: toInputDate(),
   seedVariety: "",
   seedQuantity: "",
@@ -90,6 +91,7 @@ export function PlantingsPage() {
       harvest: planting.harvest,
       fieldName: planting.fieldName || "",
       plannedAreaHectares: planting.plannedAreaHectares,
+      rowSpacingCentimeters: planting.rowSpacingCentimeters ?? "",
       startDate: planting.startDate,
       seedVariety: planting.seedVariety,
       seedQuantity: planting.seedQuantity,
@@ -107,6 +109,9 @@ export function PlantingsPage() {
       ...form,
       fieldName: form.fieldName || null,
       plannedAreaHectares: Number(form.plannedAreaHectares),
+      rowSpacingCentimeters: form.rowSpacingCentimeters
+        ? Number(form.rowSpacingCentimeters)
+        : null,
       seedQuantity: Number(form.seedQuantity),
       observations: form.observations || null,
     };

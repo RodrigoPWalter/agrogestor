@@ -94,6 +94,12 @@ export function PlantingList({
                 <dd>{planting.fieldName}</dd>
               </div>
             )}
+            {planting.rowSpacingCentimeters != null && (
+              <div>
+                <dt>Entre linhas</dt>
+                <dd>{formatNumber(planting.rowSpacingCentimeters)} cm</dd>
+              </div>
+            )}
             <div>
               <dt>Variedade</dt>
               <dd>{planting.seedVariety}</dd>

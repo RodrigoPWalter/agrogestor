@@ -74,6 +74,23 @@ export function PlantingFormModal({
             />
           </label>
           <label>
+            <span>
+              Distância entre linhas (cm) <small>(opcional)</small>
+            </span>
+            <input
+              type="number"
+              min="0.01"
+              max="1000"
+              step="0.01"
+              inputMode="decimal"
+              value={form.rowSpacingCentimeters}
+              onChange={(event) =>
+                update("rowSpacingCentimeters", event.target.value)
+              }
+              placeholder="Ex.: 70"
+            />
+          </label>
+          <label>
             <span>Variedade da semente</span>
             <input
               required
