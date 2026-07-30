@@ -7,7 +7,9 @@ Este arquivo resume o banco atual do AgroGestor. As migrations em `src/main/reso
 ```mermaid
 erDiagram
     PLANTINGS ||--o{ EXPENSES : recebe
+    PLANTINGS ||--o{ PLANTING_STEPS : executado_em
     PLANTINGS ||--o{ FIELD_DIARY_ENTRIES : pode_referenciar
+    PLANTING_STEPS o|--o| FIELD_DIARY_ENTRIES : registra
     PLANTINGS ||--o{ RAINFALL_MEASUREMENTS : pode_referenciar
     FIELD_DIARY_ENTRIES ||--o{ FIELD_DIARY_PRODUCTS : registra
     INVENTORY_PRODUCTS ||--o{ FIELD_DIARY_PRODUCTS : utilizado_em
@@ -23,9 +25,15 @@ Armazena nome, e-mail normalizado, hash da senha e perfil de acesso. O e-mail po
 
 ### `plantings`
 
-Guarda cultura, safra, área, data de plantio, variedade da semente, quantidade de sementes e status. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
+Guarda cultura, safra, talhão, área total prevista, data de início, variedade da semente, quantidade de sementes e status. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
 
 O campo de status separa plantios ativos de plantios colhidos, permitindo manter histórico sem apagar dados financeiros ou operacionais.
+
+### `planting_steps`
+
+Registra cada etapa executada da semeadura com data, hectares plantados, horários e observações. A soma das etapas determina a área efetivamente plantada, a área restante e o percentual de progresso, sem encerrar o ciclo da cultura quando atingir 100%.
+
+Cada nova etapa pode manter o identificador do lançamento criado automaticamente no Diário. Esse vínculo permite editar ou excluir o registro relacionado sem gerar duplicidades.
 
 ### `expenses`
 

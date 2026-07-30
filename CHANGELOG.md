@@ -6,6 +6,9 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Plantios agora começam com zero hectares executados e aceitam etapas de semeadura em diferentes dias.
+- Área prevista, área plantada, restante e percentual são recalculados pelo histórico de etapas.
+- Cada etapa de plantio gera um lançamento relacionado no Diário da Lavoura.
 - Correção da paginação no frontend para evitar truncamento silencioso após 100 registros.
 - Cache do Dashboard separado por usuário e limpo no logout.
 - Pipeline de CI no GitHub Actions para testes e build.

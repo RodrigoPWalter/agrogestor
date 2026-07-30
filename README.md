@@ -23,7 +23,8 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 ## Funcionalidades principais
 
 - **Autenticação com JWT:** Login protegido, sessão no frontend e envio automático do token nas requisições privadas.
-- **Controle de Plantios:** Cadastro de culturas, safras, área plantada, variedade, data de plantio e status da safra.
+- **Controle de Plantios:** Cadastro antecipado da safra com área prevista, talhão, variedade e custos desde a preparação do campo.
+- **Progresso da Semeadura:** Registro dos hectares executados em vários dias, com área restante, percentual, histórico editável e lançamento automático no Diário.
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
 - **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
 - **Gestão de Gastos:** Lançamento de despesas por plantio, cálculo de totais e visão consolidada dos custos.
@@ -93,6 +94,7 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | ----------------- | ---------------------------- |
 | Autenticação      | `/api/v1/auth`               |
 | Plantios          | `/api/v1/plantings`          |
+| Etapas de plantio | `/api/v1/plantings/{id}/steps` |
 | Gastos            | `/api/v1/expenses`           |
 | Estoque           | `/api/v1/inventory/products` |
 | Máquinas          | `/api/v1/machines`           |
