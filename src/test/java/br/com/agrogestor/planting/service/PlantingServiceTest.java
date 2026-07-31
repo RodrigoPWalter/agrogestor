@@ -8,8 +8,10 @@ import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.HarvestProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
+import br.com.agrogestor.planting.repository.HarvestStepRepository;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
@@ -53,6 +55,9 @@ class PlantingServiceTest {
     @Mock
     private PlantingStepRepository stepRepository;
 
+    @Mock
+    private HarvestStepRepository harvestStepRepository;
+
     private PlantingService service;
 
     @BeforeEach
@@ -61,11 +66,19 @@ class PlantingServiceTest {
                 .thenReturn(BigDecimal.ZERO);
         lenient().when(stepRepository.sumAreasByPlantingIds(any()))
                 .thenReturn(List.of());
+        lenient().when(harvestStepRepository.sumAreaByPlantingId(any()))
+                .thenReturn(BigDecimal.ZERO);
+        lenient().when(harvestStepRepository.sumAreasByPlantingIds(any()))
+                .thenReturn(List.of());
+        lenient().when(harvestStepRepository
+                        .findByPlantingIdOrderByHarvestDateAscCreatedAtAsc(any()))
+                .thenReturn(List.of());
         service = new PlantingService(
                 repository,
                 expenseRepository,
                 diaryRepository,
-                stepRepository
+                stepRepository,
+                harvestStepRepository
         );
     }
 
@@ -88,6 +101,8 @@ class PlantingServiceTest {
         assertThat(response.plantedAreaHectares()).isEqualByComparingTo("0.00");
         assertThat(response.plantingProgressStatus())
                 .isEqualTo(PlantingProgressStatus.NOT_STARTED);
+        assertThat(response.harvestProgressStatus())
+                .isEqualTo(HarvestProgressStatus.NOT_STARTED);
     }
 
     @Test
@@ -237,6 +252,36 @@ class PlantingServiceTest {
     }
 
     @Test
+    void shouldRejectFinishingBeforeAllPlantedAreaIsHarvested() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(planting()));
+        when(stepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("18.50"));
+        when(harvestStepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("10.00"));
+
+        assertThatThrownBy(() -> service.finish(id))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("8,5 hectares para colher");
+    }
+
+    @Test
+    void shouldFinishAfterAllPlantedAreaIsHarvested() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(planting()));
+        when(stepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("18.50"));
+        when(harvestStepRepository.sumAreaByPlantingId(id))
+                .thenReturn(new BigDecimal("18.50"));
+
+        var response = service.finish(id);
+
+        assertThat(response.status()).isEqualTo(PlantingStatus.HARVESTED);
+        assertThat(response.harvestProgressStatus())
+                .isEqualTo(HarvestProgressStatus.COMPLETED);
+    }
+
+    @Test
     void shouldBuildSeasonClosingWithRevenueEstimate() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.of(planting()));
@@ -253,6 +298,7 @@ class PlantingServiceTest {
         assertThat(closing.totalExpenses()).isEqualByComparingTo("5000.00");
         assertThat(closing.expensePerHectare()).isEqualByComparingTo("270.27");
         assertThat(closing.mainHarvestQuantity()).isEqualByComparingTo("120.000");
+        assertThat(closing.mainHarvestUnit()).isEqualTo("sacas de 60 kg");
         assertThat(closing.estimatedRevenue()).isEqualByComparingTo("8400.00");
         assertThat(closing.estimatedResult()).isEqualByComparingTo("3400.00");
         assertThat(closing.expensesByCategory()).hasSize(2);

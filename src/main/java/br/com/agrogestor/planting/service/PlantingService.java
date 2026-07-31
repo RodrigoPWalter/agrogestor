@@ -10,10 +10,14 @@ import br.com.agrogestor.planting.dto.HarvestTotalResponse;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
 import br.com.agrogestor.planting.dto.SeasonClosingResponse;
+import br.com.agrogestor.planting.entity.HarvestProgressStatus;
+import br.com.agrogestor.planting.entity.HarvestStep;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
+import br.com.agrogestor.planting.repository.HarvestAreaTotalProjection;
+import br.com.agrogestor.planting.repository.HarvestStepRepository;
 import br.com.agrogestor.planting.repository.PlantingAreaTotalProjection;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
@@ -30,8 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.UUID;
@@ -43,17 +49,20 @@ public class PlantingService {
     private final ExpenseRepository expenseRepository;
     private final FieldDiaryRepository diaryRepository;
     private final PlantingStepRepository stepRepository;
+    private final HarvestStepRepository harvestStepRepository;
 
     public PlantingService(
             PlantingRepository repository,
             ExpenseRepository expenseRepository,
             FieldDiaryRepository diaryRepository,
-            PlantingStepRepository stepRepository
+            PlantingStepRepository stepRepository,
+            HarvestStepRepository harvestStepRepository
     ) {
         this.repository = repository;
         this.expenseRepository = expenseRepository;
         this.diaryRepository = diaryRepository;
         this.stepRepository = stepRepository;
+        this.harvestStepRepository = harvestStepRepository;
     }
 
     @Transactional
@@ -70,7 +79,11 @@ public class PlantingService {
                 request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
-        return toResponse(repository.save(planting), BigDecimal.ZERO);
+        return toResponse(
+                repository.save(planting),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
+        );
     }
 
     @Transactional(readOnly = true)
@@ -101,16 +114,18 @@ public class PlantingService {
         }
 
         Map<UUID, BigDecimal> plantedAreas = plantedAreas(result.getContent());
+        Map<UUID, BigDecimal> harvestedAreas = harvestedAreas(result.getContent());
         return PageResponse.from(result.map(planting ->
                 toResponse(
                         planting,
-                        plantedAreas.getOrDefault(planting.getId(), BigDecimal.ZERO)
+                        plantedAreas.getOrDefault(planting.getId(), BigDecimal.ZERO),
+                        harvestedAreas.getOrDefault(planting.getId(), BigDecimal.ZERO)
                 )));
     }
 
     @Transactional(readOnly = true)
     public PlantingResponse findById(UUID id) {
-        return toResponse(findEntity(id), plantedArea(id));
+        return toResponse(findEntity(id), plantedArea(id), harvestedArea(id));
     }
 
     @Transactional
@@ -145,7 +160,7 @@ public class PlantingService {
                 request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
-        return toResponse(planting, plantedArea);
+        return toResponse(planting, plantedArea, harvestedArea(id));
     }
 
     @Transactional
@@ -156,16 +171,31 @@ public class PlantingService {
 
     @Transactional
     public PlantingResponse finish(UUID id) {
-        Planting planting = findEntity(id);
+        Planting planting = findEntityForUpdate(id);
+        BigDecimal plantedArea = plantedArea(id);
+        BigDecimal harvestedArea = harvestedArea(id);
+        if (plantedArea.signum() == 0) {
+            throw new BusinessRuleException(
+                    "Não é possível finalizar uma safra sem hectares plantados"
+            );
+        }
+        if (harvestedArea.compareTo(plantedArea) < 0) {
+            BigDecimal remainingArea = plantedArea.subtract(harvestedArea);
+            throw new BusinessRuleException(
+                    "Ainda restam "
+                            + displayArea(remainingArea)
+                            + " hectares para colher antes de finalizar a safra"
+            );
+        }
         planting.finish();
-        return toResponse(planting, plantedArea(id));
+        return toResponse(planting, plantedArea, harvestedArea);
     }
 
     @Transactional
     public PlantingResponse reactivate(UUID id) {
         Planting planting = findEntity(id);
         planting.reactivate();
-        return toResponse(planting, plantedArea(id));
+        return toResponse(planting, plantedArea(id), harvestedArea(id));
     }
 
     @Transactional(readOnly = true)
@@ -232,7 +262,18 @@ public class PlantingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
     }
 
-    private PlantingResponse toResponse(Planting planting, BigDecimal plantedArea) {
+    private Planting findEntityForUpdate(UUID id) {
+        return repository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Plantio não encontrado com o ID " + id
+                ));
+    }
+
+    private PlantingResponse toResponse(
+            Planting planting,
+            BigDecimal plantedArea,
+            BigDecimal harvestedArea
+    ) {
         BigDecimal plannedArea = planting.getPlannedAreaHectares();
         BigDecimal normalizedPlantedArea = area(plantedArea);
         BigDecimal remainingArea = area(
@@ -242,6 +283,20 @@ public class PlantingService {
         PlantingProgressStatus progressStatus = progressStatus(
                 normalizedPlantedArea,
                 plannedArea
+        );
+        BigDecimal normalizedHarvestedArea = area(harvestedArea);
+        BigDecimal harvestRemainingArea = area(
+                normalizedPlantedArea
+                        .subtract(normalizedHarvestedArea)
+                        .max(BigDecimal.ZERO)
+        );
+        BigDecimal harvestedPercentage = percentage(
+                normalizedHarvestedArea,
+                normalizedPlantedArea
+        );
+        HarvestProgressStatus harvestProgressStatus = harvestProgressStatus(
+                normalizedHarvestedArea,
+                normalizedPlantedArea
         );
 
         return new PlantingResponse(
@@ -256,6 +311,11 @@ public class PlantingService {
                 plantedPercentage,
                 progressStatus,
                 progressStatus.getDisplayName(),
+                normalizedHarvestedArea,
+                harvestRemainingArea,
+                harvestedPercentage,
+                harvestProgressStatus,
+                harvestProgressStatus.getDisplayName(),
                 planting.getStartDate(),
                 planting.getSeedVariety(),
                 planting.getSeedRate(),
@@ -270,6 +330,21 @@ public class PlantingService {
                 planting.getCreatedAt(),
                 planting.getUpdatedAt()
         );
+    }
+
+    private Map<UUID, BigDecimal> harvestedAreas(List<Planting> plantings) {
+        if (plantings.isEmpty()) {
+            return Map.of();
+        }
+        return harvestStepRepository
+                .sumAreasByPlantingIds(
+                        plantings.stream().map(Planting::getId).toList()
+                )
+                .stream()
+                .collect(Collectors.toMap(
+                        HarvestAreaTotalProjection::getPlantingId,
+                        HarvestAreaTotalProjection::getHarvestedArea
+                ));
     }
 
     private Map<UUID, BigDecimal> plantedAreas(List<Planting> plantings) {
@@ -292,6 +367,11 @@ public class PlantingService {
         return total == null ? BigDecimal.ZERO : total;
     }
 
+    private BigDecimal harvestedArea(UUID plantingId) {
+        BigDecimal total = harvestStepRepository.sumAreaByPlantingId(plantingId);
+        return total == null ? BigDecimal.ZERO : total;
+    }
+
     private PlantingProgressStatus progressStatus(
             BigDecimal plantedArea,
             BigDecimal plannedArea
@@ -305,15 +385,43 @@ public class PlantingService {
         return PlantingProgressStatus.IN_PROGRESS;
     }
 
+    private HarvestProgressStatus harvestProgressStatus(
+            BigDecimal harvestedArea,
+            BigDecimal plantedArea
+    ) {
+        if (harvestedArea.signum() == 0) {
+            return HarvestProgressStatus.NOT_STARTED;
+        }
+        if (plantedArea.signum() > 0
+                && harvestedArea.compareTo(plantedArea) >= 0) {
+            return HarvestProgressStatus.COMPLETED;
+        }
+        return HarvestProgressStatus.IN_PROGRESS;
+    }
+
     private List<HarvestTotalResponse> harvestTotals(UUID plantingId) {
         Map<String, BigDecimal> totals = new TreeMap<>();
+        List<HarvestStep> harvestSteps = harvestStepRepository
+                .findByPlantingIdOrderByHarvestDateAscCreatedAtAsc(plantingId);
+        Set<UUID> linkedDiaryEntries = harvestSteps.stream()
+                .map(HarvestStep::getDiaryEntryId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        harvestSteps.forEach(step -> totals.merge(
+                "sacas de 60 kg",
+                step.getHarvestUnit()
+                        .toKilograms(step.getHarvestQuantity())
+                        .divide(new BigDecimal("60"), 3, RoundingMode.HALF_UP),
+                BigDecimal::add
+        ));
         diaryRepository.findByPlantingIdAndActivityType(plantingId, ActivityType.HARVEST)
                 .stream()
+                .filter(entry -> !linkedDiaryEntries.contains(entry.getId()))
                 .filter(entry -> entry.getHarvestQuantity() != null)
-                .forEach(entry -> totals.merge(
+                .forEach(entry -> mergeHarvestTotal(
+                        totals,
                         normalizeHarvestUnit(entry),
-                        entry.getHarvestQuantity(),
-                        BigDecimal::add
+                        entry.getHarvestQuantity()
                 ));
 
         return totals.entrySet().stream()
@@ -325,6 +433,31 @@ public class PlantingService {
         return entry.getHarvestUnit() == null || entry.getHarvestUnit().isBlank()
                 ? "un."
                 : entry.getHarvestUnit().trim();
+    }
+
+    private void mergeHarvestTotal(
+            Map<String, BigDecimal> totals,
+            String unit,
+            BigDecimal quantity
+    ) {
+        String normalizedUnit = unit.toLowerCase(Locale.ROOT);
+        BigDecimal bags = null;
+        if (normalizedUnit.contains("saca") || normalizedUnit.equals("sc")) {
+            bags = quantity;
+        } else if (normalizedUnit.equals("kg")
+                || normalizedUnit.contains("quilograma")) {
+            bags = quantity.divide(new BigDecimal("60"), 3, RoundingMode.HALF_UP);
+        } else if (normalizedUnit.equals("t")
+                || normalizedUnit.contains("tonelada")) {
+            bags = quantity.multiply(new BigDecimal("1000"))
+                    .divide(new BigDecimal("60"), 3, RoundingMode.HALF_UP);
+        }
+
+        if (bags == null) {
+            totals.merge(unit, quantity, BigDecimal::add);
+        } else {
+            totals.merge("sacas de 60 kg", bags, BigDecimal::add);
+        }
     }
 
     private BigDecimal expensePerHectare(BigDecimal total, BigDecimal hectares) {

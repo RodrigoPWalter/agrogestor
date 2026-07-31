@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import br.com.agrogestor.planting.entity.HarvestProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
@@ -20,6 +21,11 @@ public record PlantingResponse(
         BigDecimal plantedPercentage,
         PlantingProgressStatus plantingProgressStatus,
         String plantingProgressStatusName,
+        BigDecimal harvestedAreaHectares,
+        BigDecimal harvestRemainingAreaHectares,
+        BigDecimal harvestedPercentage,
+        HarvestProgressStatus harvestProgressStatus,
+        String harvestProgressStatusName,
         LocalDate startDate,
         String seedVariety,
         BigDecimal seedRate,

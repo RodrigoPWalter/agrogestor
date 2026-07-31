@@ -7,6 +7,7 @@ import br.com.agrogestor.planting.dto.PlantingStepRequest;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.entity.PlantingStep;
+import br.com.agrogestor.planting.repository.HarvestStepRepository;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
@@ -43,6 +44,9 @@ class PlantingStepServiceTest {
     @Mock
     private FieldDiaryRepository diaryRepository;
 
+    @Mock
+    private HarvestStepRepository harvestRepository;
+
     private PlantingStepService service;
 
     @BeforeEach
@@ -50,7 +54,8 @@ class PlantingStepServiceTest {
         service = new PlantingStepService(
                 stepRepository,
                 plantingRepository,
-                diaryRepository
+                diaryRepository,
+                harvestRepository
         );
     }
 
@@ -282,6 +287,35 @@ class PlantingStepServiceTest {
         assertThatThrownBy(() -> service.create(plantingId, request("5.00")))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(plantingId.toString());
+    }
+
+    @Test
+    void shouldRejectReducingPlantedAreaBelowHarvestedArea() {
+        UUID plantingId = UUID.randomUUID();
+        UUID stepId = UUID.randomUUID();
+        Planting planting = planting("30.00");
+        PlantingStep step = new PlantingStep(
+                planting,
+                LocalDate.of(2026, 7, 2),
+                new BigDecimal("10.00"),
+                "BRS 284",
+                null,
+                null,
+                null
+        );
+        when(plantingRepository.findByIdForUpdate(plantingId))
+                .thenReturn(Optional.of(planting));
+        when(stepRepository.findByIdAndPlantingId(stepId, plantingId))
+                .thenReturn(Optional.of(step));
+        when(stepRepository.sumAreaByPlantingId(plantingId))
+                .thenReturn(new BigDecimal("15.00"));
+        when(harvestRepository.sumAreaByPlantingId(plantingId))
+                .thenReturn(new BigDecimal("12.00"));
+
+        assertThatThrownBy(() ->
+                service.update(plantingId, stepId, request("5.00")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("12 hectares já colhidos");
     }
 
     private PlantingStepRequest request(String area) {
