@@ -15,6 +15,7 @@ import br.com.agrogestor.inventory.entity.ProductType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
@@ -267,7 +268,8 @@ class FieldDiaryServiceTest {
                 new BigDecimal("18.50"),
                 LocalDate.of(2026, 7, 1),
                 "BRS 284",
-                new BigDecimal("900"),
+                new BigDecimal("50"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 null
         );
     }

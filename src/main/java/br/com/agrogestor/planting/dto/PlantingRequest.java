@@ -1,5 +1,6 @@
 package br.com.agrogestor.planting.dto;
 
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -56,10 +57,14 @@ public record PlantingRequest(
         @Size(max = 120, message = "A variedade deve ter no máximo 120 caracteres")
         String seedVariety,
 
-        @NotNull(message = "A quantidade de sementes é obrigatória")
-        @DecimalMin(value = "0.001", message = "A quantidade de sementes deve ser maior que zero")
-        @Digits(integer = 11, fraction = 3, message = "A quantidade aceita até 11 inteiros e 3 decimais")
-        BigDecimal seedQuantity,
+        @JsonAlias("seedQuantity")
+        @NotNull(message = "A taxa de semeadura é obrigatória")
+        @DecimalMin(value = "0.001", message = "A taxa de semeadura deve ser maior que zero")
+        @Digits(integer = 11, fraction = 3, message = "A taxa aceita até 11 inteiros e 3 decimais")
+        BigDecimal seedRate,
+
+        @NotNull(message = "A unidade da taxa de semeadura é obrigatória")
+        SeedRateUnit seedRateUnit,
 
         @Size(max = 1000, message = "As observações devem ter no máximo 1000 caracteres")
         String observations
@@ -70,7 +75,8 @@ public record PlantingRequest(
             BigDecimal plannedAreaHectares,
             LocalDate startDate,
             String seedVariety,
-            BigDecimal seedQuantity,
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit,
             String observations
     ) {
         this(
@@ -81,7 +87,8 @@ public record PlantingRequest(
                 null,
                 startDate,
                 seedVariety,
-                seedQuantity,
+                seedRate,
+                seedRateUnit,
                 observations
         );
     }

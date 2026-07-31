@@ -30,7 +30,9 @@ const activePlanting = {
   plantingProgressStatusName: "Área totalmente plantada",
   startDate: "2026-07-10",
   seedVariety: "BRS 284",
-  seedQuantity: 900,
+  seedRate: 50,
+  seedRateUnit: "KILOGRAMS_PER_HECTARE",
+  seedRateUnitName: "kg/ha",
   observations: "",
 };
 
@@ -64,6 +66,7 @@ describe("PlantingsPage", () => {
     render(<PlantingsPage />);
 
     expect(await screen.findByText("Trigo")).toBeInTheDocument();
+    expect(screen.getByText("50 kg/ha")).toBeInTheDocument();
     expect(api.getExpenses).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
@@ -144,8 +147,11 @@ describe("PlantingsPage", () => {
     fireEvent.change(screen.getByLabelText("Variedade da semente"), {
       target: { value: "BRS 284" },
     });
-    fireEvent.change(screen.getByLabelText("Quantidade de sementes"), {
-      target: { value: "1500" },
+    fireEvent.change(screen.getByLabelText("Taxa de semeadura"), {
+      target: { value: "60000" },
+    });
+    fireEvent.change(screen.getByLabelText("Unidade da taxa"), {
+      target: { value: "SEEDS_PER_HECTARE" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Cadastrar plantio" }));
 
@@ -157,6 +163,8 @@ describe("PlantingsPage", () => {
           fieldName: "Talhão 3",
           plannedAreaHectares: 30,
           rowSpacingCentimeters: 70,
+          seedRate: 60000,
+          seedRateUnit: "SEEDS_PER_HECTARE",
         }),
       ),
     );

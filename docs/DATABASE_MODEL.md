@@ -25,9 +25,13 @@ Armazena nome, e-mail normalizado, hash da senha e perfil de acesso. O e-mail po
 
 ### `plantings`
 
-Guarda cultura, safra, talhão, área total prevista, distância entre linhas em centímetros, data de início, variedade da semente, quantidade de sementes e status. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
+Guarda cultura, safra, talhão, área total prevista, distância entre linhas em centímetros, data de início, variedade da semente, taxa de semeadura e status. A taxa é registrada por hectare com uma unidade explícita: quilogramas por hectare (`KILOGRAMS_PER_HECTARE`) ou sementes por hectare (`SEEDS_PER_HECTARE`). A medida em quilogramas aceita decimais; a medida em sementes exige um número inteiro. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
 
 A distância entre linhas é opcional para preservar os cadastros anteriores e atender culturas com diferentes configurações de semeadura.
+
+A unidade da taxa de semeadura permanece nula somente nos registros criados antes dessa padronização. Ao editar um desses registros, o usuário deve escolher a unidade correta, pois não é seguro deduzi-la apenas pela cultura ou pelo valor antigo.
+
+A coluna física `seed_quantity` foi mantida por compatibilidade com versões anteriores, mas a aplicação a expõe como `seedRate`, pois o valor representa uma taxa por hectare nos novos cadastros.
 
 O campo de status separa plantios ativos de plantios colhidos, permitindo manter histórico sem apagar dados financeiros ou operacionais.
 

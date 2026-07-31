@@ -23,7 +23,8 @@ const emptyForm = {
   rowSpacingCentimeters: "",
   startDate: toInputDate(),
   seedVariety: "",
-  seedQuantity: "",
+  seedRate: "",
+  seedRateUnit: "",
   observations: "",
 };
 
@@ -94,7 +95,8 @@ export function PlantingsPage() {
       rowSpacingCentimeters: planting.rowSpacingCentimeters ?? "",
       startDate: planting.startDate,
       seedVariety: planting.seedVariety,
-      seedQuantity: planting.seedQuantity,
+      seedRate: planting.seedRate ?? planting.seedQuantity,
+      seedRateUnit: planting.seedRateUnit || "",
       observations: planting.observations || "",
     });
     setModalOpen(true);
@@ -112,7 +114,7 @@ export function PlantingsPage() {
       rowSpacingCentimeters: form.rowSpacingCentimeters
         ? Number(form.rowSpacingCentimeters)
         : null,
-      seedQuantity: Number(form.seedQuantity),
+      seedRate: Number(form.seedRate),
       observations: form.observations || null,
     };
     try {

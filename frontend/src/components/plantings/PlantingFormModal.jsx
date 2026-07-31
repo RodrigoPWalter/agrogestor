@@ -101,16 +101,43 @@ export function PlantingFormModal({
             />
           </label>
           <label>
-            <span>Quantidade de sementes</span>
+            <span>Taxa de semeadura</span>
             <input
               required
               type="number"
-              min="0.001"
-              step="0.001"
-              value={form.seedQuantity}
-              onChange={(event) => update("seedQuantity", event.target.value)}
-              placeholder="925"
+              min={form.seedRateUnit === "SEEDS_PER_HECTARE" ? "1" : "0.001"}
+              step={form.seedRateUnit === "SEEDS_PER_HECTARE" ? "1" : "0.001"}
+              value={form.seedRate}
+              onChange={(event) => update("seedRate", event.target.value)}
+              placeholder={
+                form.seedRateUnit === "SEEDS_PER_HECTARE"
+                  ? "Ex.: 60000"
+                  : "Ex.: 50"
+              }
             />
+          </label>
+          <label>
+            <span>Unidade da taxa</span>
+            <select
+              required
+              aria-label="Unidade da taxa"
+              value={form.seedRateUnit}
+              onChange={(event) => update("seedRateUnit", event.target.value)}
+            >
+              <option value="">Escolha uma unidade</option>
+              <option value="KILOGRAMS_PER_HECTARE">
+                Quilogramas por hectare (kg/ha)
+              </option>
+              <option value="SEEDS_PER_HECTARE">
+                Sementes por hectare (sementes/ha)
+              </option>
+            </select>
+            <span>
+              <small>
+                Use kg/ha para sementes medidas por peso ou sementes/ha quando
+                souber a população desejada.
+              </small>
+            </span>
           </label>
           <label className="form-grid__full">
             <span>

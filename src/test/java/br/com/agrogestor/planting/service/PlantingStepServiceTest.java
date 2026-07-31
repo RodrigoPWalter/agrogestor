@@ -5,6 +5,7 @@ import br.com.agrogestor.diary.entity.FieldDiaryEntry;
 import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.planting.dto.PlantingStepRequest;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.entity.PlantingStep;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
@@ -269,7 +270,8 @@ class PlantingStepServiceTest {
                 new BigDecimal(plannedArea),
                 LocalDate.of(2026, 7, 1),
                 "BRS 284",
-                new BigDecimal("1500.000"),
+                new BigDecimal("50.000"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 null
         );
     }

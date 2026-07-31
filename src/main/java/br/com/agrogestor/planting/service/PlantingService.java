@@ -13,6 +13,7 @@ import br.com.agrogestor.planting.dto.SeasonClosingResponse;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingStatus;
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingAreaTotalProjection;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
@@ -65,7 +66,8 @@ public class PlantingService {
                 scaleNullable(request.rowSpacingCentimeters(), 2),
                 request.startDate(),
                 normalize(request.seedVariety()),
-                request.seedQuantity(),
+                normalizeSeedRate(request.seedRate(), request.seedRateUnit()),
+                request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
         return toResponse(repository.save(planting), BigDecimal.ZERO);
@@ -139,7 +141,8 @@ public class PlantingService {
                 scaleNullable(request.rowSpacingCentimeters(), 2),
                 request.startDate(),
                 normalize(request.seedVariety()),
-                request.seedQuantity(),
+                normalizeSeedRate(request.seedRate(), request.seedRateUnit()),
+                request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
         return toResponse(planting, plantedArea);
@@ -255,7 +258,11 @@ public class PlantingService {
                 progressStatus.getDisplayName(),
                 planting.getStartDate(),
                 planting.getSeedVariety(),
-                planting.getSeedQuantity(),
+                planting.getSeedRate(),
+                planting.getSeedRateUnit(),
+                planting.getSeedRateUnit() == null
+                        ? null
+                        : planting.getSeedRateUnit().getDisplayName(),
                 planting.getObservations(),
                 planting.getStatus(),
                 planting.getStatus().getDisplayName(),
@@ -351,6 +358,19 @@ public class PlantingService {
 
     private BigDecimal scaleNullable(BigDecimal value, int scale) {
         return value == null ? null : value.setScale(scale, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal normalizeSeedRate(
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit
+    ) {
+        if (seedRateUnit == SeedRateUnit.SEEDS_PER_HECTARE
+                && seedRate.stripTrailingZeros().scale() > 0) {
+            throw new BusinessRuleException(
+                    "A taxa em sementes por hectare deve ser um número inteiro"
+            );
+        }
+        return seedRate.setScale(3, RoundingMode.HALF_UP);
     }
 
     private String normalize(String value) {

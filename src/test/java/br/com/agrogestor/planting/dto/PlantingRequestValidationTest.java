@@ -1,5 +1,6 @@
 package br.com.agrogestor.planting.dto;
 
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.AfterAll;
@@ -51,6 +52,26 @@ class PlantingRequestValidationTest {
                 .contains("rowSpacingCentimeters");
     }
 
+    @Test
+    void shouldRequireSeedRateUnit() {
+        PlantingRequest request = new PlantingRequest(
+                "Trigo",
+                "2026",
+                null,
+                new BigDecimal("18.50"),
+                null,
+                LocalDate.of(2026, 7, 2),
+                "Brava",
+                new BigDecimal("120"),
+                null,
+                null
+        );
+
+        assertThat(validator.validate(request))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .contains("seedRateUnit");
+    }
+
     private PlantingRequest validRequest(String harvest) {
         return new PlantingRequest(
                 "Trigo",
@@ -58,7 +79,8 @@ class PlantingRequestValidationTest {
                 new BigDecimal("18.50"),
                 LocalDate.of(2026, 7, 2),
                 "Brava",
-                new BigDecimal("200"),
+                new BigDecimal("120"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 null
         );
     }
@@ -72,7 +94,8 @@ class PlantingRequestValidationTest {
                 new BigDecimal(value),
                 LocalDate.of(2026, 7, 30),
                 "AG 8700",
-                new BigDecimal("10"),
+                new BigDecimal("60000"),
+                SeedRateUnit.SEEDS_PER_HECTARE,
                 null
         );
     }

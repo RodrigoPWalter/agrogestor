@@ -47,7 +47,11 @@ public class Planting {
     private String seedVariety;
 
     @Column(name = "seed_quantity", nullable = false, precision = 14, scale = 3)
-    private BigDecimal seedQuantity;
+    private BigDecimal seedRate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seed_rate_unit", length = 30)
+    private SeedRateUnit seedRateUnit;
 
     @Column(length = 1000)
     private String observations;
@@ -76,7 +80,8 @@ public class Planting {
             BigDecimal rowSpacingCentimeters,
             LocalDate startDate,
             String seedVariety,
-            BigDecimal seedQuantity,
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit,
             String observations
     ) {
         update(
@@ -87,7 +92,8 @@ public class Planting {
                 rowSpacingCentimeters,
                 startDate,
                 seedVariety,
-                seedQuantity,
+                seedRate,
+                seedRateUnit,
                 observations
         );
     }
@@ -99,7 +105,8 @@ public class Planting {
             BigDecimal plannedAreaHectares,
             LocalDate startDate,
             String seedVariety,
-            BigDecimal seedQuantity,
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit,
             String observations
     ) {
         this(
@@ -110,7 +117,8 @@ public class Planting {
                 null,
                 startDate,
                 seedVariety,
-                seedQuantity,
+                seedRate,
+                seedRateUnit,
                 observations
         );
     }
@@ -121,7 +129,8 @@ public class Planting {
             BigDecimal plannedAreaHectares,
             LocalDate startDate,
             String seedVariety,
-            BigDecimal seedQuantity,
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit,
             String observations
     ) {
         this(
@@ -132,7 +141,8 @@ public class Planting {
                 null,
                 startDate,
                 seedVariety,
-                seedQuantity,
+                seedRate,
+                seedRateUnit,
                 observations
         );
     }
@@ -145,7 +155,8 @@ public class Planting {
             BigDecimal rowSpacingCentimeters,
             LocalDate startDate,
             String seedVariety,
-            BigDecimal seedQuantity,
+            BigDecimal seedRate,
+            SeedRateUnit seedRateUnit,
             String observations
     ) {
         this.crop = crop;
@@ -155,7 +166,8 @@ public class Planting {
         this.rowSpacingCentimeters = rowSpacingCentimeters;
         this.startDate = startDate;
         this.seedVariety = seedVariety;
-        this.seedQuantity = seedQuantity;
+        this.seedRate = seedRate;
+        this.seedRateUnit = seedRateUnit;
         this.observations = observations;
     }
 
@@ -219,8 +231,12 @@ public class Planting {
         return seedVariety;
     }
 
-    public BigDecimal getSeedQuantity() {
-        return seedQuantity;
+    public BigDecimal getSeedRate() {
+        return seedRate;
+    }
+
+    public SeedRateUnit getSeedRateUnit() {
+        return seedRateUnit;
     }
 
     public String getObservations() {

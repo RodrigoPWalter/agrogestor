@@ -105,8 +105,11 @@ export function PlantingList({
               <dd>{planting.seedVariety}</dd>
             </div>
             <div>
-              <dt>Sementes</dt>
-              <dd>{formatNumber(planting.seedQuantity, 3)}</dd>
+              <dt>Taxa de semeadura</dt>
+              <dd>
+                {formatNumber(planting.seedRate ?? planting.seedQuantity, 3)}{" "}
+                {planting.seedRateUnitName || "unidade não informada"}
+              </dd>
             </div>
             <div>
               <dt>

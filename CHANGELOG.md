@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Taxa de semeadura por plantio padronizada em `kg/ha` ou `sementes/ha`.
 - Cadastro opcional da distância entre linhas de cada plantio, informada em centímetros.
 - Plantios agora começam com zero hectares executados e aceitam etapas de semeadura em diferentes dias.
 - Área prevista, área plantada, restante e percentual são recalculados pelo histórico de etapas.

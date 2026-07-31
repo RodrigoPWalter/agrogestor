@@ -9,6 +9,7 @@ import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
@@ -80,6 +81,10 @@ class PlantingServiceTest {
         assertThat(captor.getValue().getCrop()).isEqualTo("Soja precoce");
         assertThat(response.crop()).isEqualTo("Soja precoce");
         assertThat(response.observations()).isEqualTo("Talhão norte");
+        assertThat(response.seedRate()).isEqualByComparingTo("50.000");
+        assertThat(response.seedRateUnit())
+                .isEqualTo(SeedRateUnit.KILOGRAMS_PER_HECTARE);
+        assertThat(response.seedRateUnitName()).isEqualTo("kg/ha");
         assertThat(response.plantedAreaHectares()).isEqualByComparingTo("0.00");
         assertThat(response.plantingProgressStatus())
                 .isEqualTo(PlantingProgressStatus.NOT_STARTED);
@@ -96,6 +101,7 @@ class PlantingServiceTest {
                 LocalDate.of(2026, 7, 30),
                 "AG 8700",
                 new BigDecimal("10.000"),
+                SeedRateUnit.SEEDS_PER_HECTARE,
                 null
         );
         when(repository.save(any(Planting.class)))
@@ -105,6 +111,25 @@ class PlantingServiceTest {
 
         assertThat(response.rowSpacingCentimeters())
                 .isEqualByComparingTo("70.00");
+    }
+
+    @Test
+    void shouldRejectFractionalSeedsPerHectare() {
+        PlantingRequest request = new PlantingRequest(
+                "Milho",
+                "2026",
+                new BigDecimal("12.00"),
+                LocalDate.of(2026, 7, 30),
+                "AG 8700",
+                new BigDecimal("60000.500"),
+                SeedRateUnit.SEEDS_PER_HECTARE,
+                null
+        );
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("A taxa em sementes por hectare deve ser um número inteiro");
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -162,7 +187,8 @@ class PlantingServiceTest {
                 new BigDecimal("18.50"),
                 LocalDate.of(2026, 10, 15),
                 "BRS 284",
-                new BigDecimal("925.000"),
+                new BigDecimal("50.000"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 null
         );
 
@@ -239,7 +265,8 @@ class PlantingServiceTest {
                 new BigDecimal("18.50"),
                 LocalDate.of(2026, 10, 15),
                 "BRS 284",
-                new BigDecimal("925.000"),
+                new BigDecimal("50.000"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 observations
         );
     }
@@ -251,7 +278,8 @@ class PlantingServiceTest {
                 new BigDecimal("18.50"),
                 LocalDate.of(2026, 10, 15),
                 "BRS 284",
-                new BigDecimal("925.000"),
+                new BigDecimal("50.000"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 "Talhão norte"
         );
     }

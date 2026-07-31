@@ -6,6 +6,7 @@ import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,7 +123,8 @@ class ExpenseServiceTest {
                 new BigDecimal("100.00"),
                 LocalDate.of(2026, 10, 15),
                 "BRS 284",
-                new BigDecimal("5000.000"),
+                new BigDecimal("50.000"),
+                SeedRateUnit.KILOGRAMS_PER_HECTARE,
                 null
         );
     }
