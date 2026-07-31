@@ -41,16 +41,23 @@ public class PlantingStepService {
     public PlantingStepResponse create(UUID plantingId, PlantingStepRequest request) {
         Planting planting = findPlantingForUpdate(plantingId);
         validateStep(planting, request, totalArea(plantingId), BigDecimal.ZERO);
+        String seedVariety = effectiveSeedVariety(planting, request.seedVariety());
 
         PlantingStep step = stepRepository.save(new PlantingStep(
                 planting,
                 request.stepDate(),
                 area(request.plantedAreaHectares()),
+                seedVariety,
                 request.startTime(),
                 request.endTime(),
                 normalizeNullable(request.observations())
         ));
-        FieldDiaryEntry diaryEntry = saveDiaryEntry(null, planting, request);
+        FieldDiaryEntry diaryEntry = saveDiaryEntry(
+                null,
+                planting,
+                request,
+                seedVariety
+        );
         step.linkDiaryEntry(diaryEntry.getId());
         return toResponse(step);
     }
@@ -79,6 +86,7 @@ public class PlantingStepService {
     ) {
         Planting planting = findPlantingForUpdate(plantingId);
         PlantingStep step = findStep(plantingId, stepId);
+        String seedVariety = effectiveSeedVariety(planting, request.seedVariety());
         validateStep(
                 planting,
                 request,
@@ -89,6 +97,7 @@ public class PlantingStepService {
         step.update(
                 request.stepDate(),
                 area(request.plantedAreaHectares()),
+                seedVariety,
                 request.startTime(),
                 request.endTime(),
                 normalizeNullable(request.observations())
@@ -96,7 +105,8 @@ public class PlantingStepService {
         FieldDiaryEntry diaryEntry = saveDiaryEntry(
                 step.getDiaryEntryId(),
                 planting,
-                request
+                request,
+                seedVariety
         );
         step.linkDiaryEntry(diaryEntry.getId());
         return toResponse(step);
@@ -162,12 +172,17 @@ public class PlantingStepService {
     private FieldDiaryEntry saveDiaryEntry(
             UUID diaryEntryId,
             Planting planting,
-            PlantingStepRequest request
+            PlantingStepRequest request,
+            String seedVariety
     ) {
         FieldDiaryEntry diaryEntry = diaryEntryId == null
                 ? null
                 : diaryRepository.findById(diaryEntryId).orElse(null);
-        String activity = buildDiaryActivity(planting, request.plantedAreaHectares());
+        String activity = buildDiaryActivity(
+                planting,
+                request.plantedAreaHectares(),
+                seedVariety
+        );
         String observations = normalizeNullable(request.observations());
 
         if (diaryEntry == null) {
@@ -194,14 +209,20 @@ public class PlantingStepService {
         return diaryEntry;
     }
 
-    private String buildDiaryActivity(Planting planting, BigDecimal plantedArea) {
+    private String buildDiaryActivity(
+            Planting planting,
+            BigDecimal plantedArea,
+            String seedVariety
+    ) {
         String location = planting.getFieldName() == null
                 ? ""
                 : " em " + planting.getFieldName();
         return "Plantio realizado: "
                 + displayArea(plantedArea)
                 + " hectares plantados"
-                + location;
+                + location
+                + " com a variedade "
+                + normalize(seedVariety);
     }
 
     private Planting findPlanting(UUID plantingId) {
@@ -236,6 +257,9 @@ public class PlantingStepService {
                 step.getPlanting().getId(),
                 step.getStepDate(),
                 step.getPlantedAreaHectares(),
+                step.getSeedVariety() == null
+                        ? step.getPlanting().getSeedVariety()
+                        : step.getSeedVariety(),
                 step.getStartTime(),
                 step.getEndTime(),
                 step.getObservations(),
@@ -255,6 +279,16 @@ public class PlantingStepService {
     private String normalizeNullable(String value) {
         return value == null || value.isBlank()
                 ? null
-                : value.trim().replaceAll("\\s+", " ");
+                : normalize(value);
+    }
+
+    private String normalize(String value) {
+        return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String effectiveSeedVariety(Planting planting, String seedVariety) {
+        return seedVariety == null || seedVariety.isBlank()
+                ? planting.getSeedVariety()
+                : normalize(seedVariety);
     }
 }

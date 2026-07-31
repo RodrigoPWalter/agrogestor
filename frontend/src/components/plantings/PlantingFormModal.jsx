@@ -91,14 +91,21 @@ export function PlantingFormModal({
             />
           </label>
           <label>
-            <span>Variedade da semente</span>
+            <span>Variedade planejada</span>
             <input
               required
+              aria-label="Variedade planejada"
               maxLength="120"
               value={form.seedVariety}
               onChange={(event) => update("seedVariety", event.target.value)}
               placeholder="Ex.: BRS 284"
             />
+            <span>
+              <small>
+                Será sugerida ao adicionar hectares e poderá ser trocada em cada
+                etapa.
+              </small>
+            </span>
           </label>
           <label>
             <span>Taxa de semeadura</span>

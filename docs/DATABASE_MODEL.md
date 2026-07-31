@@ -37,7 +37,9 @@ O campo de status separa plantios ativos de plantios colhidos, permitindo manter
 
 ### `planting_steps`
 
-Registra cada etapa executada da semeadura com data, hectares plantados, horários e observações. A soma das etapas determina a área efetivamente plantada, a área restante e o percentual de progresso, sem encerrar o ciclo da cultura quando atingir 100%.
+Registra cada etapa executada da semeadura com data, hectares plantados, variedade utilizada, horários e observações. Um mesmo plantio pode, portanto, ter variedades diferentes em etapas distintas. A soma das etapas determina a área efetivamente plantada, a área restante e o percentual de progresso, sem encerrar o ciclo da cultura quando atingir 100%.
+
+A variedade informada no cadastro do plantio funciona como planejamento e sugestão para novas etapas. Os registros anteriores à inclusão desse campo foram preenchidos automaticamente com essa variedade planejada.
 
 Cada nova etapa pode manter o identificador do lançamento criado automaticamente no Diário. Esse vínculo permite editar ou excluir o registro relacionado sem gerar duplicidades.
 

@@ -11,6 +11,7 @@ public record PlantingStepResponse(
         UUID plantingId,
         LocalDate stepDate,
         BigDecimal plantedAreaHectares,
+        String seedVariety,
         LocalTime startTime,
         LocalTime endTime,
         String observations,

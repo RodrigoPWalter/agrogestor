@@ -105,6 +105,7 @@ describe("PlantingDetailsModal", () => {
       id: "step-1",
       stepDate: "2026-07-30",
       plantedAreaHectares: 5,
+      seedVariety: "BRS 284",
       startTime: "08:00:00",
       endTime: "17:00:00",
       observations: "Plantio durante todo o dia",
@@ -129,6 +130,9 @@ describe("PlantingDetailsModal", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Adicionar hectares" }),
     );
+    expect(screen.getByLabelText("Variedade plantada nesta etapa")).toHaveValue(
+      "BRS 284",
+    );
     fireEvent.change(screen.getByLabelText("Área plantada nesta etapa (ha)"), {
       target: { value: "5" },
     });
@@ -139,6 +143,7 @@ describe("PlantingDetailsModal", () => {
         planting.id,
         expect.objectContaining({
           plantedAreaHectares: 5,
+          seedVariety: "BRS 284",
         }),
       );
     });
@@ -146,6 +151,7 @@ describe("PlantingDetailsModal", () => {
       await screen.findByText("Etapa de plantio adicionada com sucesso."),
     ).toBeInTheDocument();
     expect(screen.getByText("5 ha plantados")).toBeInTheDocument();
+    expect(screen.getByText("Variedade: BRS 284")).toBeInTheDocument();
     expect(onChanged).toHaveBeenCalledOnce();
   });
 });

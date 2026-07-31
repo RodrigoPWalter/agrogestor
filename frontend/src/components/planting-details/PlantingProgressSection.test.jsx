@@ -12,6 +12,7 @@ const planting = {
 const form = {
   stepDate: "2026-07-30",
   plantedAreaHectares: "",
+  seedVariety: "BRS 284",
   startTime: "",
   endTime: "",
   observations: "",
@@ -27,11 +28,13 @@ describe("PlantingProgressSection", () => {
             id: "step-1",
             stepDate: "2026-07-29",
             plantedAreaHectares: 5,
+            seedVariety: "BRS 284",
           },
           {
             id: "step-2",
             stepDate: "2026-07-30",
             plantedAreaHectares: 10,
+            seedVariety: "BRS 294",
           },
         ]}
         form={form}
@@ -49,6 +52,8 @@ describe("PlantingProgressSection", () => {
     );
 
     expect(screen.getAllByText("15 ha")).toHaveLength(2);
+    expect(screen.getByText("Variedade: BRS 284")).toBeInTheDocument();
+    expect(screen.getByText("Variedade: BRS 294")).toBeInTheDocument();
     expect(screen.getByText("Em andamento")).toBeInTheDocument();
     expect(
       screen.getByRole("progressbar", {

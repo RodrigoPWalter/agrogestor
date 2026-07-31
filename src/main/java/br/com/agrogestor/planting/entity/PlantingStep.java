@@ -36,6 +36,9 @@ public class PlantingStep {
     @Column(name = "planted_area_hectares", nullable = false, precision = 12, scale = 2)
     private BigDecimal plantedAreaHectares;
 
+    @Column(name = "seed_variety", length = 120)
+    private String seedVariety;
+
     @Column(name = "start_time")
     private LocalTime startTime;
 
@@ -61,23 +64,33 @@ public class PlantingStep {
             Planting planting,
             LocalDate stepDate,
             BigDecimal plantedAreaHectares,
+            String seedVariety,
             LocalTime startTime,
             LocalTime endTime,
             String observations
     ) {
-        update(stepDate, plantedAreaHectares, startTime, endTime, observations);
+        update(
+                stepDate,
+                plantedAreaHectares,
+                seedVariety,
+                startTime,
+                endTime,
+                observations
+        );
         this.planting = planting;
     }
 
     public void update(
             LocalDate stepDate,
             BigDecimal plantedAreaHectares,
+            String seedVariety,
             LocalTime startTime,
             LocalTime endTime,
             String observations
     ) {
         this.stepDate = stepDate;
         this.plantedAreaHectares = plantedAreaHectares;
+        this.seedVariety = seedVariety;
         this.startTime = startTime;
         this.endTime = endTime;
         this.observations = observations;
@@ -113,6 +126,10 @@ public class PlantingStep {
 
     public BigDecimal getPlantedAreaHectares() {
         return plantedAreaHectares;
+    }
+
+    public String getSeedVariety() {
+        return seedVariety;
     }
 
     public LocalTime getStartTime() {

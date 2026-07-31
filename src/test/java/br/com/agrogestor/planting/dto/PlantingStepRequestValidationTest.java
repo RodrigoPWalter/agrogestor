@@ -47,7 +47,30 @@ class PlantingStepRequestValidationTest {
                 .contains("stepDate");
     }
 
+    @Test
+    void shouldRejectSeedVarietyAboveMaximumLength() {
+        PlantingStepRequest request = new PlantingStepRequest(
+                LocalDate.now(),
+                new BigDecimal("5.00"),
+                "A".repeat(121),
+                null,
+                null,
+                null
+        );
+
+        assertThat(validator.validate(request))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .contains("seedVariety");
+    }
+
     private PlantingStepRequest request(BigDecimal area, LocalDate date) {
-        return new PlantingStepRequest(date, area, null, null, null);
+        return new PlantingStepRequest(
+                date,
+                area,
+                "BRS 284",
+                null,
+                null,
+                null
+        );
     }
 }

@@ -20,6 +20,9 @@ public record PlantingStepRequest(
         @Digits(integer = 10, fraction = 2, message = "A área aceita até 10 inteiros e 2 decimais")
         BigDecimal plantedAreaHectares,
 
+        @Size(max = 120, message = "A variedade deve ter no máximo 120 caracteres")
+        String seedVariety,
+
         LocalTime startTime,
 
         LocalTime endTime,

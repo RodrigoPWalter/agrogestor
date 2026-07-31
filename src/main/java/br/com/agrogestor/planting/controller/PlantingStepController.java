@@ -35,7 +35,7 @@ public class PlantingStepController {
     }
 
     @PostMapping
-    @Operation(summary = "Adicionar hectares plantados")
+    @Operation(summary = "Adicionar hectares e variedade plantados")
     public ResponseEntity<PlantingStepResponse> create(
             @PathVariable UUID plantingId,
             @Valid @RequestBody PlantingStepRequest request

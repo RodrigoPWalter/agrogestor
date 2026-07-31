@@ -18,10 +18,11 @@ const emptyExpense = {
   observations: "",
 };
 
-function emptyStep() {
+function emptyStep(seedVariety = "") {
   return {
     stepDate: toInputDate(),
     plantedAreaHectares: "",
+    seedVariety,
     startTime: "",
     endTime: "",
     observations: "",
@@ -45,7 +46,9 @@ export function PlantingDetailsModal({
   const [saving, setSaving] = useState(false);
   const [stepFormOpen, setStepFormOpen] = useState(false);
   const [editingStep, setEditingStep] = useState(null);
-  const [stepForm, setStepForm] = useState(emptyStep);
+  const [stepForm, setStepForm] = useState(() =>
+    emptyStep(planting.seedVariety),
+  );
 
   const load = useCallback(async () => {
     try {
@@ -90,7 +93,7 @@ export function PlantingDetailsModal({
 
   function openStepCreate() {
     setEditingStep(null);
-    setStepForm(emptyStep());
+    setStepForm(emptyStep(planting.seedVariety));
     setStepFormOpen(true);
     setError("");
   }
@@ -100,6 +103,7 @@ export function PlantingDetailsModal({
     setStepForm({
       stepDate: step.stepDate,
       plantedAreaHectares: step.plantedAreaHectares,
+      seedVariety: step.seedVariety || planting.seedVariety,
       startTime: step.startTime?.slice(0, 5) || "",
       endTime: step.endTime?.slice(0, 5) || "",
       observations: step.observations || "",
@@ -111,7 +115,7 @@ export function PlantingDetailsModal({
   function closeStepForm() {
     setStepFormOpen(false);
     setEditingStep(null);
-    setStepForm(emptyStep());
+    setStepForm(emptyStep(planting.seedVariety));
   }
 
   async function saveStep(event) {

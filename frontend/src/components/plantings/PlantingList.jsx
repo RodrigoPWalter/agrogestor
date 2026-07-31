@@ -101,7 +101,7 @@ export function PlantingList({
               </div>
             )}
             <div>
-              <dt>Variedade</dt>
+              <dt>Variedade planejada</dt>
               <dd>{planting.seedVariety}</dd>
             </div>
             <div>

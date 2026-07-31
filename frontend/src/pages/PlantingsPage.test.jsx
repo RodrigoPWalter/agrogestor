@@ -144,7 +144,7 @@ describe("PlantingsPage", () => {
         target: { value: "70" },
       },
     );
-    fireEvent.change(screen.getByLabelText("Variedade da semente"), {
+    fireEvent.change(screen.getByLabelText("Variedade planejada"), {
       target: { value: "BRS 284" },
     });
     fireEvent.change(screen.getByLabelText("Taxa de semeadura"), {

@@ -153,6 +153,16 @@ export function PlantingProgressSection({
               />
             </label>
             <label>
+              <span>Variedade plantada nesta etapa</span>
+              <input
+                required
+                maxLength="120"
+                value={form.seedVariety}
+                onChange={(event) => update("seedVariety", event.target.value)}
+                placeholder="Ex.: BRS 284"
+              />
+            </label>
+            <label>
               <span>Horário de início (opcional)</span>
               <input
                 type="time"
@@ -222,6 +232,7 @@ export function PlantingProgressSection({
                         <span>
                           {formatNumber(step.plantedAreaHectares)} ha plantados
                         </span>
+                        <span>Variedade: {step.seedVariety}</span>
                       </div>
                       {planting.status === "ACTIVE" && (
                         <div className="card-actions">

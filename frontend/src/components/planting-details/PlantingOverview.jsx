@@ -19,7 +19,7 @@ export function PlantingOverview({ planting, summary, expenseCount }) {
             <strong>{planting.fieldName || "Não informado"}</strong>
           </div>
           <div>
-            <span>Variedade</span>
+            <span>Variedade planejada</span>
             <strong>{planting.seedVariety}</strong>
           </div>
           <div>

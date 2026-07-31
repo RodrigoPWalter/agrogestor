@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Cada etapa de plantio registra a variedade de semente utilizada, permitindo várias variedades no mesmo talhão.
 - Taxa de semeadura por plantio padronizada em `kg/ha` ou `sementes/ha`.
 - Cadastro opcional da distância entre linhas de cada plantio, informada em centímetros.
 - Plantios agora começam com zero hectares executados e aceitam etapas de semeadura em diferentes dias.

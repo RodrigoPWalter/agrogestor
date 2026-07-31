@@ -90,6 +90,7 @@ describe("cliente da API", () => {
     const data = {
       stepDate: "2026-07-30",
       plantedAreaHectares: 5,
+      seedVariety: "BRS 284",
       startTime: null,
       endTime: null,
       observations: null,

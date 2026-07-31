@@ -24,7 +24,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 
 - **Autenticação com JWT:** Login protegido, sessão no frontend e envio automático do token nas requisições privadas.
 - **Controle de Plantios:** Cadastro antecipado da safra com área prevista, talhão, variedade, distância entre linhas, taxa de semeadura em `kg/ha` ou `sementes/ha` e custos desde a preparação do campo.
-- **Progresso da Semeadura:** Registro dos hectares executados em vários dias, com área restante, percentual, histórico editável e lançamento automático no Diário.
+- **Progresso da Semeadura:** Registro dos hectares e da variedade utilizada em cada etapa, com área restante, percentual, histórico editável e lançamento automático no Diário.
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
 - **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
 - **Gestão de Gastos:** Lançamento de despesas por plantio, cálculo de totais e visão consolidada dos custos.

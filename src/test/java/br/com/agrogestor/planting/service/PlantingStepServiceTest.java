@@ -70,6 +70,7 @@ class PlantingStepServiceTest {
         var response = service.create(plantingId, request("5.00"));
 
         assertThat(response.plantedAreaHectares()).isEqualByComparingTo("5.00");
+        assertThat(response.seedVariety()).isEqualTo("BRS 284");
         ArgumentCaptor<FieldDiaryEntry> diaryCaptor =
                 ArgumentCaptor.forClass(FieldDiaryEntry.class);
         verify(diaryRepository).save(diaryCaptor.capture());
@@ -77,7 +78,34 @@ class PlantingStepServiceTest {
                 .isEqualTo(ActivityType.PLANTING);
         assertThat(diaryCaptor.getValue().getActivity())
                 .contains("5 hectares")
-                .contains("Talhão 2");
+                .contains("Talhão 2")
+                .contains("variedade BRS 284");
+    }
+
+    @Test
+    void shouldUsePlannedVarietyForRequestFromPreviousFrontendVersion() {
+        UUID plantingId = UUID.randomUUID();
+        Planting planting = planting("30.00");
+        PlantingStepRequest legacyRequest = new PlantingStepRequest(
+                LocalDate.of(2026, 7, 2),
+                new BigDecimal("5.00"),
+                null,
+                null,
+                null,
+                null
+        );
+        when(plantingRepository.findByIdForUpdate(plantingId))
+                .thenReturn(Optional.of(planting));
+        when(stepRepository.sumAreaByPlantingId(plantingId))
+                .thenReturn(BigDecimal.ZERO);
+        when(stepRepository.save(any(PlantingStep.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(diaryRepository.save(any(FieldDiaryEntry.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var response = service.create(plantingId, legacyRequest);
+
+        assertThat(response.seedVariety()).isEqualTo("BRS 284");
     }
 
     @Test
@@ -104,6 +132,7 @@ class PlantingStepServiceTest {
         PlantingStepRequest request = new PlantingStepRequest(
                 LocalDate.of(2026, 6, 30),
                 new BigDecimal("5.00"),
+                "BRS 284",
                 null,
                 null,
                 null
@@ -151,6 +180,7 @@ class PlantingStepServiceTest {
         PlantingStepRequest request = new PlantingStepRequest(
                 LocalDate.of(2026, 7, 2),
                 new BigDecimal("5.00"),
+                "BRS 284",
                 LocalTime.of(18, 0),
                 LocalTime.of(8, 0),
                 null
@@ -170,6 +200,7 @@ class PlantingStepServiceTest {
                 planting,
                 LocalDate.of(2026, 7, 2),
                 new BigDecimal("10.00"),
+                "BRS 284",
                 null,
                 null,
                 null
@@ -199,6 +230,7 @@ class PlantingStepServiceTest {
                 planting,
                 LocalDate.of(2026, 7, 2),
                 new BigDecimal("10.00"),
+                "BRS 284",
                 null,
                 null,
                 null
@@ -256,6 +288,7 @@ class PlantingStepServiceTest {
         return new PlantingStepRequest(
                 LocalDate.of(2026, 7, 2),
                 new BigDecimal(area),
+                "  BRS   284  ",
                 LocalTime.of(8, 0),
                 LocalTime.of(17, 30),
                 "Plantio durante todo o dia"
