@@ -1,7 +1,6 @@
 import {
   Eye,
   EyeOff,
-  Leaf,
   LockKeyhole,
   Mail,
   ShieldCheck,
@@ -47,7 +46,7 @@ export function LoginPage() {
       <section className="login-introduction" aria-label="Sobre o AgroGestor">
         <div className="login-brand">
           <span>
-            <Leaf size={25} />
+            <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
           </span>
           <strong>AgroGestor</strong>
         </div>
@@ -77,7 +76,7 @@ export function LoginPage() {
         <div className="login-card">
           <header>
             <span className="login-card__mark">
-              <Leaf size={22} />
+              <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
             </span>
             <p>Acesso à propriedade</p>
             <h2>Entre na sua conta</h2>

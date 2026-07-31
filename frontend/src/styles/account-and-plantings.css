@@ -45,10 +45,15 @@
 
 .login-brand > span,
 .login-card__mark {
-  display: grid;
-  place-items: center;
-  color: #173f19;
-  background: var(--machine-yellow);
+  display: block;
+  overflow: hidden;
+}
+
+.login-brand > span img,
+.login-card__mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .login-brand > span {

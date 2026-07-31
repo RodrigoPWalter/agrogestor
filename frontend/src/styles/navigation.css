@@ -32,13 +32,17 @@
 }
 
 .app-brand > span {
-  display: grid;
+  display: block;
+  overflow: hidden;
   width: 34px;
   height: 34px;
-  place-items: center;
-  color: #234d1e;
   border-radius: 7px;
-  background: var(--machine-yellow);
+}
+
+.app-brand > span img {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .app-brand > strong {

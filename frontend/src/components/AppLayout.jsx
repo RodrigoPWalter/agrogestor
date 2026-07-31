@@ -5,7 +5,6 @@ import {
   ChevronDown,
   LoaderCircle,
   LayoutDashboard,
-  Leaf,
   ReceiptText,
   Sprout,
   Tractor,
@@ -115,7 +114,7 @@ export function AppLayout() {
             aria-label="Ir para a visão geral"
           >
             <span>
-              <Leaf size={21} />
+              <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
             </span>
             <strong>AgroGestor</strong>
           </NavLink>

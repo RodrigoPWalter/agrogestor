@@ -1,15 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#367c2b"/>
-  <rect x="106" y="106" width="300" height="300" rx="72" fill="#ffde00"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Símbolo do AgroGestor</title>
+  <rect width="512" height="512" fill="#173f2a"/>
   <path
-    d="M326 169c-70 5-127 42-143 99-12 43 5 79 33 95 34 20 82 11 109-25 35-46 30-109 1-169Z"
-    fill="#245f22"
-  />
-  <path
-    d="M169 350c45-73 96-111 157-151M195 311c28 0 52 7 71 21M230 266c-1-18 4-38 16-58"
+    d="M382 170A151 151 0 1 0 382 342V278H310"
     fill="none"
-    stroke="#fff"
-    stroke-linecap="round"
-    stroke-width="22"
+    stroke="#f7f6f1"
+    stroke-linecap="square"
+    stroke-linejoin="round"
+    stroke-width="38"
   />
+  <path
+    d="M151 370 256 159l91 183"
+    fill="none"
+    stroke="#f7f6f1"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+    stroke-width="38"
+  />
+  <path d="m246 273-59 126h39l38-126Z" fill="#d6aa2a"/>
+  <path d="m256 273-13 126h36l-13-126Z" fill="#d6aa2a"/>
+  <path d="m276 273 25 126h39l-54-126Z" fill="#d6aa2a"/>
 </svg>

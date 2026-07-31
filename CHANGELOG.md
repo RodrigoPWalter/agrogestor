@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Nova identidade visual com monograma `AG`, linhas de plantio e ícones próprios para o PWA.
 - Colheita por etapas com área diária, produção, unidade, variedade e histórico editável.
 - Progresso da colheita, produtividade em sacas por hectare e encerramento somente após 100% da área plantada.
 - Lançamento automático das etapas de colheita no Diário e integração direta com o fechamento da safra.
