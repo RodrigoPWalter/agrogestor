@@ -10,8 +10,8 @@
   z-index: 60;
   color: #fff;
   border-bottom: 2px solid var(--machine-yellow);
-  background: #173f19;
-  box-shadow: 0 4px 16px rgba(14, 46, 16, 0.16);
+  background: var(--green-900);
+  box-shadow: 0 4px 16px rgba(16, 42, 29, 0.18);
 }
 
 .app-header__inner {
@@ -151,7 +151,7 @@
   width: 32px;
   height: 32px;
   place-items: center;
-  color: #173d18;
+  color: var(--green-950);
   border-radius: 7px;
   background: var(--machine-yellow);
   font-size: 0.66rem;
@@ -260,9 +260,9 @@
     grid-template-columns: repeat(5, 1fr);
     min-height: 66px;
     padding: 5px 6px max(5px, env(safe-area-inset-bottom));
-    border-top: 1px solid rgba(255, 222, 0, 0.3);
-    background: #173f19;
-    box-shadow: 0 -5px 18px rgba(15, 46, 16, 0.18);
+    border-top: 1px solid rgba(214, 170, 42, 0.32);
+    background: var(--green-900);
+    box-shadow: 0 -5px 18px rgba(16, 42, 29, 0.2);
   }
 
   .mobile-app-bar a,
@@ -295,7 +295,7 @@
     z-index: 64;
     display: block;
     border: 0;
-    background: rgba(12, 29, 13, 0.42);
+    background: rgba(10, 30, 21, 0.44);
     backdrop-filter: blur(2px);
   }
 
@@ -308,10 +308,10 @@
     display: block;
     padding: 14px;
     color: #fff;
-    border: 1px solid rgba(255, 222, 0, 0.25);
+    border: 1px solid rgba(214, 170, 42, 0.28);
     border-radius: 10px;
-    background: #173f19;
-    box-shadow: 0 16px 40px rgba(9, 31, 11, 0.3);
+    background: var(--green-900);
+    box-shadow: 0 16px 40px rgba(10, 30, 21, 0.32);
   }
 
   .mobile-more-menu > div:first-child strong,
@@ -351,7 +351,7 @@
 
   .mobile-more-menu__grid a.is-active {
     color: var(--machine-yellow);
-    border-color: rgba(255, 222, 0, 0.35);
+    border-color: rgba(214, 170, 42, 0.38);
   }
 }
 

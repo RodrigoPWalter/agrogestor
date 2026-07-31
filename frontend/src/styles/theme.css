@@ -622,42 +622,42 @@ body {
   }
 }
 
-/* Agricultural machinery color direction */
+/* AgroGestor brand palette */
 :root {
-  --green-950: #163a17;
-  --green-900: #245f22;
-  --green-800: #367c2b;
-  --green-700: #367c2b;
-  --green-600: #4c9141;
-  --green-100: #dfecda;
-  --green-50: #f0f6ed;
-  --gold-600: #766300;
-  --gold-100: #fff5b3;
-  --ink: #172318;
-  --muted: #667064;
-  --line: #d7ddd3;
-  --background: #f4f5f0;
-  --machine-green: #367c2b;
-  --machine-green-dark: #1d541d;
-  --machine-yellow: #ffde00;
-  --machine-yellow-hover: #f1cf00;
+  --green-950: #102a1d;
+  --green-900: #173f2a;
+  --green-800: #235b3d;
+  --green-700: #286047;
+  --green-600: #39775a;
+  --green-100: #dce9e1;
+  --green-50: #edf3ef;
+  --gold-600: #80651c;
+  --gold-100: #f6edcf;
+  --ink: #17211c;
+  --muted: #68716c;
+  --line: #d9ded9;
+  --background: #f4f5f2;
+  --machine-green: #235b3d;
+  --machine-green-dark: #173f2a;
+  --machine-yellow: #d6aa2a;
+  --machine-yellow-hover: #c69a20;
 }
 
 .sidebar {
-  border-right-color: #184718;
+  border-right-color: #102a1d;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 34%),
-    #173f19;
-  box-shadow: 8px 0 28px rgba(18, 55, 19, 0.16);
+    var(--green-900);
+  box-shadow: 8px 0 28px rgba(16, 42, 29, 0.16);
 }
 
 .brand {
-  border-bottom-color: rgba(255, 222, 0, 0.22);
+  border-bottom-color: rgba(214, 170, 42, 0.24);
 }
 
 .brand__mark {
-  color: #214e1d;
-  border-color: #ffde00;
+  color: var(--green-900);
+  border-color: var(--machine-yellow);
   background: var(--machine-yellow);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
 }
@@ -680,18 +680,18 @@ body {
   background: var(--machine-green);
   box-shadow:
     inset 3px 0 var(--machine-yellow),
-    0 3px 10px rgba(10, 42, 13, 0.18);
+    0 3px 10px rgba(16, 42, 29, 0.2);
 }
 
 .sidebar__footer {
-  border-color: rgba(255, 222, 0, 0.18);
+  border-color: rgba(214, 170, 42, 0.2);
   background: rgba(0, 0, 0, 0.1);
 }
 
 .status-dot {
-  border-color: rgba(255, 222, 0, 0.28);
+  border-color: rgba(214, 170, 42, 0.3);
   background: var(--machine-yellow);
-  box-shadow: 0 0 0 4px rgba(255, 222, 0, 0.1);
+  box-shadow: 0 0 0 4px rgba(214, 170, 42, 0.12);
 }
 
 .topbar {
@@ -710,7 +710,7 @@ body {
 }
 
 .user-profile > span {
-  color: #183d18;
+  color: var(--green-950);
   background: var(--machine-yellow);
 }
 
@@ -720,16 +720,16 @@ body {
 }
 
 .button--primary {
-  color: #173b18;
-  border: 1px solid #dfc100;
-  background: var(--machine-yellow);
-  box-shadow: 0 3px 8px rgba(132, 112, 0, 0.22);
+  color: #fff;
+  border: 1px solid var(--machine-green-dark);
+  background: var(--machine-green);
+  box-shadow: 0 3px 8px rgba(23, 63, 42, 0.2);
 }
 
 .button--primary:hover:not(:disabled) {
-  color: #102f12;
-  background: var(--machine-yellow-hover);
-  box-shadow: 0 5px 13px rgba(132, 112, 0, 0.28);
+  color: #fff;
+  background: var(--machine-green-dark);
+  box-shadow: 0 5px 13px rgba(23, 63, 42, 0.26);
 }
 
 .button--ghost:hover:not(:disabled) {
@@ -744,7 +744,7 @@ body {
 .planting-selector select:focus,
 .search-box:focus-within {
   border-color: var(--machine-green);
-  box-shadow: 0 0 0 3px rgba(54, 124, 43, 0.16);
+  box-shadow: 0 0 0 3px rgba(35, 91, 61, 0.16);
 }
 
 .metric-card--green .metric-card__icon,
@@ -771,7 +771,7 @@ body {
   background: linear-gradient(
     90deg,
     var(--machine-green),
-    #68a64f 70%,
+    var(--green-600) 70%,
     var(--machine-yellow)
   );
 }
@@ -792,8 +792,8 @@ body {
 }
 
 .expenses-planting-selector .planting-selector__icon {
-  color: #244d20;
-  background: var(--machine-yellow);
+  color: var(--green-900);
+  background: var(--gold-100);
 }
 
 .expense-summary-card {
@@ -810,9 +810,9 @@ body {
 }
 
 .expense-summary-card--financial {
-  border-color: #d6ca70;
+  border-color: #dfd1a5;
   background:
-    linear-gradient(120deg, rgba(255, 222, 0, 0.16), transparent 62%), #fff;
+    linear-gradient(120deg, rgba(214, 170, 42, 0.13), transparent 62%), #fff;
 }
 
 .expense-summary-card--financial::after {
@@ -821,12 +821,12 @@ body {
 }
 
 .expense-summary-card--financial > span {
-  color: #224b1e;
-  background: var(--machine-yellow);
+  color: var(--green-900);
+  background: var(--gold-100);
 }
 
 .expense-summary-card--financial strong {
-  color: #194719;
+  color: var(--green-900);
   font-size: 1.08rem;
   font-weight: 900;
 }
@@ -854,7 +854,7 @@ body {
 }
 
 .expense-item__icon {
-  border: 1px solid #e6cf38;
+  border: 1px solid #e2d4a9;
 }
 
 .expense-item__main small {
@@ -867,8 +867,8 @@ body {
 .expense-category-badge {
   display: inline-flex;
   padding: 2px 6px;
-  color: #24551f;
-  border: 1px solid #c7dbc1;
+  color: var(--green-800);
+  border: 1px solid #c7dbd0;
   border-radius: 999px;
   background: #eaf3e7;
   font-size: 0.58rem;
@@ -877,10 +877,10 @@ body {
 
 .expense-item__amount {
   padding: 6px 8px;
-  color: #183e17;
-  border: 1px solid #e5ca16;
+  color: var(--green-900);
+  border: 1px solid #dfd1a5;
   border-radius: 5px;
-  background: var(--machine-yellow);
+  background: var(--gold-100);
   font-size: 0.78rem;
   font-weight: 900;
 }
@@ -891,7 +891,7 @@ body {
 }
 
 .category-breakdown__row small {
-  color: #385b35;
+  color: var(--green-700);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-weight: 700;
 }

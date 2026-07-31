@@ -51,7 +51,7 @@
 
 .expenses-context-selector select:focus {
   border-bottom-color: var(--machine-green);
-  box-shadow: 0 2px 0 rgba(54, 124, 43, 0.18);
+  box-shadow: 0 2px 0 rgba(35, 91, 61, 0.18);
 }
 
 .expense-summary-strip {
@@ -161,7 +161,7 @@
 .expenses-search:focus-within {
   color: var(--machine-green);
   border-color: var(--machine-green);
-  box-shadow: 0 0 0 3px rgba(54, 124, 43, 0.12);
+  box-shadow: 0 0 0 3px rgba(35, 91, 61, 0.12);
 }
 
 .expenses-search input {
