@@ -6,6 +6,9 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Colheita por etapas com área diária, produção, unidade, variedade e histórico editável.
+- Progresso da colheita, produtividade em sacas por hectare e encerramento somente após 100% da área plantada.
+- Lançamento automático das etapas de colheita no Diário e integração direta com o fechamento da safra.
 - Cada etapa de plantio registra a variedade de semente utilizada, permitindo várias variedades no mesmo talhão.
 - Taxa de semeadura por plantio padronizada em `kg/ha` ou `sementes/ha`.
 - Cadastro opcional da distância entre linhas de cada plantio, informada em centímetros.

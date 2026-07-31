@@ -8,8 +8,10 @@ Este arquivo resume o banco atual do AgroGestor. As migrations em `src/main/reso
 erDiagram
     PLANTINGS ||--o{ EXPENSES : recebe
     PLANTINGS ||--o{ PLANTING_STEPS : executado_em
+    PLANTINGS ||--o{ HARVEST_STEPS : colhido_em
     PLANTINGS ||--o{ FIELD_DIARY_ENTRIES : pode_referenciar
     PLANTING_STEPS o|--o| FIELD_DIARY_ENTRIES : registra
+    HARVEST_STEPS o|--o| FIELD_DIARY_ENTRIES : registra
     PLANTINGS ||--o{ RAINFALL_MEASUREMENTS : pode_referenciar
     FIELD_DIARY_ENTRIES ||--o{ FIELD_DIARY_PRODUCTS : registra
     INVENTORY_PRODUCTS ||--o{ FIELD_DIARY_PRODUCTS : utilizado_em
@@ -42,6 +44,14 @@ Registra cada etapa executada da semeadura com data, hectares plantados, varieda
 A variedade informada no cadastro do plantio funciona como planejamento e sugestão para novas etapas. Os registros anteriores à inclusão desse campo foram preenchidos automaticamente com essa variedade planejada.
 
 Cada nova etapa pode manter o identificador do lançamento criado automaticamente no Diário. Esse vínculo permite editar ou excluir o registro relacionado sem gerar duplicidades.
+
+### `harvest_steps`
+
+Registra a colheita realizada em cada dia com área, quantidade produzida, unidade, variedade, horários e observações. A soma das áreas é limitada à área efetivamente plantada, não à área inicialmente prevista.
+
+As quantidades podem ser informadas em sacas de 60 kg, quilogramas ou toneladas. O fechamento converte essas unidades para sacas de 60 kg antes de calcular a receita estimada, enquanto o detalhe do plantio apresenta a produtividade média em sacas por hectare.
+
+Cada etapa cria um lançamento de colheita no Diário dentro da mesma transação. Edições e exclusões atualizam o lançamento relacionado, evitando duplicidade. A safra somente pode ser enviada ao histórico depois que toda a área plantada estiver colhida.
 
 ### `expenses`
 
