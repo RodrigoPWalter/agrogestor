@@ -148,13 +148,15 @@ export function PlantingsPage() {
 
   async function handleFinish(planting) {
     if (
-      !window.confirm(`Finalizar o plantio de ${planting.crop} como colhido?`)
+      !window.confirm(
+        `Finalizar a safra de ${planting.crop}? Ela será movida para o histórico.`,
+      )
     )
       return;
     try {
       await api.finishPlanting(planting.id);
       setSelectedPlanting(null);
-      setSuccess("Plantio finalizado e movido para o histórico.");
+      setSuccess("Safra finalizada e movida para o histórico.");
       await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);

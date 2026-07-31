@@ -28,12 +28,18 @@ const activePlanting = {
   plantedPercentage: 100,
   plantingProgressStatus: "COMPLETED",
   plantingProgressStatusName: "Área totalmente plantada",
+  harvestedAreaHectares: 20,
+  harvestRemainingAreaHectares: 0,
+  harvestedPercentage: 100,
+  harvestProgressStatus: "COMPLETED",
+  harvestProgressStatusName: "Área totalmente colhida",
   startDate: "2026-07-10",
   seedVariety: "BRS 284",
   seedRate: 50,
   seedRateUnit: "KILOGRAMS_PER_HECTARE",
   seedRateUnitName: "kg/ha",
   observations: "",
+  status: "ACTIVE",
 };
 
 const harvestedPlanting = {
@@ -42,6 +48,7 @@ const harvestedPlanting = {
   crop: "Soja",
   harvest: "2025/2026",
   completedAt: "2026-04-20T10:00:00Z",
+  status: "HARVESTED",
 };
 
 describe("PlantingsPage", () => {
@@ -100,7 +107,7 @@ describe("PlantingsPage", () => {
     );
     api.getExpenses.mockResolvedValueOnce({ content: [] });
 
-    fireEvent.click(screen.getByRole("button", { name: "Finalizar plantio" }));
+    fireEvent.click(screen.getByRole("button", { name: "Finalizar safra" }));
 
     await waitFor(() =>
       expect(api.finishPlanting).toHaveBeenCalledWith(activePlanting.id),

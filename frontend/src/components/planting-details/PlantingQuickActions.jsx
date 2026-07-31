@@ -1,16 +1,9 @@
-import {
-  BookOpenText,
-  CheckCircle2,
-  CloudRain,
-  ReceiptText,
-  RotateCcw,
-} from "lucide-react";
+import { BookOpenText, CloudRain, ReceiptText, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function PlantingQuickActions({
   planting,
   onShowExpenseForm,
-  onFinish,
   onReactivate,
 }) {
   return (
@@ -32,19 +25,12 @@ export function PlantingQuickActions({
         >
           <BookOpenText size={18} /> Nova observação
         </Link>
-        {planting.status === "HARVESTED" ? (
+        {planting.status === "HARVESTED" && (
           <button
             className="button button--primary"
             onClick={() => onReactivate(planting)}
           >
             <RotateCcw size={18} /> Reativar plantio
-          </button>
-        ) : (
-          <button
-            className="button button--ghost"
-            onClick={() => onFinish(planting)}
-          >
-            <CheckCircle2 size={18} /> Finalizar plantio
           </button>
         )}
       </div>

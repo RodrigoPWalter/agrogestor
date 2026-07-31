@@ -2,6 +2,7 @@ export function PlantingProgressBar({
   percentage,
   statusName,
   compact = false,
+  ariaLabel = "Progresso da área plantada",
 }) {
   const normalizedPercentage = Math.min(
     100,
@@ -15,7 +16,7 @@ export function PlantingProgressBar({
       <div
         className="planting-progress__track"
         role="progressbar"
-        aria-label="Progresso da área plantada"
+        aria-label={ariaLabel}
         aria-valuemin="0"
         aria-valuemax="100"
         aria-valuenow={Math.round(normalizedPercentage)}

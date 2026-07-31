@@ -518,6 +518,14 @@
   height: 6px;
 }
 
+.planting-progress-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
 .planting-progress-section {
   display: grid;
   gap: 14px;
@@ -698,6 +706,60 @@
   margin: 7px 0 0;
 }
 
+.harvest-progress-section {
+  border-color: #e5d9a2 !important;
+  background: linear-gradient(180deg, #fffef7, #fff) !important;
+}
+
+.harvest-production-summary {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  overflow: hidden;
+  border: 1px solid #e7dfb9;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.harvest-production-summary > div {
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+  border-right: 1px solid #e7dfb9;
+}
+
+.harvest-production-summary > div:last-child {
+  border-right: 0;
+}
+
+.harvest-production-summary span {
+  color: #6f6b4a;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.harvest-production-summary strong {
+  color: #173f19;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+}
+
+.harvest-complete {
+  flex-wrap: wrap;
+}
+
+.harvest-complete span {
+  flex: 1;
+}
+
+.harvest-complete .button {
+  min-height: 38px;
+}
+
+.harvest-step-timeline .planting-step-timeline__marker {
+  border-color: #fff0ac;
+  background: #c29100;
+}
+
 .section-heading p {
   margin: 3px 0 0;
   color: var(--muted);
@@ -852,7 +914,8 @@
   .quick-expense-form,
   .season-closing-grid,
   .season-price-form,
-  .planting-progress-summary {
+  .planting-progress-summary,
+  .harvest-production-summary {
     grid-template-columns: 1fr;
   }
 
@@ -865,6 +928,15 @@
     border-bottom: 0;
   }
 
+  .harvest-production-summary > div {
+    border-right: 0;
+    border-bottom: 1px solid #e7dfb9;
+  }
+
+  .harvest-production-summary > div:last-child {
+    border-bottom: 0;
+  }
+
   .planting-progress-section__header,
   .planting-step-form__header {
     align-items: stretch;
@@ -872,6 +944,12 @@
   }
 
   .planting-progress-section__header .button {
+    min-height: 46px;
+    justify-content: center;
+  }
+
+  .harvest-complete .button {
+    width: 100%;
     min-height: 46px;
     justify-content: center;
   }

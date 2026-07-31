@@ -120,6 +120,24 @@ export const api = {
     request(`/api/v1/plantings/${plantingId}/steps/${stepId}`, {
       method: "DELETE",
     }),
+  getHarvestSteps: (plantingId) =>
+    request(`/api/v1/plantings/${plantingId}/harvest-steps`),
+  createHarvestStep: (plantingId, data) =>
+    request(`/api/v1/plantings/${plantingId}/harvest-steps`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateHarvestStep: (plantingId, stepId, data) =>
+    request(`/api/v1/plantings/${plantingId}/harvest-steps/${stepId}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  deleteHarvestStep: (plantingId, stepId) =>
+    request(`/api/v1/plantings/${plantingId}/harvest-steps/${stepId}`, {
+      method: "DELETE",
+    }),
   getSeasonClosing: (id, salePricePerUnit) => {
     const query =
       salePricePerUnit && Number(salePricePerUnit) > 0

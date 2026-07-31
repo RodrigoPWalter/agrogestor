@@ -34,15 +34,16 @@ export function PlantingList({
               <span className="badge">{planting.harvest}</span>
             </div>
             <div className="card-actions">
-              {view === "active" && (
-                <button
-                  className="icon-button icon-button--success"
-                  onClick={() => onFinish(planting)}
-                  aria-label="Finalizar plantio"
-                >
-                  <CheckCircle2 size={18} />
-                </button>
-              )}
+              {view === "active" &&
+                planting.harvestProgressStatus === "COMPLETED" && (
+                  <button
+                    className="icon-button icon-button--success"
+                    onClick={() => onFinish(planting)}
+                    aria-label="Finalizar safra"
+                  >
+                    <CheckCircle2 size={18} />
+                  </button>
+                )}
               {view === "history" && (
                 <button
                   className="icon-button icon-button--success"
@@ -75,11 +76,26 @@ export function PlantingList({
             </strong>
             <span>Progresso da área prevista</span>
           </div>
+          <span className="planting-progress-label">Semeadura</span>
           <PlantingProgressBar
             compact
             percentage={planting.plantedPercentage}
             statusName={planting.plantingProgressStatusName}
           />
+          {Number(planting.plantedAreaHectares) > 0 && (
+            <>
+              <span className="planting-progress-label">
+                Colheita: {formatNumber(planting.harvestedAreaHectares)} de{" "}
+                {formatNumber(planting.plantedAreaHectares)} ha
+              </span>
+              <PlantingProgressBar
+                compact
+                percentage={planting.harvestedPercentage}
+                statusName={planting.harvestProgressStatusName}
+                ariaLabel="Progresso da área colhida"
+              />
+            </>
+          )}
           <PlantingSummaryCard summary={summaries[planting.id]} />
           <dl className="details-list">
             {planting.completedAt && (

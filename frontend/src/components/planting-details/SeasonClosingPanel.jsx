@@ -15,7 +15,7 @@ export function SeasonClosingPanel({
           <h3>
             <BarChart3 size={17} /> Fechamento de safra
           </h3>
-          <p>Custo total vs. produção registrada no diário de colheita.</p>
+          <p>Custo total vs. produção registrada nas etapas de colheita.</p>
         </div>
       </div>
 
@@ -71,7 +71,7 @@ export function SeasonClosingPanel({
 
       {closing.harvestTotals.length === 0 ? (
         <p className="muted-copy">
-          Ainda não há colheita registrada no diário para este plantio.
+          Ainda não há colheita registrada para este plantio.
         </p>
       ) : closing.harvestTotals.length > 1 ? (
         <div className="season-harvest-list">

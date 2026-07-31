@@ -12,10 +12,14 @@ vi.mock("../api/client", () => ({
     getRainfallByPlanting: vi.fn(),
     getSeasonClosing: vi.fn(),
     getPlantingSteps: vi.fn(),
+    getHarvestSteps: vi.fn(),
     createExpense: vi.fn(),
     createPlantingStep: vi.fn(),
     updatePlantingStep: vi.fn(),
     deletePlantingStep: vi.fn(),
+    createHarvestStep: vi.fn(),
+    updateHarvestStep: vi.fn(),
+    deleteHarvestStep: vi.fn(),
   },
 }));
 
@@ -65,6 +69,7 @@ describe("PlantingDetailsModal", () => {
       harvestTotals: [],
     });
     api.getPlantingSteps.mockResolvedValue([]);
+    api.getHarvestSteps.mockResolvedValue([]);
   });
 
   it("reúne o resumo, gastos, diário e chuvas do plantio", async () => {
@@ -86,6 +91,7 @@ describe("PlantingDetailsModal", () => {
     expect(screen.getByText("Fechamento de safra")).toBeInTheDocument();
     expect(screen.getByText("70 cm")).toBeInTheDocument();
     expect(screen.getByText("Progresso do plantio")).toBeInTheDocument();
+    expect(screen.getByText("Progresso da colheita")).toBeInTheDocument();
     expect(
       screen.getByText(/A semeadura ainda não começou/),
     ).toBeInTheDocument();
@@ -152,6 +158,82 @@ describe("PlantingDetailsModal", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("5 ha plantados")).toBeInTheDocument();
     expect(screen.getByText("Variedade: BRS 284")).toBeInTheDocument();
+    expect(onChanged).toHaveBeenCalledOnce();
+  });
+
+  it("registra a colheita do dia e recalcula a produção", async () => {
+    const onChanged = vi.fn();
+    const planted = {
+      ...planting,
+      plantedAreaHectares: 20,
+      remainingAreaHectares: 0,
+      plantedPercentage: 100,
+    };
+    const harvestStep = {
+      id: "harvest-step-1",
+      harvestDate: "2026-07-30",
+      harvestedAreaHectares: 8,
+      harvestQuantity: 640,
+      harvestUnit: "BAGS_60_KG",
+      harvestUnitName: "sacas de 60 kg",
+      seedVariety: "BRS 284",
+      startTime: "08:00:00",
+      endTime: "17:00:00",
+      observations: "Colheita durante o dia",
+    };
+    api.createHarvestStep.mockResolvedValue(harvestStep);
+    api.getPlantingSteps.mockResolvedValue([
+      {
+        id: "planting-step-1",
+        stepDate: "2026-01-10",
+        plantedAreaHectares: 20,
+        seedVariety: "BRS 284",
+      },
+    ]);
+    api.getHarvestSteps
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([harvestStep]);
+
+    render(
+      <MemoryRouter>
+        <PlantingDetailsModal
+          planting={planted}
+          onClose={vi.fn()}
+          onFinish={vi.fn()}
+          onReactivate={vi.fn()}
+          onChanged={onChanged}
+        />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Registrar colheita" }),
+    );
+    fireEvent.change(screen.getByLabelText("Área colhida nesta etapa (ha)"), {
+      target: { value: "8" },
+    });
+    fireEvent.change(screen.getByLabelText("Quantidade produzida"), {
+      target: { value: "640" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Registrar colheita" }));
+
+    await waitFor(() => {
+      expect(api.createHarvestStep).toHaveBeenCalledWith(
+        planting.id,
+        expect.objectContaining({
+          harvestedAreaHectares: 8,
+          harvestQuantity: 640,
+          harvestUnit: "BAGS_60_KG",
+          seedVariety: "BRS 284",
+        }),
+      );
+    });
+    expect(
+      await screen.findByText("Colheita do dia registrada com sucesso."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("8 ha colhidos")).toBeInTheDocument();
+    expect(screen.getAllByText(/640 sacas de 60 kg/)).toHaveLength(2);
+    expect(screen.getByText("80 sc/ha")).toBeInTheDocument();
     expect(onChanged).toHaveBeenCalledOnce();
   });
 });

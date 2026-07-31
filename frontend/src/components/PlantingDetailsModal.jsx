@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { ErrorBanner, LoadingState, SuccessBanner } from "./Feedback";
 import { Modal } from "./Modal";
+import { HarvestProgressSection } from "./planting-details/HarvestProgressSection";
 import { PlantingActivitySections } from "./planting-details/PlantingActivitySections";
 import { PlantingExpensesSection } from "./planting-details/PlantingExpensesSection";
 import { PlantingOverview } from "./planting-details/PlantingOverview";
@@ -22,6 +23,19 @@ function emptyStep(seedVariety = "") {
   return {
     stepDate: toInputDate(),
     plantedAreaHectares: "",
+    seedVariety,
+    startTime: "",
+    endTime: "",
+    observations: "",
+  };
+}
+
+function emptyHarvestStep(seedVariety = "") {
+  return {
+    harvestDate: toInputDate(),
+    harvestedAreaHectares: "",
+    harvestQuantity: "",
+    harvestUnit: "BAGS_60_KG",
     seedVariety,
     startTime: "",
     endTime: "",
@@ -49,10 +63,15 @@ export function PlantingDetailsModal({
   const [stepForm, setStepForm] = useState(() =>
     emptyStep(planting.seedVariety),
   );
+  const [harvestFormOpen, setHarvestFormOpen] = useState(false);
+  const [editingHarvestStep, setEditingHarvestStep] = useState(null);
+  const [harvestForm, setHarvestForm] = useState(() =>
+    emptyHarvestStep(planting.seedVariety),
+  );
 
   const load = useCallback(async () => {
     try {
-      const [summary, expenses, diary, rainfall, closing, steps] =
+      const [summary, expenses, diary, rainfall, closing, steps, harvestSteps] =
         await Promise.all([
           api.getExpenseSummary(planting.id),
           api.getExpenses(planting.id),
@@ -60,6 +79,7 @@ export function PlantingDetailsModal({
           api.getRainfallByPlanting(planting.id).catch(() => []),
           api.getSeasonClosing(planting.id),
           api.getPlantingSteps(planting.id),
+          api.getHarvestSteps(planting.id),
         ]);
       setData({
         summary,
@@ -68,6 +88,7 @@ export function PlantingDetailsModal({
         rainfall,
         closing,
         steps,
+        harvestSteps,
       });
       setError("");
     } catch (requestError) {
@@ -88,6 +109,20 @@ export function PlantingDetailsModal({
       ...current,
       steps,
       diary: diary.content,
+    }));
+  }
+
+  async function refreshHarvestAndDiary() {
+    const [harvestSteps, diary, closing] = await Promise.all([
+      api.getHarvestSteps(planting.id),
+      api.getDiaryEntries(planting.id),
+      api.getSeasonClosing(planting.id),
+    ]);
+    setData((current) => ({
+      ...current,
+      harvestSteps,
+      diary: diary.content,
+      closing,
     }));
   }
 
@@ -167,6 +202,89 @@ export function PlantingDetailsModal({
     }
   }
 
+  function openHarvestCreate() {
+    setEditingHarvestStep(null);
+    setHarvestForm(emptyHarvestStep(planting.seedVariety));
+    setHarvestFormOpen(true);
+    setError("");
+  }
+
+  function openHarvestEdit(step) {
+    setEditingHarvestStep(step);
+    setHarvestForm({
+      harvestDate: step.harvestDate,
+      harvestedAreaHectares: step.harvestedAreaHectares,
+      harvestQuantity: step.harvestQuantity,
+      harvestUnit: step.harvestUnit,
+      seedVariety: step.seedVariety || planting.seedVariety,
+      startTime: step.startTime?.slice(0, 5) || "",
+      endTime: step.endTime?.slice(0, 5) || "",
+      observations: step.observations || "",
+    });
+    setHarvestFormOpen(true);
+    setError("");
+  }
+
+  function closeHarvestForm() {
+    setHarvestFormOpen(false);
+    setEditingHarvestStep(null);
+    setHarvestForm(emptyHarvestStep(planting.seedVariety));
+  }
+
+  async function saveHarvestStep(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    const payload = {
+      ...harvestForm,
+      harvestedAreaHectares: Number(harvestForm.harvestedAreaHectares),
+      harvestQuantity: Number(harvestForm.harvestQuantity),
+      startTime: harvestForm.startTime || null,
+      endTime: harvestForm.endTime || null,
+      observations: harvestForm.observations || null,
+    };
+
+    try {
+      if (editingHarvestStep) {
+        await api.updateHarvestStep(
+          planting.id,
+          editingHarvestStep.id,
+          payload,
+        );
+        setSuccess("Etapa de colheita atualizada.");
+      } else {
+        await api.createHarvestStep(planting.id, payload);
+        setSuccess("Colheita do dia registrada com sucesso.");
+      }
+      closeHarvestForm();
+      await refreshHarvestAndDiary();
+      await onChanged();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteHarvestStep(step) {
+    if (
+      !window.confirm(
+        `Excluir a colheita de ${formatNumber(step.harvestedAreaHectares)} ha registrada em ${formatDate(step.harvestDate)}?`,
+      )
+    )
+      return;
+
+    setError("");
+    try {
+      await api.deleteHarvestStep(planting.id, step.id);
+      setSuccess("Etapa de colheita excluída e totais recalculados.");
+      await refreshHarvestAndDiary();
+      await onChanged();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
   async function registerExpense(event) {
     event.preventDefault();
     setSaving(true);
@@ -235,6 +353,23 @@ export function PlantingDetailsModal({
               onSubmit={saveStep}
               onDelete={deleteStep}
             />
+            <HarvestProgressSection
+              planting={planting}
+              steps={data.harvestSteps}
+              plantingSteps={data.steps}
+              form={harvestForm}
+              formOpen={harvestFormOpen}
+              editing={editingHarvestStep}
+              saving={saving}
+              today={toInputDate()}
+              onFormChange={setHarvestForm}
+              onCreate={openHarvestCreate}
+              onEdit={openHarvestEdit}
+              onCancel={closeHarvestForm}
+              onSubmit={saveHarvestStep}
+              onDelete={deleteHarvestStep}
+              onFinish={onFinish}
+            />
             <SeasonClosingPanel
               closing={data.closing}
               salePrice={salePrice}
@@ -258,7 +393,6 @@ export function PlantingDetailsModal({
             <PlantingQuickActions
               planting={planting}
               onShowExpenseForm={() => setShowExpenseForm(true)}
-              onFinish={onFinish}
               onReactivate={onReactivate}
             />
           </>

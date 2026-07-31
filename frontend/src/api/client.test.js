@@ -119,4 +119,24 @@ describe("cliente da API", () => {
       }),
     );
   });
+
+  it("envia uma nova etapa de colheita para o plantio", async () => {
+    const data = {
+      harvestDate: "2026-07-30",
+      harvestedAreaHectares: 8,
+      harvestQuantity: 640,
+      harvestUnit: "BAGS_60_KG",
+      seedVariety: "AG 8700",
+    };
+    httpClient.request.mockResolvedValueOnce({ status: 201, data: {} });
+
+    await api.createHarvestStep("planting-1", data);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/plantings/planting-1/harvest-steps",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      data,
+    });
+  });
 });
