@@ -68,6 +68,7 @@ async function requestAllPages(path, params = {}) {
 }
 
 export const api = {
+  getDashboardSummary: () => request("/api/v1/dashboard"),
   login: (credentials) =>
     request("/api/v1/auth/login", {
       method: "POST",

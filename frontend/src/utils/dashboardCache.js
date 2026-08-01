@@ -1,6 +1,6 @@
 import { buildUserCacheKey } from "../auth/session";
 
-const DASHBOARD_CACHE_NAME = "dashboard:v2";
+const DASHBOARD_CACHE_NAME = "dashboard:v3";
 
 export function getDashboardCacheKey() {
   return buildUserCacheKey(DASHBOARD_CACHE_NAME);

@@ -1,11 +1,7 @@
 import { CircleDollarSign, Gauge, LandPlot, Warehouse } from "lucide-react";
 import { formatCurrency, formatNumber } from "../../utils/formatters";
 
-export function DashboardMetrics({
-  metrics,
-  activePlantingsCount,
-  expensesCount,
-}) {
+export function DashboardMetrics({ metrics }) {
   return (
     <section className="metric-grid" aria-label="Indicadores principais">
       <article className="metric-card metric-card--green">
@@ -14,10 +10,12 @@ export function DashboardMetrics({
         </span>
         <div>
           <small>Área plantada</small>
-          <strong>{formatNumber(metrics.hectares)} ha</strong>
+          <strong>{formatNumber(metrics.plantedAreaHectares)} ha</strong>
           <span>
-            {activePlantingsCount}{" "}
-            {activePlantingsCount === 1 ? "plantio ativo" : "plantios ativos"}
+            {metrics.activePlantingsCount}{" "}
+            {metrics.activePlantingsCount === 1
+              ? "plantio ativo"
+              : "plantios ativos"}
           </span>
         </div>
       </article>
@@ -29,7 +27,7 @@ export function DashboardMetrics({
         <div>
           <small>Gastos registrados</small>
           <strong>{formatCurrency(metrics.totalExpenses)}</strong>
-          <span>{expensesCount} lançamentos</span>
+          <span>{metrics.expenseCount} lançamentos</span>
         </div>
       </article>
 
@@ -39,10 +37,10 @@ export function DashboardMetrics({
         </span>
         <div>
           <small>Produtos em estoque</small>
-          <strong>{metrics.inventoryCount}</strong>
+          <strong>{metrics.inventoryProductCount}</strong>
           <span>
-            {metrics.lowStockProducts}{" "}
-            {metrics.lowStockProducts === 1
+            {metrics.lowStockProductCount}{" "}
+            {metrics.lowStockProductCount === 1
               ? "alerta de estoque"
               : "alertas de estoque"}
           </span>

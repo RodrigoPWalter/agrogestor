@@ -17,7 +17,7 @@ describe("cache do dashboard", () => {
 
   it("usa uma chave escopada pelo usuário", () => {
     expect(getDashboardCacheKey()).toBe(
-      "agrogestor:cache:teste@local:dashboard:v2",
+      "agrogestor:cache:teste@local:dashboard:v3",
     );
   });
 

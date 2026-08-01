@@ -25,6 +25,16 @@ describe("cliente da API", () => {
     httpClient.request.mockReset();
   });
 
+  it("busca o resumo enxuto da visão geral", async () => {
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: {} });
+
+    await api.getDashboardSummary();
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/dashboard",
+    });
+  });
+
   it("busca todas as páginas de plantios ativos", async () => {
     httpClient.request
       .mockResolvedValueOnce({

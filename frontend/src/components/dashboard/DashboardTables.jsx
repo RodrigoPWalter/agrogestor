@@ -41,7 +41,7 @@ export function InventoryAttentionPanel({ inventoryProducts }) {
                   <td>
                     <span className="table-primary">{product.name}</span>
                   </td>
-                  <td>{product.type}</td>
+                  <td>{product.productTypeName}</td>
                   <td className="numeric-value">
                     {formatNumber(product.quantity, 3)} {product.unitName}
                   </td>
@@ -147,7 +147,7 @@ export function RecentExpensesPanel({ expenses }) {
                   <td>
                     <span className="table-primary">{expense.description}</span>
                   </td>
-                  <td>{expense.category}</td>
+                  <td>{expense.categoryDisplayName}</td>
                   <td>{formatDate(expense.expenseDate)}</td>
                   <td className="numeric-value">
                     {formatCurrency(expense.amount)}

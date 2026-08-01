@@ -1,5 +1,5 @@
 import { LoaderCircle, Plus, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { CommodityQuotesPanel } from "../components/dashboard/CommodityQuotesPanel";
@@ -19,22 +19,34 @@ import {
   writeDashboardCache,
 } from "../utils/dashboardCache";
 
+const emptySummary = {
+  metrics: {
+    plantedAreaHectares: 0,
+    plannedAreaHectares: 0,
+    activePlantingsCount: 0,
+    totalExpenses: 0,
+    expenseCount: 0,
+    inventoryProductCount: 0,
+    lowStockProductCount: 0,
+    costPerHectare: 0,
+  },
+  recentPlantings: [],
+  recentExpenses: [],
+  inventoryProducts: [],
+};
+
 export function DashboardPage() {
   const [dashboardCacheKey] = useState(() => getDashboardCacheKey());
   const [cachedDashboard] = useState(() =>
     readDashboardCache(dashboardCacheKey),
   );
-  const [plantings, setPlantings] = useState(
-    () => cachedDashboard?.plantings ?? [],
+  const [summary, setSummary] = useState(
+    () => cachedDashboard?.summary ?? emptySummary,
   );
-  const [expenses, setExpenses] = useState(
-    () => cachedDashboard?.expenses ?? [],
+  const [loading, setLoading] = useState(() => !cachedDashboard?.summary);
+  const [usingCache, setUsingCache] = useState(() =>
+    Boolean(cachedDashboard?.summary),
   );
-  const [inventoryProducts, setInventoryProducts] = useState(
-    () => cachedDashboard?.inventoryProducts ?? [],
-  );
-  const [loading, setLoading] = useState(() => !cachedDashboard);
-  const [usingCache, setUsingCache] = useState(() => Boolean(cachedDashboard));
   const [error, setError] = useState("");
   const [commodityQuotes, setCommodityQuotes] = useState(
     () => cachedDashboard?.commodityQuotes ?? null,
@@ -45,28 +57,12 @@ export function DashboardPage() {
   const [quotesError, setQuotesError] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      api.getPlantings(),
-      api.getExpenses(),
-      api.getInventoryProducts(),
-    ])
-      .then(([plantingPage, expensePage, products]) => {
-        const nextPlantings = plantingPage.content;
-        const nextExpenses = expensePage.content;
-        const nextInventoryProducts = products;
-
-        setPlantings(nextPlantings);
-        setExpenses(nextExpenses);
-        setInventoryProducts(nextInventoryProducts);
+    api
+      .getDashboardSummary()
+      .then((nextSummary) => {
+        setSummary(nextSummary);
         setUsingCache(false);
-        writeDashboardCache(
-          {
-            plantings: nextPlantings,
-            expenses: nextExpenses,
-            inventoryProducts: nextInventoryProducts,
-          },
-          dashboardCacheKey,
-        );
+        writeDashboardCache({ summary: nextSummary }, dashboardCacheKey);
       })
       .catch((requestError) => {
         setError(
@@ -126,32 +122,6 @@ export function DashboardPage() {
     loadCommodityQuotes();
   }, [dashboardCacheKey, loading]);
 
-  const metrics = useMemo(() => {
-    const plantedHectares = plantings.reduce(
-      (total, planting) => total + Number(planting.plantedAreaHectares),
-      0,
-    );
-    const plannedHectares = plantings.reduce(
-      (total, planting) => total + Number(planting.plannedAreaHectares),
-      0,
-    );
-    const totalExpenses = expenses.reduce(
-      (total, expense) => total + Number(expense.amount),
-      0,
-    );
-    const lowStockProducts = inventoryProducts.filter(
-      (product) => product.lowStock,
-    ).length;
-
-    return {
-      hectares: plantedHectares,
-      totalExpenses,
-      costPerHectare: plannedHectares > 0 ? totalExpenses / plannedHectares : 0,
-      inventoryCount: inventoryProducts.length,
-      lowStockProducts,
-    };
-  }, [plantings, expenses, inventoryProducts]);
-
   return (
     <div className="page">
       <PageHeader
@@ -183,15 +153,13 @@ export function DashboardPage() {
         </section>
       )}
 
-      <DashboardMetrics
-        metrics={metrics}
-        activePlantingsCount={plantings.length}
-        expensesCount={expenses.length}
-      />
+      <DashboardMetrics metrics={summary.metrics} />
 
       <div className="dashboard-grid dashboard-grid--balanced">
         <DashboardQuickActions />
-        <InventoryAttentionPanel inventoryProducts={inventoryProducts} />
+        <InventoryAttentionPanel
+          inventoryProducts={summary.inventoryProducts}
+        />
       </div>
 
       <CommodityQuotesPanel
@@ -202,8 +170,8 @@ export function DashboardPage() {
       />
 
       <div className="dashboard-grid">
-        <RecentPlantingsPanel plantings={plantings} />
-        <RecentExpensesPanel expenses={expenses} />
+        <RecentPlantingsPanel plantings={summary.recentPlantings} />
+        <RecentExpensesPanel expenses={summary.recentExpenses} />
       </div>
 
       <section className="tip-banner">

@@ -6,9 +6,7 @@ import { DashboardPage } from "./DashboardPage";
 
 vi.mock("../api/client", () => ({
   api: {
-    getPlantings: vi.fn(),
-    getExpenses: vi.fn(),
-    getInventoryProducts: vi.fn(),
+    getDashboardSummary: vi.fn(),
     getCommodityQuotes: vi.fn(),
   },
 }));
@@ -36,12 +34,8 @@ describe("DashboardPage", () => {
   });
 
   it("busca as cotações somente depois dos dados essenciais", async () => {
-    const plantingsRequest = deferred();
-    const expensesRequest = deferred();
-    const inventoryRequest = deferred();
-    api.getPlantings.mockReturnValue(plantingsRequest.promise);
-    api.getExpenses.mockReturnValue(expensesRequest.promise);
-    api.getInventoryProducts.mockReturnValue(inventoryRequest.promise);
+    const dashboardRequest = deferred();
+    api.getDashboardSummary.mockReturnValue(dashboardRequest.promise);
 
     render(
       <MemoryRouter>
@@ -51,10 +45,27 @@ describe("DashboardPage", () => {
 
     expect(api.getCommodityQuotes).not.toHaveBeenCalled();
 
-    plantingsRequest.resolve({ content: [] });
-    expensesRequest.resolve({ content: [] });
-    inventoryRequest.resolve([]);
+    dashboardRequest.resolve(emptyDashboardSummary());
 
     await waitFor(() => expect(api.getCommodityQuotes).toHaveBeenCalledOnce());
+    expect(api.getDashboardSummary).toHaveBeenCalledOnce();
   });
 });
+
+function emptyDashboardSummary() {
+  return {
+    metrics: {
+      plantedAreaHectares: 0,
+      plannedAreaHectares: 0,
+      activePlantingsCount: 0,
+      totalExpenses: 0,
+      expenseCount: 0,
+      inventoryProductCount: 0,
+      lowStockProductCount: 0,
+      costPerHectare: 0,
+    },
+    recentPlantings: [],
+    recentExpenses: [],
+    inventoryProducts: [],
+  };
+}
