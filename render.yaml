@@ -26,6 +26,8 @@ services:
         sync: false
       - key: APP_ADMIN_ENABLED
         value: "true"
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
 
   - type: web
     name: agrogestor-rodrigowalter
@@ -36,6 +38,8 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://agrogestor-api-rodrigowalter.onrender.com
+      - key: VITE_API_TIMEOUT_MS
+        value: "90000"
     routes:
       - type: rewrite
         source: /*
