@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearSession, saveSession } from "../auth/session";
 import {
   CONNECTION_STATUS,
@@ -12,6 +12,8 @@ describe("cliente HTTP", () => {
     clearSession();
     resetConnectionStatus();
   });
+
+  afterEach(() => vi.restoreAllMocks());
 
   it("envia o token da sessão no cabeçalho Authorization", async () => {
     saveSession({
@@ -84,5 +86,34 @@ describe("cliente HTTP", () => {
 
     expect(expiredListener).toHaveBeenCalledOnce();
     window.removeEventListener(AUTH_EXPIRED_EVENT, expiredListener);
+  });
+
+  it("explica quando o aparelho esta sem internet", async () => {
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+
+    await expect(
+      httpClient.request({
+        url: "/api/v1/plantings",
+        adapter: async (config) => {
+          const error = new Error("Network Error");
+          error.config = config;
+          throw error;
+        },
+      }),
+    ).rejects.toThrow("Sem internet. Os dados não foram enviados");
+  });
+
+  it("orienta a conferir a lista depois de um timeout", async () => {
+    await expect(
+      httpClient.request({
+        url: "/api/v1/expenses",
+        adapter: async (config) => {
+          const error = new Error("timeout");
+          error.config = config;
+          error.code = "ECONNABORTED";
+          throw error;
+        },
+      }),
+    ).rejects.toThrow("confira se ele apareceu na lista");
   });
 });

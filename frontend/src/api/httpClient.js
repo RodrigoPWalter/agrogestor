@@ -37,9 +37,28 @@ httpClient.interceptors.response.use(
 
     if (error.code === "ECONNABORTED") {
       return Promise.reject(
-        new Error("A solicitação demorou para responder. Tente novamente."),
+        new Error(
+          "O servidor demorou para responder. Antes de repetir um lançamento, confira se ele apareceu na lista.",
+        ),
       );
     }
+
+    if (!error.response && navigator.onLine === false) {
+      return Promise.reject(
+        new Error(
+          "Sem internet. Os dados não foram enviados; conecte-se e tente novamente.",
+        ),
+      );
+    }
+
+    if (!error.response) {
+      return Promise.reject(
+        new Error(
+          "O servidor não respondeu e pode estar iniciando. Aguarde alguns instantes e tente novamente.",
+        ),
+      );
+    }
+
     const response = error.response;
     const fieldMessage = response?.data?.fieldErrors
       ? Object.values(response.data.fieldErrors)[0]

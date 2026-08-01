@@ -11,6 +11,7 @@ import {
 import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
 
 const emptyForm = {
   measurementDate: toInputDate(),
@@ -23,7 +24,7 @@ export function RainfallPage() {
   const [measurements, setMeasurements] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -69,27 +70,26 @@ export function RainfallPage() {
 
   async function submit(event) {
     event.preventDefault();
-    setSaving(true);
-    const payload = {
-      ...form,
-      millimeters: Number(form.millimeters),
-      notes: form.notes || null,
-    };
-    try {
-      if (editing) {
-        await api.updateRainfall(editing.id, payload);
-        setSuccess("Medição atualizada.");
-      } else {
-        await api.createRainfall(payload);
-        setSuccess("Chuva registrada.");
+    await runSaving(async () => {
+      const payload = {
+        ...form,
+        millimeters: Number(form.millimeters),
+        notes: form.notes || null,
+      };
+      try {
+        if (editing) {
+          await api.updateRainfall(editing.id, payload);
+          setSuccess("Medição atualizada.");
+        } else {
+          await api.createRainfall(payload);
+          setSuccess("Chuva registrada.");
+        }
+        setModalOpen(false);
+        await loadData({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setModalOpen(false);
-      await loadData({ showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function remove(item) {

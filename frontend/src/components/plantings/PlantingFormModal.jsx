@@ -4,6 +4,7 @@ export function PlantingFormModal({
   editing,
   form,
   saving,
+  draftRecovered,
   onChange,
   onClose,
   onSubmit,
@@ -15,7 +16,11 @@ export function PlantingFormModal({
   return (
     <Modal
       title={editing ? "Editar plantio" : "Novo plantio"}
-      description="Preencha os dados principais da lavoura."
+      description={
+        draftRecovered
+          ? "Recuperamos o rascunho que estava salvo neste aparelho."
+          : "Preencha os dados principais da lavoura."
+      }
       onClose={onClose}
       dismissible={!saving}
     >

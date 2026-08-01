@@ -10,6 +10,7 @@ export function DiaryFormModal({
   activityTypes,
   today,
   saving,
+  draftRecovered,
   onChange,
   onClose,
   onSubmit,
@@ -17,7 +18,11 @@ export function DiaryFormModal({
   return (
     <Modal
       title={editing ? "Editar atividade" : "Nova atividade"}
-      description="Registre o trabalho como ele aconteceu no campo."
+      description={
+        draftRecovered
+          ? "Recuperamos o rascunho que estava salvo neste aparelho."
+          : "Registre o trabalho como ele aconteceu no campo."
+      }
       onClose={onClose}
       dismissible={!saving}
     >

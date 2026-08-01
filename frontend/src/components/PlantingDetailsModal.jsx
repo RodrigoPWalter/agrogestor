@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useConfirmation } from "./ConfirmationProvider";
 import { ErrorBanner, LoadingState, SuccessBanner } from "./Feedback";
 import { Modal } from "./Modal";
@@ -58,8 +59,8 @@ export function PlantingDetailsModal({
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expense, setExpense] = useState(emptyExpense);
   const [salePrice, setSalePrice] = useState("");
-  const [closingLoading, setClosingLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { pending: closingLoading, run: runClosing } = useSingleFlight();
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [stepFormOpen, setStepFormOpen] = useState(false);
   const [editingStep, setEditingStep] = useState(null);
   const [stepForm, setStepForm] = useState(() =>
@@ -157,32 +158,31 @@ export function PlantingDetailsModal({
 
   async function saveStep(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    const payload = {
-      ...stepForm,
-      plantedAreaHectares: Number(stepForm.plantedAreaHectares),
-      startTime: stepForm.startTime || null,
-      endTime: stepForm.endTime || null,
-      observations: stepForm.observations || null,
-    };
+    await runSaving(async () => {
+      setError("");
+      const payload = {
+        ...stepForm,
+        plantedAreaHectares: Number(stepForm.plantedAreaHectares),
+        startTime: stepForm.startTime || null,
+        endTime: stepForm.endTime || null,
+        observations: stepForm.observations || null,
+      };
 
-    try {
-      if (editingStep) {
-        await api.updatePlantingStep(planting.id, editingStep.id, payload);
-        setSuccess("Etapa de plantio atualizada.");
-      } else {
-        await api.createPlantingStep(planting.id, payload);
-        setSuccess("Etapa de plantio adicionada com sucesso.");
+      try {
+        if (editingStep) {
+          await api.updatePlantingStep(planting.id, editingStep.id, payload);
+          setSuccess("Etapa de plantio atualizada.");
+        } else {
+          await api.createPlantingStep(planting.id, payload);
+          setSuccess("Etapa de plantio adicionada com sucesso.");
+        }
+        closeStepForm();
+        await refreshStepsAndDiary();
+        await onChanged();
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      closeStepForm();
-      await refreshStepsAndDiary();
-      await onChanged();
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function deleteStep(step) {
@@ -236,37 +236,36 @@ export function PlantingDetailsModal({
 
   async function saveHarvestStep(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    const payload = {
-      ...harvestForm,
-      harvestedAreaHectares: Number(harvestForm.harvestedAreaHectares),
-      harvestQuantity: Number(harvestForm.harvestQuantity),
-      startTime: harvestForm.startTime || null,
-      endTime: harvestForm.endTime || null,
-      observations: harvestForm.observations || null,
-    };
+    await runSaving(async () => {
+      setError("");
+      const payload = {
+        ...harvestForm,
+        harvestedAreaHectares: Number(harvestForm.harvestedAreaHectares),
+        harvestQuantity: Number(harvestForm.harvestQuantity),
+        startTime: harvestForm.startTime || null,
+        endTime: harvestForm.endTime || null,
+        observations: harvestForm.observations || null,
+      };
 
-    try {
-      if (editingHarvestStep) {
-        await api.updateHarvestStep(
-          planting.id,
-          editingHarvestStep.id,
-          payload,
-        );
-        setSuccess("Etapa de colheita atualizada.");
-      } else {
-        await api.createHarvestStep(planting.id, payload);
-        setSuccess("Colheita do dia registrada com sucesso.");
+      try {
+        if (editingHarvestStep) {
+          await api.updateHarvestStep(
+            planting.id,
+            editingHarvestStep.id,
+            payload,
+          );
+          setSuccess("Etapa de colheita atualizada.");
+        } else {
+          await api.createHarvestStep(planting.id, payload);
+          setSuccess("Colheita do dia registrada com sucesso.");
+        }
+        closeHarvestForm();
+        await refreshHarvestAndDiary();
+        await onChanged();
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      closeHarvestForm();
-      await refreshHarvestAndDiary();
-      await onChanged();
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function deleteHarvestStep(step) {
@@ -291,37 +290,35 @@ export function PlantingDetailsModal({
 
   async function registerExpense(event) {
     event.preventDefault();
-    setSaving(true);
-    try {
-      await api.createExpense({
-        ...expense,
-        plantingId: planting.id,
-        amount: Number(expense.amount),
-        observations: expense.observations || null,
-      });
-      setExpense({ ...emptyExpense, expenseDate: toInputDate() });
-      setShowExpenseForm(false);
-      await load();
-      await onChanged();
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    await runSaving(async () => {
+      try {
+        await api.createExpense({
+          ...expense,
+          plantingId: planting.id,
+          amount: Number(expense.amount),
+          observations: expense.observations || null,
+        });
+        setExpense({ ...emptyExpense, expenseDate: toInputDate() });
+        setShowExpenseForm(false);
+        await load();
+        await onChanged();
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    });
   }
 
   async function updateClosing(event) {
     event.preventDefault();
-    setClosingLoading(true);
-    try {
-      const closing = await api.getSeasonClosing(planting.id, salePrice);
-      setData((current) => ({ ...current, closing }));
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setClosingLoading(false);
-    }
+    await runClosing(async () => {
+      try {
+        const closing = await api.getSeasonClosing(planting.id, salePrice);
+        setData((current) => ({ ...current, closing }));
+        setError("");
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    });
   }
 
   return (

@@ -14,6 +14,13 @@ import {
   SuccessBanner,
 } from "../components/Feedback";
 import { toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import {
+  clearFormDraft,
+  readFormDraft,
+  writeFormDraft,
+} from "../utils/formDraft";
 
 function newExpenseForm(plantingId = "") {
   return {
@@ -33,13 +40,15 @@ export function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(newExpenseForm());
   const [searchQuery, setSearchQuery] = useState("");
+  const [draftRecovered, setDraftRecovered] = useState(false);
+  const beginExpenseRequest = useLatestRequestGuard();
 
   useEffect(() => {
     api
@@ -61,27 +70,36 @@ export function ExpensesPage() {
   const loadExpenseData = useCallback(
     async (plantingId, { showLoading = true } = {}) => {
       if (!plantingId) return;
+      const isCurrentRequest = beginExpenseRequest();
       if (showLoading) setLoading(true);
       try {
         const [expensePage, expenseSummary] = await Promise.all([
           api.getExpenses(plantingId),
           api.getExpenseSummary(plantingId),
         ]);
-        setExpenses(expensePage.content);
-        setSummary(expenseSummary);
-        setError("");
+        if (isCurrentRequest()) {
+          setExpenses(expensePage.content);
+          setSummary(expenseSummary);
+          setError("");
+        }
       } catch (requestError) {
-        setError(requestError.message);
+        if (isCurrentRequest()) setError(requestError.message);
       } finally {
-        if (showLoading) setLoading(false);
+        if (showLoading && isCurrentRequest()) setLoading(false);
       }
     },
-    [],
+    [beginExpenseRequest],
   );
 
   useEffect(() => {
     loadExpenseData(selectedPlantingId);
   }, [selectedPlantingId, loadExpenseData]);
+
+  useEffect(() => {
+    if (modalOpen && !editing) {
+      writeFormDraft("gasto", form);
+    }
+  }, [editing, form, modalOpen]);
 
   const filteredExpenses = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
@@ -100,13 +118,16 @@ export function ExpensesPage() {
   }, [expenses, searchQuery]);
 
   function openCreate() {
+    const draft = readFormDraft("gasto");
     setEditing(null);
-    setForm(newExpenseForm(selectedPlantingId));
+    setForm({ ...newExpenseForm(selectedPlantingId), ...draft });
+    setDraftRecovered(Boolean(draft));
     setModalOpen(true);
     setError("");
   }
 
   function openEdit(expense) {
+    setDraftRecovered(false);
     setEditing(expense);
     setForm({
       plantingId: expense.plantingId,
@@ -120,34 +141,41 @@ export function ExpensesPage() {
     setError("");
   }
 
+  function closeForm() {
+    if (!editing) clearFormDraft("gasto");
+    setDraftRecovered(false);
+    setModalOpen(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    const payload = {
-      ...form,
-      amount: Number(form.amount),
-      observations: form.observations || null,
-    };
-    try {
-      if (editing) {
-        await api.updateExpense(editing.id, payload);
-        setSuccess("Gasto atualizado com sucesso.");
-      } else {
-        await api.createExpense(payload);
-        setSuccess("Gasto registrado com sucesso.");
+    await runSaving(async () => {
+      setError("");
+      const payload = {
+        ...form,
+        amount: Number(form.amount),
+        observations: form.observations || null,
+      };
+      try {
+        if (editing) {
+          await api.updateExpense(editing.id, payload);
+          setSuccess("Gasto atualizado com sucesso.");
+        } else {
+          await api.createExpense(payload);
+          clearFormDraft("gasto");
+          setDraftRecovered(false);
+          setSuccess("Gasto registrado com sucesso.");
+        }
+        setModalOpen(false);
+        if (form.plantingId !== selectedPlantingId) {
+          setSelectedPlantingId(form.plantingId);
+        } else {
+          await loadExpenseData(selectedPlantingId, { showLoading: false });
+        }
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setModalOpen(false);
-      if (form.plantingId !== selectedPlantingId) {
-        setSelectedPlantingId(form.plantingId);
-      } else {
-        await loadExpenseData(selectedPlantingId, { showLoading: false });
-      }
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function handleDelete(expense) {
@@ -226,8 +254,9 @@ export function ExpensesPage() {
           form={form}
           plantings={plantings}
           saving={saving}
+          draftRecovered={draftRecovered}
           onChange={setForm}
-          onClose={() => setModalOpen(false)}
+          onClose={closeForm}
           onSubmit={handleSubmit}
         />
       )}

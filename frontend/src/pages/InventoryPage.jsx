@@ -14,6 +14,7 @@ import { InventorySummary } from "../components/inventory/InventorySummary";
 import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
 
 const emptyProduct = {
   name: "",
@@ -28,7 +29,7 @@ export function InventoryPage() {
   const requestConfirmation = useConfirmation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [productModal, setProductModal] = useState(false);
@@ -106,49 +107,47 @@ export function InventoryPage() {
 
   async function submitProduct(event) {
     event.preventDefault();
-    setSaving(true);
-    const payload = {
-      ...form,
-      initialQuantity: Number(form.initialQuantity || 0),
-      minimumStock: Number(form.minimumStock || 0),
-      expirationDate: form.expirationDate || null,
-    };
-    try {
-      if (editing) {
-        await api.updateInventoryProduct(editing.id, payload);
-        setSuccess("Produto atualizado com sucesso.");
-      } else {
-        await api.createInventoryProduct(payload);
-        setSuccess("Produto adicionado ao estoque.");
+    await runSaving(async () => {
+      const payload = {
+        ...form,
+        initialQuantity: Number(form.initialQuantity || 0),
+        minimumStock: Number(form.minimumStock || 0),
+        expirationDate: form.expirationDate || null,
+      };
+      try {
+        if (editing) {
+          await api.updateInventoryProduct(editing.id, payload);
+          setSuccess("Produto atualizado com sucesso.");
+        } else {
+          await api.createInventoryProduct(payload);
+          setSuccess("Produto adicionado ao estoque.");
+        }
+        setProductModal(false);
+        await loadProducts({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setProductModal(false);
-      await loadProducts({ showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function submitMovement(event) {
     event.preventDefault();
-    setSaving(true);
-    try {
-      await api.moveInventory(selected.id, {
-        ...movement,
-        quantity: Number(movement.quantity),
-        notes: movement.notes || null,
-      });
-      setSuccess(
-        `${movement.movementType === "ENTRY" ? "Entrada" : "Saída"} registrada.`,
-      );
-      setMovementModal(false);
-      await loadProducts({ showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    await runSaving(async () => {
+      try {
+        await api.moveInventory(selected.id, {
+          ...movement,
+          quantity: Number(movement.quantity),
+          notes: movement.notes || null,
+        });
+        setSuccess(
+          `${movement.movementType === "ENTRY" ? "Entrada" : "Saída"} registrada.`,
+        );
+        setMovementModal(false);
+        await loadProducts({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    });
   }
 
   async function removeProduct(product) {

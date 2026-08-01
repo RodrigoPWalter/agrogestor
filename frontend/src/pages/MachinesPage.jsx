@@ -15,6 +15,8 @@ import { MachineSummary } from "../components/machines/MachineSummary";
 import { MaintenanceFormModal } from "../components/machines/MaintenanceFormModal";
 import { MaintenanceHistory } from "../components/machines/MaintenanceHistory";
 import { toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
 
 const currentYear = new Date().getFullYear();
 const emptyMachine = {
@@ -36,7 +38,7 @@ export function MachinesPage() {
   const requestConfirmation = useConfirmation();
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [machineModal, setMachineModal] = useState(false);
@@ -47,6 +49,7 @@ export function MachinesPage() {
   const [maintenances, setMaintenances] = useState([]);
   const [machineForm, setMachineForm] = useState(emptyMachine);
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenance);
+  const beginMaintenanceRequest = useLatestRequestGuard();
 
   async function loadMachines({ showLoading = true } = {}) {
     if (showLoading) setLoading(true);
@@ -100,11 +103,13 @@ export function MachinesPage() {
   }
 
   async function selectMachine(machine) {
+    const isCurrentRequest = beginMaintenanceRequest();
     setSelectedMachine(machine);
     try {
-      setMaintenances(await api.getMaintenances(machine.id));
+      const items = await api.getMaintenances(machine.id);
+      if (isCurrentRequest()) setMaintenances(items);
     } catch (requestError) {
-      setError(requestError.message);
+      if (isCurrentRequest()) setError(requestError.message);
     }
   }
 
@@ -133,59 +138,57 @@ export function MachinesPage() {
 
   async function submitMachine(event) {
     event.preventDefault();
-    setSaving(true);
-    const payload = {
-      ...machineForm,
-      manufactureYear: Number(machineForm.manufactureYear),
-      usageHours: Number(machineForm.usageHours),
-    };
+    await runSaving(async () => {
+      const payload = {
+        ...machineForm,
+        manufactureYear: Number(machineForm.manufactureYear),
+        usageHours: Number(machineForm.usageHours),
+      };
 
-    try {
-      if (editingMachine) {
-        await api.updateMachine(editingMachine.id, payload);
-        setSuccess("Máquina atualizada.");
-      } else {
-        await api.createMachine(payload);
-        setSuccess("Máquina cadastrada.");
+      try {
+        if (editingMachine) {
+          await api.updateMachine(editingMachine.id, payload);
+          setSuccess("Máquina atualizada.");
+        } else {
+          await api.createMachine(payload);
+          setSuccess("Máquina cadastrada.");
+        }
+        setMachineModal(false);
+        await loadMachines({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setMachineModal(false);
-      await loadMachines({ showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function submitMaintenance(event) {
     event.preventDefault();
-    setSaving(true);
-    const payload = {
-      ...maintenanceForm,
-      cost: Number(maintenanceForm.cost),
-      nextReviewHours: maintenanceForm.nextReviewHours
-        ? Number(maintenanceForm.nextReviewHours)
-        : null,
-      replacedParts: maintenanceForm.replacedParts || null,
-      notes: maintenanceForm.notes || null,
-    };
+    await runSaving(async () => {
+      const payload = {
+        ...maintenanceForm,
+        cost: Number(maintenanceForm.cost),
+        nextReviewHours: maintenanceForm.nextReviewHours
+          ? Number(maintenanceForm.nextReviewHours)
+          : null,
+        replacedParts: maintenanceForm.replacedParts || null,
+        notes: maintenanceForm.notes || null,
+      };
 
-    try {
-      if (editingMaintenance) {
-        await api.updateMaintenance(editingMaintenance.id, payload);
-        setSuccess("Manutenção atualizada.");
-      } else {
-        await api.createMaintenance(selectedMachine.id, payload);
-        setSuccess("Manutenção registrada.");
+      try {
+        if (editingMaintenance) {
+          await api.updateMaintenance(editingMaintenance.id, payload);
+          setSuccess("Manutenção atualizada.");
+        } else {
+          await api.createMaintenance(selectedMachine.id, payload);
+          setSuccess("Manutenção registrada.");
+        }
+        setMaintenanceModal(false);
+        await loadMachines({ showLoading: false });
+        await selectMachine(selectedMachine);
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setMaintenanceModal(false);
-      await loadMachines({ showLoading: false });
-      await selectMachine(selectedMachine);
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function removeMachine(machine) {

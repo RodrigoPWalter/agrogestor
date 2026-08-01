@@ -14,6 +14,13 @@ import { DiaryFilter } from "../components/diary/DiaryFilter";
 import { DiaryFormModal } from "../components/diary/DiaryFormModal";
 import { DiaryTimeline } from "../components/diary/DiaryTimeline";
 import { toInputDate } from "../utils/formatters";
+import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import {
+  clearFormDraft,
+  readFormDraft,
+  writeFormDraft,
+} from "../utils/formDraft";
 
 const activityTypes = [
   { value: "INSPECTION", label: "Vistoria" },
@@ -58,28 +65,33 @@ export function FieldDiaryPage() {
   const [machines, setMachines] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm());
   const [searchParams, setSearchParams] = useSearchParams();
+  const [draftRecovered, setDraftRecovered] = useState(false);
+  const beginEntriesRequest = useLatestRequestGuard();
 
   const loadEntries = useCallback(
     async (plantingId, { showLoading = true } = {}) => {
+      const isCurrentRequest = beginEntriesRequest();
       if (showLoading) setLoading(true);
       try {
         const page = await api.getDiaryEntries(plantingId);
-        setEntries(page.content);
-        setError("");
+        if (isCurrentRequest()) {
+          setEntries(page.content);
+          setError("");
+        }
       } catch (requestError) {
-        setError(requestError.message);
+        if (isCurrentRequest()) setError(requestError.message);
       } finally {
-        if (showLoading) setLoading(false);
+        if (showLoading && isCurrentRequest()) setLoading(false);
       }
     },
-    [],
+    [beginEntriesRequest],
   );
 
   useEffect(() => {
@@ -106,6 +118,7 @@ export function FieldDiaryPage() {
       ...emptyForm(searchParams.get("plantingId") || ""),
       activityType: quickType === "rain" ? "RAIN" : "OBSERVATION",
     });
+    setDraftRecovered(false);
     setModalOpen(true);
     setSearchParams({});
   }, [plantings, searchParams, setSearchParams]);
@@ -114,14 +127,23 @@ export function FieldDiaryPage() {
     loadEntries(selectedPlantingId);
   }, [selectedPlantingId, loadEntries]);
 
+  useEffect(() => {
+    if (modalOpen && !editing) {
+      writeFormDraft("diario", form);
+    }
+  }, [editing, form, modalOpen]);
+
   function openCreate() {
+    const draft = readFormDraft("diario");
     setEditing(null);
-    setForm(emptyForm(selectedPlantingId));
+    setForm({ ...emptyForm(selectedPlantingId), ...draft });
+    setDraftRecovered(Boolean(draft));
     setModalOpen(true);
     setError("");
   }
 
   function openEdit(entry) {
+    setDraftRecovered(false);
     setEditing(entry);
     setForm({
       plantingId: entry.plantingId,
@@ -148,53 +170,60 @@ export function FieldDiaryPage() {
     setError("");
   }
 
+  function closeForm() {
+    if (!editing) clearFormDraft("diario");
+    setDraftRecovered(false);
+    setModalOpen(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    const payload = {
-      ...form,
-      plantingId: form.plantingId || null,
-      weatherCondition: form.weatherCondition || null,
-      appliedProducts: form.appliedProducts || null,
-      products: form.products
-        .filter((item) => item.productId && Number(item.quantity) > 0)
-        .map((item) => ({
-          productId: item.productId,
-          quantity: Number(item.quantity),
-        })),
-      observations: form.observations || null,
-      rainfallMillimeters: form.rainfallMillimeters
-        ? Number(form.rainfallMillimeters)
-        : null,
-      productId: form.productId || null,
-      productName: form.productName || null,
-      quantity: form.quantity ? Number(form.quantity) : null,
-      supplier: form.supplier || null,
-      amount: form.amount ? Number(form.amount) : null,
-      machineId: form.machineId || null,
-      harvestQuantity: form.harvestQuantity
-        ? Number(form.harvestQuantity)
-        : null,
-    };
+    await runSaving(async () => {
+      setError("");
+      const payload = {
+        ...form,
+        plantingId: form.plantingId || null,
+        weatherCondition: form.weatherCondition || null,
+        appliedProducts: form.appliedProducts || null,
+        products: form.products
+          .filter((item) => item.productId && Number(item.quantity) > 0)
+          .map((item) => ({
+            productId: item.productId,
+            quantity: Number(item.quantity),
+          })),
+        observations: form.observations || null,
+        rainfallMillimeters: form.rainfallMillimeters
+          ? Number(form.rainfallMillimeters)
+          : null,
+        productId: form.productId || null,
+        productName: form.productName || null,
+        quantity: form.quantity ? Number(form.quantity) : null,
+        supplier: form.supplier || null,
+        amount: form.amount ? Number(form.amount) : null,
+        machineId: form.machineId || null,
+        harvestQuantity: form.harvestQuantity
+          ? Number(form.harvestQuantity)
+          : null,
+      };
 
-    try {
-      if (editing) {
-        await api.updateDiaryEntry(editing.id, payload);
-        setSuccess("Registro e estoque atualizados.");
-      } else {
-        await api.createDiaryEntry(payload);
-        setSuccess(
-          "Acontecimento registrado e módulos relacionados atualizados.",
-        );
+      try {
+        if (editing) {
+          await api.updateDiaryEntry(editing.id, payload);
+          setSuccess("Registro e estoque atualizados.");
+        } else {
+          await api.createDiaryEntry(payload);
+          clearFormDraft("diario");
+          setDraftRecovered(false);
+          setSuccess(
+            "Acontecimento registrado e módulos relacionados atualizados.",
+          );
+        }
+        setModalOpen(false);
+        await loadEntries(selectedPlantingId, { showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setModalOpen(false);
-      await loadEntries(selectedPlantingId, { showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function handleDelete(entry) {
@@ -268,8 +297,9 @@ export function FieldDiaryPage() {
           activityTypes={activityTypes}
           today={toInputDate()}
           saving={saving}
+          draftRecovered={draftRecovered}
           onChange={setForm}
-          onClose={() => setModalOpen(false)}
+          onClose={closeForm}
           onSubmit={handleSubmit}
         />
       )}

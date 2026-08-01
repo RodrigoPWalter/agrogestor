@@ -15,6 +15,7 @@ export function ExpenseFormModal({
   form,
   plantings,
   saving,
+  draftRecovered,
   onChange,
   onClose,
   onSubmit,
@@ -26,7 +27,11 @@ export function ExpenseFormModal({
   return (
     <Modal
       title={editing ? "Editar gasto" : "Registrar gasto"}
-      description="Informe o valor e a categoria para manter o custo atualizado."
+      description={
+        draftRecovered
+          ? "Recuperamos o rascunho que estava salvo neste aparelho."
+          : "Informe o valor e a categoria para manter o custo atualizado."
+      }
       onClose={onClose}
       dismissible={!saving}
     >

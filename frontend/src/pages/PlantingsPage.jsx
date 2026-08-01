@@ -15,6 +15,13 @@ import { PlantingList } from "../components/plantings/PlantingList";
 import { PlantingsToolbar } from "../components/plantings/PlantingsToolbar";
 import { toInputDate } from "../utils/formatters";
 import { buildPlantingExpenseSummaries } from "../utils/plantingSummaries";
+import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import {
+  clearFormDraft,
+  readFormDraft,
+  writeFormDraft,
+} from "../utils/formDraft";
 
 const emptyForm = {
   crop: "",
@@ -33,7 +40,7 @@ export function PlantingsPage() {
   const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [search, setSearch] = useState("");
@@ -43,32 +50,43 @@ export function PlantingsPage() {
   const [view, setView] = useState("active");
   const [summaries, setSummaries] = useState({});
   const [selectedPlanting, setSelectedPlanting] = useState(null);
+  const [draftRecovered, setDraftRecovered] = useState(false);
+  const beginPlantingsRequest = useLatestRequestGuard();
 
   const loadPlantings = useCallback(
     async ({ showLoading = true } = {}) => {
+      const isCurrentRequest = beginPlantingsRequest();
       if (showLoading) setLoading(true);
       try {
         const [page, expensePage] = await Promise.all([
           view === "active" ? api.getPlantings() : api.getPlantingHistory(),
           api.getExpenses(),
         ]);
-        setPlantings(page.content);
-        setSummaries(
-          buildPlantingExpenseSummaries(page.content, expensePage.content),
-        );
-        setError("");
+        if (isCurrentRequest()) {
+          setPlantings(page.content);
+          setSummaries(
+            buildPlantingExpenseSummaries(page.content, expensePage.content),
+          );
+          setError("");
+        }
       } catch (requestError) {
-        setError(requestError.message);
+        if (isCurrentRequest()) setError(requestError.message);
       } finally {
-        if (showLoading) setLoading(false);
+        if (showLoading && isCurrentRequest()) setLoading(false);
       }
     },
-    [view],
+    [beginPlantingsRequest, view],
   );
 
   useEffect(() => {
     loadPlantings();
   }, [loadPlantings]);
+
+  useEffect(() => {
+    if (modalOpen && !editing) {
+      writeFormDraft("plantio", form);
+    }
+  }, [editing, form, modalOpen]);
 
   const filteredPlantings = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("pt-BR");
@@ -81,13 +99,16 @@ export function PlantingsPage() {
   }, [plantings, search]);
 
   function openCreate() {
+    const draft = readFormDraft("plantio");
     setEditing(null);
-    setForm({ ...emptyForm, startDate: toInputDate() });
+    setForm({ ...emptyForm, startDate: toInputDate(), ...draft });
+    setDraftRecovered(Boolean(draft));
     setModalOpen(true);
     setError("");
   }
 
   function openEdit(planting) {
+    setDraftRecovered(false);
     setEditing(planting);
     setForm({
       crop: planting.crop,
@@ -105,35 +126,42 @@ export function PlantingsPage() {
     setError("");
   }
 
+  function closeForm() {
+    if (!editing) clearFormDraft("plantio");
+    setDraftRecovered(false);
+    setModalOpen(false);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
-    setSaving(true);
-    setError("");
-    const payload = {
-      ...form,
-      fieldName: form.fieldName || null,
-      plannedAreaHectares: Number(form.plannedAreaHectares),
-      rowSpacingCentimeters: form.rowSpacingCentimeters
-        ? Number(form.rowSpacingCentimeters)
-        : null,
-      seedRate: Number(form.seedRate),
-      observations: form.observations || null,
-    };
-    try {
-      if (editing) {
-        await api.updatePlanting(editing.id, payload);
-        setSuccess("Plantio atualizado com sucesso.");
-      } else {
-        await api.createPlanting(payload);
-        setSuccess("Plantio cadastrado com sucesso.");
+    await runSaving(async () => {
+      setError("");
+      const payload = {
+        ...form,
+        fieldName: form.fieldName || null,
+        plannedAreaHectares: Number(form.plannedAreaHectares),
+        rowSpacingCentimeters: form.rowSpacingCentimeters
+          ? Number(form.rowSpacingCentimeters)
+          : null,
+        seedRate: Number(form.seedRate),
+        observations: form.observations || null,
+      };
+      try {
+        if (editing) {
+          await api.updatePlanting(editing.id, payload);
+          setSuccess("Plantio atualizado com sucesso.");
+        } else {
+          await api.createPlanting(payload);
+          clearFormDraft("plantio");
+          setDraftRecovered(false);
+          setSuccess("Plantio cadastrado com sucesso.");
+        }
+        setModalOpen(false);
+        await loadPlantings({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
       }
-      setModalOpen(false);
-      await loadPlantings({ showLoading: false });
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
+    });
   }
 
   async function handleDelete(planting) {
@@ -265,8 +293,9 @@ export function PlantingsPage() {
           editing={Boolean(editing)}
           form={form}
           saving={saving}
+          draftRecovered={draftRecovered}
           onChange={setForm}
-          onClose={() => setModalOpen(false)}
+          onClose={closeForm}
           onSubmit={handleSubmit}
         />
       )}
