@@ -29,10 +29,18 @@ function createSession(response) {
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(readSession);
+  const [authNotice, setAuthNotice] = useState("");
 
   const logout = useCallback(() => {
     clearSession();
     setSession(null);
+    setAuthNotice("");
+  }, []);
+
+  const expireSession = useCallback(() => {
+    clearSession();
+    setSession(null);
+    setAuthNotice("Sua sessão expirou. Entre novamente para continuar.");
   }, []);
 
   const login = useCallback(async (credentials) => {
@@ -41,6 +49,7 @@ export function AuthProvider({ children }) {
 
     saveSession(nextSession);
     setSession(nextSession);
+    setAuthNotice("");
     return response.user;
   }, []);
 
@@ -55,7 +64,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const handleExpiredSession = () => logout();
+    const handleExpiredSession = () => expireSession();
     const handleStorageChange = (event) => {
       if (event.key === AUTH_STORAGE_KEY) {
         setSession(readSession());
@@ -69,7 +78,20 @@ export function AuthProvider({ children }) {
       window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, [logout]);
+  }, [expireSession]);
+
+  useEffect(() => {
+    if (!session?.expiresAt) return undefined;
+
+    const remainingTime = session.expiresAt - Date.now();
+    if (remainingTime <= 0) {
+      expireSession();
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(expireSession, remainingTime);
+    return () => window.clearTimeout(timeoutId);
+  }, [expireSession, session?.expiresAt]);
 
   const value = useMemo(
     () => ({
@@ -79,8 +101,9 @@ export function AuthProvider({ children }) {
       login,
       logout,
       updateProfile,
+      authNotice,
     }),
-    [login, logout, session, updateProfile],
+    [authNotice, login, logout, session, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

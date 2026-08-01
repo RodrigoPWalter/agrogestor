@@ -13,7 +13,7 @@ describe("LoginPage", () => {
 
   beforeEach(() => {
     login.mockReset();
-    useAuth.mockReturnValue({ login });
+    useAuth.mockReturnValue({ authNotice: "", login });
   });
 
   it("autentica e retorna à página solicitada", async () => {
@@ -78,5 +78,22 @@ describe("LoginPage", () => {
         name: "",
       }),
     ).toHaveTextContent("E-mail ou senha inválidos.");
+  });
+
+  it("explica quando o acesso anterior expirou", () => {
+    useAuth.mockReturnValue({
+      authNotice: "Sua sessão expirou. Entre novamente para continuar.",
+      login,
+    });
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Sua sessão expirou. Entre novamente para continuar.",
+    );
   });
 });

@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { clearSession, saveSession } from "../auth/session";
 import {
   CONNECTION_STATUS,
   getConnectionStatus,
   resetConnectionStatus,
 } from "./connectionStatus";
-import { httpClient } from "./httpClient";
+import { AUTH_EXPIRED_EVENT, httpClient } from "./httpClient";
 
 describe("cliente HTTP", () => {
   beforeEach(() => {
@@ -56,5 +56,33 @@ describe("cliente HTTP", () => {
     });
 
     expect(requestConfig.headers.Authorization).toBeUndefined();
+  });
+
+  it("avisa a aplicação quando uma requisição autenticada recebe 401", async () => {
+    saveSession({
+      accessToken: "jwt-invalido",
+      expiresAt: Date.now() + 60_000,
+      user: { email: "produtor@agrogestor.local" },
+    });
+    const expiredListener = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, expiredListener);
+
+    await expect(
+      httpClient.request({
+        url: "/api/v1/plantings",
+        adapter: async (config) => {
+          const error = new Error("Não autorizado");
+          error.config = config;
+          error.response = {
+            data: { message: "Sessão inválida." },
+            status: 401,
+          };
+          throw error;
+        },
+      }),
+    ).rejects.toThrow("Sessão inválida.");
+
+    expect(expiredListener).toHaveBeenCalledOnce();
+    window.removeEventListener(AUTH_EXPIRED_EVENT, expiredListener);
   });
 });

@@ -1,6 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
+import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { readSession } from "./session";
 
@@ -12,11 +19,13 @@ vi.mock("../api/client", () => ({
 }));
 
 function AuthConsumer() {
-  const { isAuthenticated, login, logout, updateProfile, user } = useAuth();
+  const { authNotice, isAuthenticated, login, logout, updateProfile, user } =
+    useAuth();
 
   return (
     <>
       <span>{isAuthenticated ? user.nome : "Visitante"}</span>
+      <span>{authNotice || "Sem aviso"}</span>
       <button
         type="button"
         onClick={() =>
@@ -55,6 +64,10 @@ describe("AuthProvider", () => {
     api.updateProfile.mockReset();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("autentica, mantém a sessão e permite sair", async () => {
     api.login.mockResolvedValue({
       accessToken: "jwt-assinado",
@@ -87,7 +100,7 @@ describe("AuthProvider", () => {
     expect(readSession()).toBeNull();
   });
 
-  it("substitui a sessÃ£o depois de atualizar o perfil", async () => {
+  it("substitui a sessão depois de atualizar o perfil", async () => {
     localStorage.setItem(
       "agrogestor.auth",
       JSON.stringify({
@@ -125,5 +138,59 @@ describe("AuthProvider", () => {
     });
     expect(readSession()?.accessToken).toBe("jwt-novo");
     expect(readSession()?.user.email).toBe("rodrigo@agro.local");
+  });
+
+  it("encerra a sessão quando a API informa que o token expirou", () => {
+    localStorage.setItem(
+      "agrogestor.auth",
+      JSON.stringify({
+        accessToken: "jwt-expirado",
+        expiresAt: Date.now() + 60_000,
+        user: {
+          nome: "Rodrigo",
+          email: "produtor@agrogestor.local",
+        },
+      }),
+    );
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    act(() => window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT)));
+
+    expect(screen.getByText("Visitante")).toBeInTheDocument();
+    expect(
+      screen.getByText("Sua sessão expirou. Entre novamente para continuar."),
+    ).toBeInTheDocument();
+    expect(readSession()).toBeNull();
+  });
+
+  it("encerra a sessão automaticamente no horário de expiração", () => {
+    vi.useFakeTimers();
+    localStorage.setItem(
+      "agrogestor.auth",
+      JSON.stringify({
+        accessToken: "jwt-curto",
+        expiresAt: Date.now() + 1_000,
+        user: {
+          nome: "Rodrigo",
+          email: "produtor@agrogestor.local",
+        },
+      }),
+    );
+
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    act(() => vi.advanceTimersByTime(1_001));
+
+    expect(screen.getByText("Visitante")).toBeInTheDocument();
+    expect(readSession()).toBeNull();
   });
 });

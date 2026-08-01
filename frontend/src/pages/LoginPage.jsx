@@ -16,7 +16,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { authNotice, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -85,6 +85,12 @@ export function LoginPage() {
           </header>
 
           <form className="login-form" onSubmit={handleSubmit}>
+            {authNotice && (
+              <div className="login-notice" role="status">
+                {authNotice}
+              </div>
+            )}
+
             <label htmlFor="login-email">E-mail</label>
             <div className="login-input">
               <Mail size={17} />

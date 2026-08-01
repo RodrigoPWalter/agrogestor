@@ -47,7 +47,7 @@ httpClient.interceptors.response.use(
 
     if (
       response?.status === 401 &&
-      getAccessToken() &&
+      error.config?.headers?.Authorization &&
       !error.config?.url?.includes("/api/v1/auth/login")
     ) {
       window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
