@@ -94,6 +94,7 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | Domínio           | Rota base                    |
 | ----------------- | ---------------------------- |
 | Autenticação      | `/api/v1/auth`               |
+| Visão geral       | `/api/v1/dashboard`          |
 | Plantios          | `/api/v1/plantings`          |
 | Etapas de plantio | `/api/v1/plantings/{id}/steps` |
 | Etapas de colheita | `/api/v1/plantings/{id}/harvest-steps` |
@@ -104,6 +105,7 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | Diário da lavoura | `/api/v1/field-diary`        |
 | Chuvas            | `/api/v1/rainfall`           |
 | Cotações          | `/api/v1/commodity-quotes`   |
+| Saúde do serviço  | `/api/v1/health`             |
 
 ## Executando localmente
 

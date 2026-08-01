@@ -13,16 +13,29 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 public interface PlantingRepository extends JpaRepository<Planting, UUID> {
 
     Page<Planting> findByHarvestIgnoreCase(String harvest, Pageable pageable);
     Page<Planting> findByStatus(PlantingStatus status, Pageable pageable);
+    long countByStatus(PlantingStatus status);
+    List<Planting> findByStatusOrderByStartDateDescCropAsc(
+            PlantingStatus status,
+            Pageable pageable
+    );
     Page<Planting> findByHarvestIgnoreCaseAndStatus(
             String harvest, PlantingStatus status, Pageable pageable);
 
     @Query("select distinct p.harvest from Planting p order by p.harvest desc")
     List<String> findDistinctHarvests();
+
+    @Query("""
+            select coalesce(sum(planting.plannedAreaHectares), 0)
+            from Planting planting
+            where planting.status = :status
+            """)
+    BigDecimal sumPlannedAreaByStatus(@Param("status") PlantingStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select planting from Planting planting where planting.id = :id")
