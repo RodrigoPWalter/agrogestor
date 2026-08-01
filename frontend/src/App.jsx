@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { PrivateRoute, PublicOnlyRoute } from "./auth/RouteGuards";
+import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { AppLayout } from "./components/AppLayout";
 import { LoadingState } from "./components/Feedback";
 import { loginPageLoader, privatePageLoaders } from "./routes/pageLoaders";
@@ -24,9 +25,11 @@ function PageLoader() {
 
 function lazyPage(PageComponent) {
   return (
-    <Suspense fallback={<PageLoader />}>
-      <PageComponent />
-    </Suspense>
+    <AppErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <PageComponent />
+      </Suspense>
+    </AppErrorBoundary>
   );
 }
 
