@@ -29,7 +29,8 @@ São considerados dentro do escopo:
 
 - O projeto ainda não implementa isolamento por propriedade/organização.
 - O token JWT é armazenado no navegador para manter a experiência simples do PWA.
-- O Swagger fica público no ambiente atual por conveniência de portfólio.
-- Não há rate limit no login nesta fase.
+- O Swagger fica habilitado apenas no desenvolvimento local e é desativado pelo perfil de produção.
+- O login possui limite por endereço de origem. Como o controle é mantido em memória, ele deve migrar para um armazenamento compartilhado caso a API passe a executar em várias instâncias.
+- O `npm audit` sinaliza o modo RSC do React Router atual. O AgroGestor é uma SPA Vite e não utiliza RSC, Actions ou execução no servidor; a atualização deve ser aplicada assim que houver uma versão corrigida sem reintroduzir as vulnerabilidades das versões anteriores.
 
 Esses pontos estão documentados para orientar a evolução do projeto e não devem ser ignorados em um cenário comercial.

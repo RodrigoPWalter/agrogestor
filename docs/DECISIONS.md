@@ -71,3 +71,13 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 **Trade-off:** o histórico do banco fica com marcas de decisões antigas, como a tabela `weather_location`.
 
 **Evolução prevista:** criar novas migrations para desativar ou remover estruturas obsoletas quando a decisão for definitiva.
+
+## 8. Segurança em conexões lentas
+
+**Decisão:** os formulários bloqueiam uma segunda execução enquanto o primeiro salvamento está pendente e mantêm rascunhos locais dos lançamentos mais importantes.
+
+**Motivo:** no celular, uma conexão instável pode fazer o usuário tocar novamente no botão ou fechar o aplicativo antes de concluir o preenchimento. A trava reduz duplicidades e o rascunho evita redigitação.
+
+**Trade-off:** os rascunhos ficam no `localStorage` do aparelho e não são sincronizados. Por isso não armazenam senhas, são separados pelo e-mail autenticado e expiram em sete dias.
+
+**Evolução prevista:** quando houver sincronização offline, substituir os rascunhos por uma fila persistente com identificadores idempotentes e estado visível de envio.

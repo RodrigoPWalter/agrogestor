@@ -6,6 +6,15 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Proteção interna contra envios duplicados durante salvamentos demorados.
+- Recuperação por usuário dos rascunhos de Plantios, Gastos e Diário por até sete dias.
+- Respostas antigas são ignoradas ao trocar rapidamente filtros e seleções.
+- Mensagens de rede diferenciam falta de internet, timeout e inicialização do servidor.
+- Limite de tentativas repetidas no endpoint de login.
+- Teste de inicialização completa e integração com PostgreSQL no CI.
+- Perfil de produção mais leve, com pool de conexões ajustado e OpenAPI desativada.
+- Índices compostos para consultas operacionais de plantios, gastos e Diário.
+- Backup do Neon com SSL explícito e verificação automática pelo `pg_restore`.
 - Tela de recuperação para falhas de carregamento, evitando que o aplicativo fique em branco.
 - Modais protegidos contra fechamento por toque acidental e bloqueados durante o salvamento.
 - Carregamento de módulos orientado pela navegação, respeitando economia de dados e conexões lentas.

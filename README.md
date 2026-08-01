@@ -16,7 +16,7 @@ O foco do sistema é ser simples o suficiente para uso no campo e estruturado o 
 ## Aplicação publicada
 
 - Frontend: [https://agrogestor-rodrigowalter.onrender.com](https://agrogestor-rodrigowalter.onrender.com)
-- API/Swagger: [https://agrogestor-api-rodrigowalter.onrender.com/swagger-ui.html](https://agrogestor-api-rodrigowalter.onrender.com/swagger-ui.html)
+- API (verificação de saúde): [https://agrogestor-api-rodrigowalter.onrender.com/api/v1/health](https://agrogestor-api-rodrigowalter.onrender.com/api/v1/health)
 
 O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito pode suspender serviços sem uso, o primeiro acesso depois de um período parado pode levar alguns segundos. Para reduzir esse impacto, o Dashboard mantém um cache local dos últimos dados carregados e reaproveita as cotações do mercado durante o mesmo dia.
 
@@ -35,6 +35,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro, manutenções preventivas/corretivas e custos.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
 - **PWA:** Manifesto e service worker para instalação pelo navegador no Android e iPhone.
+- **Uso em conexão lenta:** Bloqueio de envios repetidos, mensagens específicas de conexão e recuperação de rascunhos de plantios, gastos e atividades do Diário.
 - **Acesso protegido:** Login com JWT e alteração de nome, e-mail e senha pelo menu do perfil.
 
 ## Stack
@@ -168,6 +169,8 @@ JWT_SECRET=uma-chave-com-pelo-menos-32-caracteres
 JWT_EXPIRATION_MINUTES=480
 JWT_ISSUER=https://agrogestor.local
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+LOGIN_MAX_ATTEMPTS=10
+LOGIN_WINDOW_MINUTES=15
 APP_ADMIN_ENABLED=true
 APP_ADMIN_NAME=Administrador
 APP_ADMIN_EMAIL=admin@agrogestor.local
@@ -180,7 +183,7 @@ Quando a tabela de usuários está vazia, o sistema cria um administrador inicia
 
 ```text
 VITE_API_URL=
-VITE_API_TIMEOUT_MS=60000
+VITE_API_TIMEOUT_MS=90000
 ```
 
 Vazio em desenvolvimento local com proxy do Vite. Preenchido em produção para apontar para a API publicada.
@@ -196,6 +199,8 @@ npm.cmd run preview -- --host
 ```
 
 Em produção, o app pode ser instalado no celular pela opção do navegador “Adicionar à tela inicial” ou “Instalar app”.
+
+Os rascunhos dos formulários de Plantios, Gastos e Diário ficam armazenados somente no aparelho e associados ao usuário autenticado. Eles são removidos depois do salvamento, ao cancelar o formulário ou após sete dias.
 
 ## Testes
 
@@ -220,6 +225,8 @@ npm.cmd run build
 - O projeto evita expor entidades diretamente na API, usando DTOs para entrada e saída.
 - Serviços que alteram mais de uma tabela usam transações para preservar consistência.
 - O CI executa testes do backend, testes do frontend, build de produção e auditoria das dependências de produção do frontend.
+- O CI também sobe um PostgreSQL temporário para validar as migrations e o fluxo transacional entre Diário e Estoque.
+- A documentação OpenAPI fica disponível no ambiente local. No perfil de produção ela é desativada para reduzir superfície de exposição e custo de inicialização.
 - O repositório ainda não define uma licença de uso. Antes de aceitar contribuições ou liberar reutilização por terceiros, escolha uma licença adequada para o objetivo do projeto.
 
 ## Documentação complementar

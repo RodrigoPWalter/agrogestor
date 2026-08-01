@@ -99,6 +99,7 @@ Tabela mantida por compatibilidade com migrations antigas. O módulo de previsã
 - Datas de auditoria usam `TIMESTAMPTZ`.
 - Mudanças estruturais entram somente por novas migrations do Flyway.
 - Migrations já aplicadas não devem ser reescritas ou removidas.
+- Consultas de plantios ativos, gastos por safra e Diário por plantio usam índices compostos compatíveis com a ordenação apresentada no aplicativo.
 
 ## Próximas evoluções de banco
 
