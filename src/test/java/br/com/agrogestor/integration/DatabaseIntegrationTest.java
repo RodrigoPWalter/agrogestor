@@ -66,7 +66,7 @@ class DatabaseIntegrationTest {
                 product.id(),
                 new BigDecimal("11.000")
         ))).isInstanceOf(BusinessRuleException.class)
-                .hasMessageContaining("Estoque insuficiente");
+                .hasMessageContaining("estoque disponível");
 
         assertThat(inventoryService.findById(product.id()).quantity())
                 .isEqualByComparingTo("10.000");
