@@ -6,6 +6,8 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Carregamento de módulos orientado pela navegação, respeitando economia de dados e conexões lentas.
+- Cotações carregadas depois dos indicadores essenciais para reduzir a disputa de rede no primeiro acesso.
 - Confirmações próprias e responsivas para exclusões, finalização e reativação de plantios.
 - Nova identidade visual com monograma `AG`, linhas de plantio e ícones próprios para o PWA.
 - Paleta visual própria com verde profundo, dourado moderado e botões de maior contraste.

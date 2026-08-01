@@ -1,4 +1,6 @@
-function createPageLoader(importPage, exportName) {
+const SLOW_CONNECTION_TYPES = new Set(["slow-2g", "2g"]);
+
+export function createPageLoader(importPage, exportName) {
   let pagePromise;
 
   return () => {
@@ -6,6 +8,9 @@ function createPageLoader(importPage, exportName) {
       pagePromise = importPage().then((module) => ({
         default: module[exportName],
       }));
+      pagePromise.catch(() => {
+        pagePromise = undefined;
+      });
     }
 
     return pagePromise;
@@ -48,30 +53,14 @@ export const loginPageLoader = createPageLoader(
   "LoginPage",
 );
 
-export function preloadPrivatePage(path) {
+export function preloadPrivatePage(
+  path,
+  { online = navigator.onLine, connection = navigator.connection } = {},
+) {
+  const shouldSaveData = connection?.saveData;
+  const slowConnection = SLOW_CONNECTION_TYPES.has(connection?.effectiveType);
+
+  if (!online || shouldSaveData || slowConnection) return undefined;
+
   return privatePageLoaders[path]?.();
-}
-
-export function schedulePrivatePagesPreload({
-  windowObject = window,
-  online = navigator.onLine,
-  loaders = Object.values(privatePageLoaders),
-} = {}) {
-  if (!online) return () => {};
-
-  const preload = () => {
-    loaders.forEach((loadPage) => {
-      loadPage().catch(() => {});
-    });
-  };
-
-  if (typeof windowObject.requestIdleCallback === "function") {
-    const idleId = windowObject.requestIdleCallback(preload, {
-      timeout: 2500,
-    });
-    return () => windowObject.cancelIdleCallback?.(idleId);
-  }
-
-  const timeoutId = windowObject.setTimeout(preload, 1200);
-  return () => windowObject.clearTimeout(timeoutId);
 }

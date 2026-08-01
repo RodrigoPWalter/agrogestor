@@ -1,41 +1,41 @@
 import { describe, expect, it, vi } from "vitest";
-import { schedulePrivatePagesPreload } from "./pageLoaders";
+import { createPageLoader, preloadPrivatePage } from "./pageLoaders";
 
 describe("pré-carregamento das telas", () => {
-  it("carrega os módulos quando o navegador fica ocioso", () => {
-    const firstLoader = vi.fn().mockResolvedValue({});
-    const secondLoader = vi.fn().mockResolvedValue({});
-    const requestIdleCallback = vi.fn((callback) => {
-      callback();
-      return 17;
-    });
-    const cancelIdleCallback = vi.fn();
-
-    const cancel = schedulePrivatePagesPreload({
-      windowObject: { requestIdleCallback, cancelIdleCallback },
+  it("reutiliza a importação quando a mesma tela é solicitada novamente", () => {
+    const firstRequest = preloadPrivatePage("/gastos", {
       online: true,
-      loaders: [firstLoader, secondLoader],
+      connection: undefined,
+    });
+    const secondRequest = preloadPrivatePage("/gastos", {
+      online: true,
+      connection: undefined,
     });
 
-    expect(requestIdleCallback).toHaveBeenCalledWith(expect.any(Function), {
-      timeout: 2500,
-    });
-    expect(firstLoader).toHaveBeenCalledOnce();
-    expect(secondLoader).toHaveBeenCalledOnce();
-
-    cancel();
-    expect(cancelIdleCallback).toHaveBeenCalledWith(17);
+    expect(firstRequest).toBe(secondRequest);
   });
 
-  it("não baixa telas adicionais quando o aparelho está offline", () => {
-    const loader = vi.fn().mockResolvedValue({});
+  it.each([
+    ["sem internet", false, undefined],
+    ["com economia de dados", true, { saveData: true }],
+    ["em conexão 2G", true, { effectiveType: "2g" }],
+  ])("não antecipa módulos %s", (_scenario, online, connection) => {
+    expect(
+      preloadPrivatePage("/estoque", { online, connection }),
+    ).toBeUndefined();
+  });
 
-    schedulePrivatePagesPreload({
-      windowObject: {},
-      online: false,
-      loaders: [loader],
+  it("permite tentar novamente quando uma importação falha", async () => {
+    const importPage = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("falha temporária"))
+      .mockResolvedValueOnce({ ExamplePage: () => null });
+    const loadPage = createPageLoader(importPage, "ExamplePage");
+
+    await expect(loadPage()).rejects.toThrow("falha temporária");
+    await expect(loadPage()).resolves.toEqual({
+      default: expect.any(Function),
     });
-
-    expect(loader).not.toHaveBeenCalled();
+    expect(importPage).toHaveBeenCalledTimes(2);
   });
 });

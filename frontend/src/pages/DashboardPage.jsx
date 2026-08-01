@@ -121,8 +121,10 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
+    if (loading) return;
+
     loadCommodityQuotes();
-  }, [dashboardCacheKey]);
+  }, [dashboardCacheKey, loading]);
 
   const metrics = useMemo(() => {
     const plantedHectares = plantings.reduce(

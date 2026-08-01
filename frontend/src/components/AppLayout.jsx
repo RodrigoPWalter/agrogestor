@@ -23,10 +23,7 @@ import {
   subscribeConnectionStatus,
 } from "../api/connectionStatus";
 import { useAuth } from "../auth/AuthContext";
-import {
-  preloadPrivatePage,
-  schedulePrivatePagesPreload,
-} from "../routes/pageLoaders";
+import { preloadPrivatePage } from "../routes/pageLoaders";
 import { BrandMark } from "./BrandMark";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
 
@@ -99,10 +96,8 @@ export function AppLayout() {
     setProfileMenuOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => schedulePrivatePagesPreload(), []);
-
   function preloadNavigationTarget(path) {
-    preloadPrivatePage(path);
+    preloadPrivatePage(path)?.catch(() => {});
   }
 
   return (
