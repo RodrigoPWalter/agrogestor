@@ -27,6 +27,7 @@ import {
   preloadPrivatePage,
   schedulePrivatePagesPreload,
 } from "../routes/pageLoaders";
+import { BrandMark } from "./BrandMark";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
 
 const navigation = [
@@ -114,7 +115,7 @@ export function AppLayout() {
             aria-label="Ir para a visão geral"
           >
             <span>
-              <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
+              <BrandMark />
             </span>
             <strong>AgroGestor</strong>
           </NavLink>

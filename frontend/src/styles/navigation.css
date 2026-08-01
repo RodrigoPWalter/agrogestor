@@ -9,7 +9,7 @@
   top: 0;
   z-index: 60;
   color: #fff;
-  border-bottom: 2px solid var(--machine-yellow);
+  border-bottom: 2px solid var(--brand-gold);
   background: var(--green-900);
   box-shadow: 0 4px 16px rgba(16, 42, 29, 0.18);
 }
@@ -83,7 +83,7 @@
   content: "";
   transform: scaleX(0);
   transform-origin: center;
-  background: var(--machine-yellow);
+  background: var(--brand-gold);
   transition: transform 150ms ease;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .desktop-navigation__item.is-active {
-  color: var(--machine-yellow);
+  color: var(--brand-gold);
 }
 
 .desktop-navigation__item.is-active::after {
@@ -117,7 +117,7 @@
 }
 
 .connection-status svg {
-  color: var(--machine-yellow);
+  color: var(--brand-gold);
 }
 
 .connection-status--offline,
@@ -153,7 +153,7 @@
   place-items: center;
   color: var(--green-950);
   border-radius: 7px;
-  background: var(--machine-yellow);
+  background: var(--brand-gold);
   font-size: 0.66rem;
   font-weight: 900;
 }
@@ -285,7 +285,7 @@
 
   .mobile-app-bar a.is-active,
   .mobile-app-bar button.is-active {
-    color: var(--machine-yellow);
+    color: var(--brand-gold);
     background: rgba(255, 255, 255, 0.055);
   }
 
@@ -350,7 +350,7 @@
   }
 
   .mobile-more-menu__grid a.is-active {
-    color: var(--machine-yellow);
+    color: var(--brand-gold);
     border-color: rgba(214, 170, 42, 0.38);
   }
 }

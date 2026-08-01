@@ -7,35 +7,45 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #1d2b23;
-  background: #f4f6f1;
+  color: #17211c;
+  background: #f4f5f2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --green-950: #102d1e;
+  --green-950: #102a1d;
   --green-900: #173f2a;
-  --green-800: #1e5438;
-  --green-700: #286c49;
-  --green-600: #35875d;
-  --green-100: #dfeee5;
-  --green-50: #eff7f2;
-  --gold-600: #b17a19;
-  --gold-100: #f7e8c6;
+  --green-800: #235b3d;
+  --green-700: #286047;
+  --green-600: #39775a;
+  --green-100: #dce9e1;
+  --green-50: #edf3ef;
+  --gold-600: #80651c;
+  --gold-100: #f6edcf;
   --blue-600: #37788a;
   --blue-100: #dceef1;
   --red-600: #b94141;
   --red-100: #fbe4e2;
-  --ink: #1d2b23;
-  --muted: #68756d;
-  --line: #dde3dc;
+  --ink: #17211c;
+  --muted: #68716c;
+  --line: #d9ded9;
   --surface: #ffffff;
-  --background: #f4f6f1;
-  --shadow: 0 14px 38px rgba(26, 53, 36, 0.08);
-  --shadow-soft: 0 6px 18px rgba(26, 53, 36, 0.06);
-  --radius: 18px;
+  --background: #f4f5f2;
+  --shadow: 0 8px 24px rgba(17, 35, 27, 0.07);
+  --shadow-soft: 0 2px 8px rgba(17, 35, 27, 0.045);
+  --radius: 10px;
+  --brand-green-strong: #173f2a;
+  --brand-green: #235b3d;
+  --brand-green-soft: #39775a;
+  --brand-gold: #d6aa2a;
+  --brand-gold-hover: #c69a20;
 }
 
 * {
   box-sizing: border-box;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 2px;
 }
 
 html {
@@ -54,6 +64,17 @@ body {
       transparent 25rem
     ),
     var(--background);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 button,

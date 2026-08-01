@@ -8,6 +8,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 - Nova identidade visual com monograma `AG`, linhas de plantio e ícones próprios para o PWA.
 - Paleta visual própria com verde profundo, dourado moderado e botões de maior contraste.
+- Tokens visuais consolidados, marca reutilizável e suporte a foco visível e redução de movimento.
 - Colheita por etapas com área diária, produção, unidade, variedade e histórico editável.
 - Progresso da colheita, produtividade em sacas por hectare e encerramento somente após 100% da área plantada.
 - Lançamento automático das etapas de colheita no Diário e integração direta com o fechamento da safra.

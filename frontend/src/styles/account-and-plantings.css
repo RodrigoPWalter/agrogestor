@@ -81,7 +81,7 @@
   align-items: center;
   gap: 7px;
   margin-bottom: 18px;
-  color: var(--machine-yellow);
+  color: var(--brand-gold);
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -118,7 +118,7 @@
 
 .login-security-note > svg {
   flex: 0 0 auto;
-  color: var(--machine-yellow);
+  color: var(--brand-gold);
 }
 
 .login-security-note strong {
@@ -138,7 +138,7 @@
   width: min(410px, 100%);
   padding: 32px;
   border: 1px solid #d8ddd5;
-  border-top: 3px solid var(--machine-yellow);
+  border-top: 3px solid var(--brand-gold);
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 18px 55px rgba(24, 63, 25, 0.1);
@@ -158,7 +158,7 @@
 
 .login-card header p {
   margin-bottom: 6px;
-  color: var(--machine-green);
+  color: var(--brand-green);
   font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.09em;
@@ -209,7 +209,7 @@
 }
 
 .login-input:focus-within {
-  border-color: var(--machine-green);
+  border-color: var(--brand-green);
   box-shadow: 0 0 0 3px rgba(35, 91, 61, 0.14);
 }
 
@@ -254,10 +254,10 @@
   min-height: 44px;
   margin-top: 22px;
   color: #fff;
-  border: 1px solid var(--machine-green-dark);
+  border: 1px solid var(--brand-green-strong);
   border-radius: 6px;
   cursor: pointer;
-  background: var(--machine-green);
+  background: var(--brand-green);
   box-shadow: 0 4px 11px rgba(23, 63, 42, 0.2);
   font-size: 0.75rem;
   font-weight: 900;
@@ -268,7 +268,7 @@
 
 .login-submit:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: var(--machine-green-dark);
+  background: var(--brand-green-strong);
 }
 
 .login-submit:disabled {
@@ -323,7 +323,7 @@
 .profile-dropdown > div > svg {
   flex: 0 0 auto;
   margin-top: 2px;
-  color: var(--machine-green);
+  color: var(--brand-green);
 }
 
 .profile-dropdown span,
@@ -500,7 +500,11 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--machine-green), var(--green-600));
+  background: linear-gradient(
+    90deg,
+    var(--brand-green),
+    var(--brand-green-soft)
+  );
   transition: width 240ms ease;
 }
 
@@ -668,7 +672,7 @@
   margin-top: 4px;
   border: 3px solid #dcebd8;
   border-radius: 50%;
-  background: var(--machine-green);
+  background: var(--brand-green);
 }
 
 .planting-step-timeline article > div {

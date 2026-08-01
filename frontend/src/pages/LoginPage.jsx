@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { BrandMark } from "../components/BrandMark";
 
 export function LoginPage() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -46,7 +47,7 @@ export function LoginPage() {
       <section className="login-introduction" aria-label="Sobre o AgroGestor">
         <div className="login-brand">
           <span>
-            <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
+            <BrandMark />
           </span>
           <strong>AgroGestor</strong>
         </div>
@@ -76,7 +77,7 @@ export function LoginPage() {
         <div className="login-card">
           <header>
             <span className="login-card__mark">
-              <img src="/icons/agrogestor-icon.svg" alt="" aria-hidden="true" />
+              <BrandMark />
             </span>
             <p>Acesso à propriedade</p>
             <h2>Entre na sua conta</h2>
