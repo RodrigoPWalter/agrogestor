@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
   ErrorBanner,
@@ -24,6 +25,7 @@ const emptyProduct = {
 };
 
 export function InventoryPage() {
+  const requestConfirmation = useConfirmation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -150,8 +152,13 @@ export function InventoryPage() {
   }
 
   async function removeProduct(product) {
-    if (!window.confirm(`Excluir “${product.name}” e todo o histórico?`))
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir produto?",
+      description: `“${product.name}” e todo o seu histórico de movimentações serão excluídos.`,
+      detail: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir produto",
+    });
+    if (!confirmed) return;
     try {
       await api.deleteInventoryProduct(product.id);
       setSuccess("Produto excluído.");

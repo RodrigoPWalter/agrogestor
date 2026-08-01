@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
   ErrorBanner,
@@ -32,6 +33,7 @@ const emptyMaintenance = {
 };
 
 export function MachinesPage() {
+  const requestConfirmation = useConfirmation();
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -187,10 +189,13 @@ export function MachinesPage() {
   }
 
   async function removeMachine(machine) {
-    if (
-      !window.confirm(`Excluir a máquina “${machine.brand} ${machine.model}”?`)
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir máquina?",
+      description: `“${machine.brand} ${machine.model}” e seu histórico de manutenção serão excluídos.`,
+      detail: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir máquina",
+    });
+    if (!confirmed) return;
 
     try {
       await api.deleteMachine(machine.id);
@@ -203,7 +208,12 @@ export function MachinesPage() {
   }
 
   async function removeMaintenance(item) {
-    if (!window.confirm("Excluir este registro de manutenção?")) return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir manutenção?",
+      description: "Este registro será removido do histórico da máquina.",
+      confirmLabel: "Excluir manutenção",
+    });
+    if (!confirmed) return;
 
     try {
       await api.deleteMaintenance(item.id);

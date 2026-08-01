@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import { ExpenseCategoryBreakdown } from "../components/expenses/ExpenseCategoryBreakdown";
 import { ExpenseFormModal } from "../components/expenses/ExpenseFormModal";
 import { ExpenseSummary } from "../components/expenses/ExpenseSummary";
@@ -26,6 +27,7 @@ function newExpenseForm(plantingId = "") {
 }
 
 export function ExpensesPage() {
+  const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [expenses, setExpenses] = useState([]);
@@ -149,7 +151,12 @@ export function ExpensesPage() {
   }
 
   async function handleDelete(expense) {
-    if (!window.confirm(`Excluir o gasto “${expense.description}”?`)) return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir gasto?",
+      description: `O lançamento “${expense.description}” será removido do plantio.`,
+      confirmLabel: "Excluir gasto",
+    });
+    if (!confirmed) return;
     setError("");
     try {
       await api.deleteExpense(expense.id);

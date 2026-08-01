@@ -34,6 +34,11 @@ export function Modal({ title, description, children, onClose }) {
     initialFocus?.focus();
 
     const handleKeyDown = (event) => {
+      const openModals = [
+        ...document.querySelectorAll('[role="dialog"][aria-modal="true"]'),
+      ];
+      if (openModals.at(-1) !== modal) return;
+
       if (event.key === "Escape") {
         event.preventDefault();
         onCloseRef.current();

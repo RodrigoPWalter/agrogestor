@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
+import { useConfirmation } from "./ConfirmationProvider";
 import { ErrorBanner, LoadingState, SuccessBanner } from "./Feedback";
 import { Modal } from "./Modal";
 import { HarvestProgressSection } from "./planting-details/HarvestProgressSection";
@@ -50,6 +51,7 @@ export function PlantingDetailsModal({
   onReactivate,
   onChanged,
 }) {
+  const requestConfirmation = useConfirmation();
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -184,12 +186,13 @@ export function PlantingDetailsModal({
   }
 
   async function deleteStep(step) {
-    if (
-      !window.confirm(
-        `Excluir a etapa de ${formatNumber(step.plantedAreaHectares)} ha registrada em ${formatDate(step.stepDate)}?`,
-      )
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir etapa de plantio?",
+      description: `${formatNumber(step.plantedAreaHectares)} ha registrados em ${formatDate(step.stepDate)} serão removidos.`,
+      detail: "O progresso total do plantio será recalculado.",
+      confirmLabel: "Excluir etapa",
+    });
+    if (!confirmed) return;
 
     setError("");
     try {
@@ -267,12 +270,13 @@ export function PlantingDetailsModal({
   }
 
   async function deleteHarvestStep(step) {
-    if (
-      !window.confirm(
-        `Excluir a colheita de ${formatNumber(step.harvestedAreaHectares)} ha registrada em ${formatDate(step.harvestDate)}?`,
-      )
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir etapa de colheita?",
+      description: `${formatNumber(step.harvestedAreaHectares)} ha colhidos em ${formatDate(step.harvestDate)} serão removidos.`,
+      detail: "O progresso total da colheita será recalculado.",
+      confirmLabel: "Excluir etapa",
+    });
+    if (!confirmed) return;
 
     setError("");
     try {

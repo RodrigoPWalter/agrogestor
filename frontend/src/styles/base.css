@@ -334,6 +334,17 @@ p {
   box-shadow: 0 10px 24px rgba(30, 84, 56, 0.24);
 }
 
+.button--danger {
+  color: #fff;
+  background: var(--red-600);
+  box-shadow: 0 8px 20px rgba(185, 65, 65, 0.18);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: #9f3636;
+  box-shadow: 0 10px 24px rgba(185, 65, 65, 0.24);
+}
+
 .button--ghost {
   color: var(--ink);
   border: 1px solid var(--line);
@@ -1425,6 +1436,25 @@ p {
   font-size: 0.77rem;
 }
 
+.confirmation-dialog {
+  display: grid;
+  gap: 22px;
+  padding: 22px 25px 25px;
+}
+
+.confirmation-dialog > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.confirmation-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .form {
   display: grid;
   gap: 20px;
@@ -2083,9 +2113,18 @@ p {
   }
 
   .modal__header,
-  .modal .form {
+  .modal .form,
+  .confirmation-dialog {
     padding-right: 18px;
     padding-left: 18px;
+  }
+
+  .confirmation-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .confirmation-dialog__actions .button {
+    width: 100%;
   }
 
   .form-actions {

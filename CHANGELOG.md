@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Confirmações próprias e responsivas para exclusões, finalização e reativação de plantios.
 - Nova identidade visual com monograma `AG`, linhas de plantio e ícones próprios para o PWA.
 - Paleta visual própria com verde profundo, dourado moderado e botões de maior contraste.
 - Tokens visuais consolidados, marca reutilizável e suporte a foco visível e redução de movimento.

@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
   ErrorBanner,
@@ -50,6 +51,7 @@ function emptyForm(plantingId = "") {
 }
 
 export function FieldDiaryPage() {
+  const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [entries, setEntries] = useState([]);
   const [inventoryProducts, setInventoryProducts] = useState([]);
@@ -196,7 +198,14 @@ export function FieldDiaryPage() {
   }
 
   async function handleDelete(entry) {
-    if (!window.confirm(`Excluir o registro “${entry.activity}”?`)) return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir registro do diário?",
+      description: `O registro “${entry.activity}” será excluído.`,
+      detail:
+        "Se houver produtos usados neste lançamento, as quantidades serão devolvidas ao estoque.",
+      confirmLabel: "Excluir registro",
+    });
+    if (!confirmed) return;
 
     try {
       await api.deleteDiaryEntry(entry.id);

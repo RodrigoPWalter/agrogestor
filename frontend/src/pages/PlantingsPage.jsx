@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
   ErrorBanner,
@@ -29,6 +30,7 @@ const emptyForm = {
 };
 
 export function PlantingsPage() {
+  const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -135,7 +137,13 @@ export function PlantingsPage() {
   }
 
   async function handleDelete(planting) {
-    if (!window.confirm(`Excluir o plantio de ${planting.crop}?`)) return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir plantio?",
+      description: `O plantio de ${planting.crop} será excluído permanentemente.`,
+      detail: "Todos os registros vinculados também poderão ser removidos.",
+      confirmLabel: "Excluir plantio",
+    });
+    if (!confirmed) return;
     setError("");
     try {
       await api.deletePlanting(planting.id);
@@ -147,12 +155,14 @@ export function PlantingsPage() {
   }
 
   async function handleFinish(planting) {
-    if (
-      !window.confirm(
-        `Finalizar a safra de ${planting.crop}? Ela será movida para o histórico.`,
-      )
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Finalizar plantio?",
+      description: `A safra de ${planting.crop} será movida para o histórico.`,
+      detail: "Você poderá reativá-la depois, se necessário.",
+      confirmLabel: "Finalizar plantio",
+      tone: "primary",
+    });
+    if (!confirmed) return;
     try {
       await api.finishPlanting(planting.id);
       setSelectedPlanting(null);
@@ -164,12 +174,13 @@ export function PlantingsPage() {
   }
 
   async function handleReactivate(planting) {
-    if (
-      !window.confirm(
-        `Reativar o plantio de ${planting.crop}? Ele voltará para a lista de plantios ativos.`,
-      )
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Reativar plantio?",
+      description: `O plantio de ${planting.crop} voltará para a lista de plantios ativos.`,
+      confirmLabel: "Reativar plantio",
+      tone: "primary",
+    });
+    if (!confirmed) return;
     try {
       await api.reactivatePlanting(planting.id);
       setSuccess("Plantio reativado e devolvido para a lista de ativos.");

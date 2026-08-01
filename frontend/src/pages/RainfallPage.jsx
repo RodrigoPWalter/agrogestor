@@ -1,6 +1,7 @@
 import { CloudRain, Droplets, Edit3, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
   ErrorBanner,
@@ -18,6 +19,7 @@ const emptyForm = {
 };
 
 export function RainfallPage() {
+  const requestConfirmation = useConfirmation();
   const [measurements, setMeasurements] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -91,12 +93,12 @@ export function RainfallPage() {
   }
 
   async function remove(item) {
-    if (
-      !window.confirm(
-        `Excluir a medição de ${formatDate(item.measurementDate)}?`,
-      )
-    )
-      return;
+    const confirmed = await requestConfirmation({
+      title: "Excluir registro de chuva?",
+      description: `A medição de ${formatDate(item.measurementDate)} será removida do histórico.`,
+      confirmLabel: "Excluir medição",
+    });
+    if (!confirmed) return;
     try {
       await api.deleteRainfall(item.id);
       setSuccess("Medição excluída.");
