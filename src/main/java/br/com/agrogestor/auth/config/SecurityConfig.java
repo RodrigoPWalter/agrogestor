@@ -1,6 +1,7 @@
 package br.com.agrogestor.auth.config;
 
 import br.com.agrogestor.auth.security.JwtAuthenticationFilter;
+import br.com.agrogestor.auth.security.LoginRateLimitFilter;
 import br.com.agrogestor.auth.security.RestAccessDeniedHandler;
 import br.com.agrogestor.auth.security.RestAuthenticationEntryPoint;
 import br.com.agrogestor.auth.security.UsuarioDetailsService;
@@ -43,6 +44,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtFilter,
+            LoginRateLimitFilter loginRateLimitFilter,
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler
     ) throws Exception {
@@ -64,6 +66,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

@@ -33,6 +33,9 @@ agrogestor:
     jwt-expiration-minutes: ${JWT_EXPIRATION_MINUTES:480}
     jwt-issuer: ${JWT_ISSUER:https://agrogestor.local}
     cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+    login-rate-limit:
+      max-attempts: ${LOGIN_MAX_ATTEMPTS:10}
+      window-minutes: ${LOGIN_WINDOW_MINUTES:15}
     bootstrap-admin:
       enabled: ${APP_ADMIN_ENABLED:true}
       name: ${APP_ADMIN_NAME:Administrador}
