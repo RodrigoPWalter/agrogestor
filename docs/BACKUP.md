@@ -39,6 +39,8 @@ No PowerShell, a partir da raiz do projeto:
 
 O script solicita a senha do banco de forma oculta. Ela é usada somente pelo processo do `pg_dump` e não é salva no projeto nem no backup.
 
+A conexão com o Neon exige SSL. Depois de criar o arquivo, o script também usa o `pg_restore` para conferir se o catálogo do backup pode ser lido antes de informar sucesso.
+
 Para copiar apenas o código e o histórico do Git:
 
 ```powershell

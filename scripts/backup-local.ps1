@@ -97,6 +97,7 @@ if (-not $SkipDatabase) {
     $passwordPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($DatabasePassword)
     try {
         $env:PGPASSWORD = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($passwordPointer)
+        $env:PGSSLMODE = 'require'
         & $pgDump `
             --host=$DatabaseHost `
             --port=$DatabasePort `
@@ -111,10 +112,24 @@ if (-not $SkipDatabase) {
             throw 'O PostgreSQL não conseguiu gerar o backup do banco.'
         }
 
+        if (-not (Test-Path -LiteralPath $databaseDump) -or
+            (Get-Item -LiteralPath $databaseDump).Length -eq 0) {
+            throw 'O arquivo de backup foi criado vazio.'
+        }
+
+        $pgRestore = Join-Path (Split-Path -Parent $pgDump) 'pg_restore.exe'
+        if (Test-Path -LiteralPath $pgRestore) {
+            & $pgRestore --list $databaseDump | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw 'O arquivo foi criado, mas falhou na verificação de integridade.'
+            }
+        }
+
         $databaseIncluded = $true
     }
     finally {
         Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+        Remove-Item Env:PGSSLMODE -ErrorAction SilentlyContinue
         [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
     }
 }
