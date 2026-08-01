@@ -10,10 +10,8 @@ import br.com.agrogestor.planting.dto.HarvestTotalResponse;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
 import br.com.agrogestor.planting.dto.SeasonClosingResponse;
-import br.com.agrogestor.planting.entity.HarvestProgressStatus;
 import br.com.agrogestor.planting.entity.HarvestStep;
 import br.com.agrogestor.planting.entity.Planting;
-import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.HarvestAreaTotalProjection;
@@ -79,7 +77,7 @@ public class PlantingService {
                 request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
-        return toResponse(
+        return PlantingResponseMapper.toResponse(
                 repository.save(planting),
                 BigDecimal.ZERO,
                 BigDecimal.ZERO
@@ -116,7 +114,7 @@ public class PlantingService {
         Map<UUID, BigDecimal> plantedAreas = plantedAreas(result.getContent());
         Map<UUID, BigDecimal> harvestedAreas = harvestedAreas(result.getContent());
         return PageResponse.from(result.map(planting ->
-                toResponse(
+                PlantingResponseMapper.toResponse(
                         planting,
                         plantedAreas.getOrDefault(planting.getId(), BigDecimal.ZERO),
                         harvestedAreas.getOrDefault(planting.getId(), BigDecimal.ZERO)
@@ -125,7 +123,11 @@ public class PlantingService {
 
     @Transactional(readOnly = true)
     public PlantingResponse findById(UUID id) {
-        return toResponse(findEntity(id), plantedArea(id), harvestedArea(id));
+        return PlantingResponseMapper.toResponse(
+                findEntity(id),
+                plantedArea(id),
+                harvestedArea(id)
+        );
     }
 
     @Transactional
@@ -160,7 +162,11 @@ public class PlantingService {
                 request.seedRateUnit(),
                 normalizeNullable(request.observations())
         );
-        return toResponse(planting, plantedArea, harvestedArea(id));
+        return PlantingResponseMapper.toResponse(
+                planting,
+                plantedArea,
+                harvestedArea(id)
+        );
     }
 
     @Transactional
@@ -188,14 +194,22 @@ public class PlantingService {
             );
         }
         planting.finish();
-        return toResponse(planting, plantedArea, harvestedArea);
+        return PlantingResponseMapper.toResponse(
+                planting,
+                plantedArea,
+                harvestedArea
+        );
     }
 
     @Transactional
     public PlantingResponse reactivate(UUID id) {
         Planting planting = findEntity(id);
         planting.reactivate();
-        return toResponse(planting, plantedArea(id), harvestedArea(id));
+        return PlantingResponseMapper.toResponse(
+                planting,
+                plantedArea(id),
+                harvestedArea(id)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -269,69 +283,6 @@ public class PlantingService {
                 ));
     }
 
-    private PlantingResponse toResponse(
-            Planting planting,
-            BigDecimal plantedArea,
-            BigDecimal harvestedArea
-    ) {
-        BigDecimal plannedArea = planting.getPlannedAreaHectares();
-        BigDecimal normalizedPlantedArea = area(plantedArea);
-        BigDecimal remainingArea = area(
-                plannedArea.subtract(normalizedPlantedArea).max(BigDecimal.ZERO)
-        );
-        BigDecimal plantedPercentage = percentage(normalizedPlantedArea, plannedArea);
-        PlantingProgressStatus progressStatus = progressStatus(
-                normalizedPlantedArea,
-                plannedArea
-        );
-        BigDecimal normalizedHarvestedArea = area(harvestedArea);
-        BigDecimal harvestRemainingArea = area(
-                normalizedPlantedArea
-                        .subtract(normalizedHarvestedArea)
-                        .max(BigDecimal.ZERO)
-        );
-        BigDecimal harvestedPercentage = percentage(
-                normalizedHarvestedArea,
-                normalizedPlantedArea
-        );
-        HarvestProgressStatus harvestProgressStatus = harvestProgressStatus(
-                normalizedHarvestedArea,
-                normalizedPlantedArea
-        );
-
-        return new PlantingResponse(
-                planting.getId(),
-                planting.getCrop(),
-                planting.getHarvest(),
-                planting.getFieldName(),
-                area(plannedArea),
-                planting.getRowSpacingCentimeters(),
-                normalizedPlantedArea,
-                remainingArea,
-                plantedPercentage,
-                progressStatus,
-                progressStatus.getDisplayName(),
-                normalizedHarvestedArea,
-                harvestRemainingArea,
-                harvestedPercentage,
-                harvestProgressStatus,
-                harvestProgressStatus.getDisplayName(),
-                planting.getStartDate(),
-                planting.getSeedVariety(),
-                planting.getSeedRate(),
-                planting.getSeedRateUnit(),
-                planting.getSeedRateUnit() == null
-                        ? null
-                        : planting.getSeedRateUnit().getDisplayName(),
-                planting.getObservations(),
-                planting.getStatus(),
-                planting.getStatus().getDisplayName(),
-                planting.getCompletedAt(),
-                planting.getCreatedAt(),
-                planting.getUpdatedAt()
-        );
-    }
-
     private Map<UUID, BigDecimal> harvestedAreas(List<Planting> plantings) {
         if (plantings.isEmpty()) {
             return Map.of();
@@ -370,33 +321,6 @@ public class PlantingService {
     private BigDecimal harvestedArea(UUID plantingId) {
         BigDecimal total = harvestStepRepository.sumAreaByPlantingId(plantingId);
         return total == null ? BigDecimal.ZERO : total;
-    }
-
-    private PlantingProgressStatus progressStatus(
-            BigDecimal plantedArea,
-            BigDecimal plannedArea
-    ) {
-        if (plantedArea.signum() == 0) {
-            return PlantingProgressStatus.NOT_STARTED;
-        }
-        if (plantedArea.compareTo(plannedArea) >= 0) {
-            return PlantingProgressStatus.COMPLETED;
-        }
-        return PlantingProgressStatus.IN_PROGRESS;
-    }
-
-    private HarvestProgressStatus harvestProgressStatus(
-            BigDecimal harvestedArea,
-            BigDecimal plantedArea
-    ) {
-        if (harvestedArea.signum() == 0) {
-            return HarvestProgressStatus.NOT_STARTED;
-        }
-        if (plantedArea.signum() > 0
-                && harvestedArea.compareTo(plantedArea) >= 0) {
-            return HarvestProgressStatus.COMPLETED;
-        }
-        return HarvestProgressStatus.IN_PROGRESS;
     }
 
     private List<HarvestTotalResponse> harvestTotals(UUID plantingId) {
@@ -476,10 +400,6 @@ public class PlantingService {
     }
 
     private BigDecimal money(BigDecimal value) {
-        return value.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal area(BigDecimal value) {
         return value.setScale(2, RoundingMode.HALF_UP);
     }
 
