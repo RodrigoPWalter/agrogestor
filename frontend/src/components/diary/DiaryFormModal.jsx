@@ -19,6 +19,7 @@ export function DiaryFormModal({
       title={editing ? "Editar atividade" : "Nova atividade"}
       description="Registre o trabalho como ele aconteceu no campo."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <DynamicDiaryFields
@@ -35,6 +36,7 @@ export function DiaryFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

@@ -329,6 +329,7 @@ export function PlantingDetailsModal({
       title={`${planting.crop} — ${planting.harvest}`}
       description={`${formatNumber(planting.plannedAreaHectares)} ha previstos · iniciado em ${formatDate(planting.startDate)}`}
       onClose={onClose}
+      dismissible={!saving && !closingLoading}
     >
       <div className="planting-detail">
         <ErrorBanner message={error} onDismiss={() => setError("")} />

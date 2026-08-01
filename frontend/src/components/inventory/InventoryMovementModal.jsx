@@ -20,6 +20,7 @@ export function InventoryMovementModal({
       title={`Movimentar ${product.name}`}
       description={`Saldo atual: ${formatNumber(product.quantity, 3)} ${product.unitName}`}
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="segmented-control inventory-movement-type">
@@ -97,6 +98,7 @@ export function InventoryMovementModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

@@ -29,6 +29,7 @@ export function ProductFormModal({
       title={editing ? "Editar produto" : "Novo produto"}
       description="Informe os dados de controle do insumo."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
@@ -109,6 +110,7 @@ export function ProductFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

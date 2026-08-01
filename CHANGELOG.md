@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Modais protegidos contra fechamento por toque acidental e bloqueados durante o salvamento.
 - Carregamento de módulos orientado pela navegação, respeitando economia de dados e conexões lentas.
 - Cotações carregadas depois dos indicadores essenciais para reduzir a disputa de rede no primeiro acesso.
 - Confirmações próprias e responsivas para exclusões, finalização e reativação de plantios.

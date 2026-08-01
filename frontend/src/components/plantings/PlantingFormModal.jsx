@@ -17,6 +17,7 @@ export function PlantingFormModal({
       title={editing ? "Editar plantio" : "Novo plantio"}
       description="Preencha os dados principais da lavoura."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
@@ -164,6 +165,7 @@ export function PlantingFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

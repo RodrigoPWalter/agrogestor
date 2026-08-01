@@ -28,6 +28,7 @@ export function ExpenseFormModal({
       title={editing ? "Editar gasto" : "Registrar gasto"}
       description="Informe o valor e a categoria para manter o custo atualizado."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
@@ -107,6 +108,7 @@ export function ExpenseFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

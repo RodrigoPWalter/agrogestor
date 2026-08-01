@@ -1,15 +1,27 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 
-export function Modal({ title, description, children, onClose }) {
+export function Modal({
+  title,
+  description,
+  children,
+  onClose,
+  closeOnBackdrop = false,
+  dismissible = true,
+}) {
   const modalRef = useRef(null);
   const onCloseRef = useRef(onClose);
+  const dismissibleRef = useRef(dismissible);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useEffect(() => {
+    dismissibleRef.current = dismissible;
+  }, [dismissible]);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
@@ -41,7 +53,7 @@ export function Modal({ title, description, children, onClose }) {
 
       if (event.key === "Escape") {
         event.preventDefault();
-        onCloseRef.current();
+        if (dismissibleRef.current) onCloseRef.current();
         return;
       }
 
@@ -74,7 +86,11 @@ export function Modal({ title, description, children, onClose }) {
   }, []);
 
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={closeOnBackdrop && dismissible ? onClose : undefined}
+    >
       <section
         ref={modalRef}
         className="modal"
@@ -93,6 +109,7 @@ export function Modal({ title, description, children, onClose }) {
             className="icon-button"
             type="button"
             onClick={onClose}
+            disabled={!dismissible}
             aria-label="Fechar"
           >
             <X size={20} />

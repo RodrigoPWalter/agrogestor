@@ -19,6 +19,7 @@ export function MaintenanceFormModal({
       title={editing ? "Editar manutenção" : "Registrar manutenção"}
       description={`${machine.brand} ${machine.model} · ${formatNumber(machine.usageHours, 1)} h atuais`}
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
@@ -96,6 +97,7 @@ export function MaintenanceFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

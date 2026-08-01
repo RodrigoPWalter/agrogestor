@@ -214,6 +214,7 @@ export function RainfallPage() {
           title={editing ? "Editar medição" : "Registrar chuva"}
           description="Use a leitura do pluviômetro da propriedade."
           onClose={() => setModalOpen(false)}
+          dismissible={!saving}
         >
           <form className="form" onSubmit={submit}>
             <div className="form-grid">
@@ -259,6 +260,7 @@ export function RainfallPage() {
                 type="button"
                 className="button button--ghost"
                 onClick={() => setModalOpen(false)}
+                disabled={saving}
               >
                 Cancelar
               </button>

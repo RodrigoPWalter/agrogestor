@@ -55,6 +55,7 @@ export function ProfileSettingsModal({ user, onClose, onSave }) {
       title="Minha conta"
       description="Altere o nome, o e-mail usado no login ou a senha."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form profile-settings-form" onSubmit={submit}>
         <ErrorBanner message={error} onDismiss={() => setError("")} />
@@ -127,6 +128,7 @@ export function ProfileSettingsModal({ user, onClose, onSave }) {
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Fechar
           </button>

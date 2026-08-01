@@ -17,6 +17,7 @@ export function MachineFormModal({
       title={editing ? "Editar máquina" : "Nova máquina"}
       description="Cadastre os dados e mantenha o horímetro atualizado."
       onClose={onClose}
+      dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
@@ -70,6 +71,7 @@ export function MachineFormModal({
             type="button"
             className="button button--ghost"
             onClick={onClose}
+            disabled={saving}
           >
             Cancelar
           </button>

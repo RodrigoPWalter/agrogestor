@@ -56,6 +56,7 @@ export function ConfirmationProvider({ children }) {
           title={options.title}
           description={options.description}
           onClose={() => closeConfirmation(false)}
+          closeOnBackdrop
         >
           <div className="confirmation-dialog">
             {options.detail && <p>{options.detail}</p>}

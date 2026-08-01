@@ -375,6 +375,11 @@ p {
   background: var(--green-50);
 }
 
+.icon-button:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
 .icon-button--danger:hover {
   color: var(--red-600);
   background: var(--red-100);
