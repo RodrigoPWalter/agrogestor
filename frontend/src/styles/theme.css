@@ -425,6 +425,18 @@ body {
   border-radius: 7px;
 }
 
+.quick-action > div {
+  min-width: 0;
+}
+
+.quick-action > svg:last-child {
+  width: 16px;
+  height: 16px;
+  justify-self: end;
+  color: #466054;
+  stroke-width: 2.25;
+}
+
 .quick-action strong {
   font-size: 0.74rem;
 }

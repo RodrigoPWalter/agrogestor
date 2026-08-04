@@ -9,7 +9,7 @@ export function PlantingQuickActions({
   return (
     <section>
       <h3>Ações rápidas</h3>
-      <div className="quick-actions">
+      <div className="planting-quick-actions">
         <button className="button button--primary" onClick={onShowExpenseForm}>
           <ReceiptText size={18} /> Registrar gasto
         </button>

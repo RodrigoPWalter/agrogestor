@@ -463,7 +463,7 @@
 }
 
 .planting-card-actions,
-.quick-actions,
+.planting-quick-actions,
 .section-heading {
   display: flex;
   align-items: center;
@@ -985,12 +985,12 @@
     border-bottom: 0;
   }
 
-  .quick-actions {
+  .planting-quick-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .quick-actions .button,
+  .planting-quick-actions .button,
   .planting-card-actions .button {
     min-height: 48px;
     justify-content: center;
