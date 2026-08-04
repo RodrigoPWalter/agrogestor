@@ -428,7 +428,7 @@ p {
 }
 
 .metric-card small,
-.metric-card span {
+.metric-card div > span {
   display: block;
   color: var(--muted);
 }
@@ -446,7 +446,7 @@ p {
   letter-spacing: -0.025em;
 }
 
-.metric-card span {
+.metric-card div > span {
   font-size: 0.72rem;
 }
 

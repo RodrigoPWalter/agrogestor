@@ -287,7 +287,7 @@ body {
   letter-spacing: -0.04em;
 }
 
-.metric-card span {
+.metric-card div > span {
   font-size: 0.62rem;
 }
 
