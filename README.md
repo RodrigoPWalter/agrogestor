@@ -15,7 +15,7 @@ O foco do sistema é ser simples o suficiente para uso no campo e estruturado o 
 
 ## Aplicação publicada
 
-- Frontend: [https://agrogestor-rodrigowalter.onrender.com](https://agrogestor-rodrigowalter.onrender.com)
+- Frontend: [https://agrogestor-rural.onrender.com](https://agrogestor-rural.onrender.com)
 - API (verificação de saúde): [https://agrogestor-api-rodrigowalter.onrender.com/api/v1/health](https://agrogestor-api-rodrigowalter.onrender.com/api/v1/health)
 
 O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito pode suspender serviços sem uso, o primeiro acesso depois de um período parado pode levar alguns segundos. Para reduzir esse impacto, o Dashboard mantém um cache local dos últimos dados carregados e reaproveita as cotações do mercado durante o mesmo dia.
