@@ -50,13 +50,17 @@
 
 html {
   min-width: 320px;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--background);
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  max-width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     radial-gradient(
       circle at 85% -10%,
@@ -64,6 +68,12 @@ body {
       transparent 25rem
     ),
     var(--background);
+}
+
+#root {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {

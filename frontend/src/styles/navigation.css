@@ -1,6 +1,8 @@
 /* Horizontal desktop navigation and PWA mobile navigation */
 .app-shell--horizontal {
   min-height: 100vh;
+  min-width: 0;
+  max-width: 100%;
   background: var(--background);
 }
 
@@ -175,6 +177,8 @@
 
 .main-content--horizontal {
   min-height: calc(100vh - 64px);
+  min-width: 0;
+  max-width: 100%;
   margin-left: 0;
 }
 

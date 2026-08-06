@@ -237,6 +237,8 @@ body {
 }
 
 .panel {
+  min-width: 0;
+  max-width: 100%;
   padding: 17px;
 }
 
@@ -366,9 +368,13 @@ body {
 }
 
 .data-table-wrapper {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-inline: contain;
   border: 1px solid #e0e4df;
   border-radius: 7px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .data-table {
@@ -398,6 +404,26 @@ body {
 .dashboard-grid,
 .expenses-layout {
   gap: 14px;
+}
+
+.dashboard-grid,
+.dashboard-grid > *,
+.quotation-history,
+.quotation-history > div,
+.quick-actions,
+.quick-action,
+.quick-action > div,
+.panel__header,
+.panel__header > div {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.quotation-history > div {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .quick-actions {
@@ -600,7 +626,66 @@ body {
   }
 
   .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
     gap: 12px;
+  }
+
+  .panel {
+    width: 100%;
+    padding: 13px;
+  }
+
+  .panel__header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .panel__header > div {
+    display: block;
+  }
+
+  .panel__header h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .quick-action {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .quick-action strong,
+  .quick-action small {
+    overflow-wrap: anywhere;
+  }
+
+  .quotation-history table,
+  .dashboard-inventory-table,
+  .dashboard-planting-table,
+  .dashboard-expense-table {
+    min-width: 100%;
+    table-layout: fixed;
+  }
+
+  .quotation-history th,
+  .quotation-history td,
+  .dashboard-inventory-table th,
+  .dashboard-inventory-table td,
+  .dashboard-planting-table th,
+  .dashboard-planting-table td,
+  .dashboard-expense-table th,
+  .dashboard-expense-table td {
+    padding-right: 4px;
+    padding-left: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .quotation-history th:first-child,
+  .quotation-history td:first-child {
+    width: 23%;
+  }
+
+  .quotation-history td:not(:first-child) {
+    font-size: 0.58rem;
+    white-space: nowrap;
   }
 }
 
