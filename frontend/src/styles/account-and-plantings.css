@@ -574,9 +574,11 @@
 .planting-detail {
   display: grid;
   gap: 18px;
+  min-width: 0;
 }
 
 .planting-detail section {
+  min-width: 0;
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -968,7 +970,7 @@
 
 .planting-detail__columns {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -999,9 +1001,23 @@
 
 .quick-expense-form {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  grid-template-columns:
+    minmax(0, 2fr) repeat(3, minmax(0, 1fr))
+    auto;
   gap: 7px;
   margin: 10px 0;
+}
+
+.quick-expense-form > *,
+.season-price-form > * {
+  min-width: 0;
+}
+
+.quick-expense-form input,
+.quick-expense-form select,
+.season-price-form input {
+  width: 100%;
+  max-width: 100%;
 }
 
 .dynamic-diary-form {

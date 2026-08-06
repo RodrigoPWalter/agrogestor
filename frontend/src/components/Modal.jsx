@@ -8,6 +8,7 @@ export function Modal({
   onClose,
   closeOnBackdrop = false,
   dismissible = true,
+  size = "default",
 }) {
   const modalRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -93,7 +94,7 @@ export function Modal({
     >
       <section
         ref={modalRef}
-        className="modal"
+        className={`modal${size === "wide" ? " modal--wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

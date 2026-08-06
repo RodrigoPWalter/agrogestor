@@ -1414,10 +1414,15 @@ p {
 .modal {
   width: min(680px, 100%);
   max-height: calc(100vh - 48px);
+  overflow-x: hidden;
   overflow-y: auto;
   border-radius: 20px;
   background: #fff;
   box-shadow: 0 24px 80px rgba(10, 31, 20, 0.26);
+}
+
+.modal--wide {
+  width: min(1120px, 100%);
 }
 
 .modal__header {

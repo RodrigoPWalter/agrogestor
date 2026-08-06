@@ -88,6 +88,7 @@ describe("PlantingDetailsModal", () => {
     expect(
       await screen.findByRole("heading", { name: "Resumo financeiro" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveClass("modal--wide");
     expect(screen.getByText("Fechamento de safra")).toBeInTheDocument();
     expect(screen.getByText("70 cm")).toBeInTheDocument();
     expect(screen.getByText("Progresso do plantio")).toBeInTheDocument();
