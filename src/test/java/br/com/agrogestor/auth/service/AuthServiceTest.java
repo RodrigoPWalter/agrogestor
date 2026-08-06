@@ -7,6 +7,7 @@ import br.com.agrogestor.auth.entity.UsuarioRole;
 import br.com.agrogestor.auth.exception.InvalidCredentialsException;
 import br.com.agrogestor.auth.repository.UsuarioRepository;
 import br.com.agrogestor.auth.security.JwtTokenService;
+import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,6 +132,7 @@ class AuthServiceTest {
 
     private Usuario usuario() {
         Usuario usuario = new Usuario(
+                new Property("Teste"),
                 "Administrador",
                 "admin@agrogestor.local",
                 "hash",

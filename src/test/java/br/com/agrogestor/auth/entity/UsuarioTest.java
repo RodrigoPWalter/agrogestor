@@ -1,5 +1,6 @@
 package br.com.agrogestor.auth.entity;
 
+import br.com.agrogestor.property.entity.Property;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -9,6 +10,7 @@ class UsuarioTest {
     @Test
     void shouldNormalizeNameAndEmail() {
         Usuario usuario = new Usuario(
+                new Property("Teste"),
                 "  Rodrigo   Walter  ",
                 "  Rodrigo@Example.COM ",
                 "senha-criptografada",
@@ -23,6 +25,7 @@ class UsuarioTest {
     @Test
     void shouldReplaceEncryptedPassword() {
         Usuario usuario = new Usuario(
+                new Property("Teste"),
                 "Rodrigo Walter",
                 "rodrigo@example.com",
                 "hash-antigo",

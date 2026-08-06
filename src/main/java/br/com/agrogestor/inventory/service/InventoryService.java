@@ -11,7 +11,7 @@ import br.com.agrogestor.inventory.entity.MovementType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
-import org.springframework.data.domain.Sort;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,16 +26,20 @@ public class InventoryService {
 
     private final InventoryProductRepository productRepository;
     private final InventoryMovementRepository movementRepository;
+    private final CurrentPropertyService currentProperty;
 
     public InventoryService(InventoryProductRepository productRepository,
-                            InventoryMovementRepository movementRepository) {
+                            InventoryMovementRepository movementRepository,
+                            CurrentPropertyService currentProperty) {
         this.productRepository = productRepository;
         this.movementRepository = movementRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
     public InventoryProductResponse create(InventoryProductRequest request) {
         InventoryProduct product = new InventoryProduct(
+                currentProperty.get(),
                 normalize(request.name()), request.productType(), quantity(request.initialQuantity()),
                 request.unit(), quantity(request.minimumStock()), request.expirationDate()
         );
@@ -56,7 +60,8 @@ public class InventoryService {
 
     @Transactional(readOnly = true)
     public List<InventoryProductResponse> findAll() {
-        return productRepository.findAll(Sort.by("name")).stream().map(this::toResponse).toList();
+        return productRepository.findByPropertyIdOrderByName(currentProperty.id())
+                .stream().map(this::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
@@ -98,7 +103,7 @@ public class InventoryService {
     }
 
     private InventoryProduct findProduct(UUID id) {
-        return productRepository.findById(id).orElseThrow(() ->
+        return productRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Produto não encontrado com o ID " + id));
     }
 

@@ -14,15 +14,22 @@ import java.util.UUID;
 
 public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
-    Page<Expense> findByPlantingId(UUID plantingId, Pageable pageable);
+    Page<Expense> findByPropertyId(UUID propertyId, Pageable pageable);
+
+    Page<Expense> findByPropertyIdAndPlantingId(UUID propertyId, UUID plantingId, Pageable pageable);
+
+    java.util.Optional<Expense> findByIdAndPropertyId(UUID id, UUID propertyId);
 
     long countByPlantingId(UUID plantingId);
 
-    @Query("select coalesce(sum(expense.amount), 0) from Expense expense")
-    BigDecimal sumAllAmounts();
+    @Query("select coalesce(sum(expense.amount), 0) from Expense expense where expense.property.id = :propertyId")
+    BigDecimal sumAllAmountsByPropertyId(@Param("propertyId") UUID propertyId);
+
+    long countByPropertyId(UUID propertyId);
 
     @EntityGraph(attributePaths = "planting")
-    List<Expense> findAllByOrderByExpenseDateDescCreatedAtDesc(Pageable pageable);
+    List<Expense> findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+            UUID propertyId, Pageable pageable);
 
     @Query("""
             select e.category as category, sum(e.amount) as total

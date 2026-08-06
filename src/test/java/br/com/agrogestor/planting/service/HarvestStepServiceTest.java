@@ -13,6 +13,8 @@ import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +38,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class HarvestStepServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+    private final Property property = new Property("Teste");
+
     @Mock
     private HarvestStepRepository harvestRepository;
 
@@ -47,6 +52,8 @@ class HarvestStepServiceTest {
 
     @Mock
     private FieldDiaryRepository diaryRepository;
+    @Mock
+    private CurrentPropertyService currentProperty;
 
     private HarvestStepService service;
 
@@ -56,15 +63,18 @@ class HarvestStepServiceTest {
                 harvestRepository,
                 plantingStepRepository,
                 plantingRepository,
-                diaryRepository
+                diaryRepository,
+                currentProperty
         );
+        org.mockito.Mockito.lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
+        org.mockito.Mockito.lenient().when(currentProperty.get()).thenReturn(property);
     }
 
     @Test
     void shouldAddHarvestStepAndCreateDiaryEntry() {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(plantingStepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(new BigDecimal("20.00"));
@@ -97,7 +107,7 @@ class HarvestStepServiceTest {
     @Test
     void shouldRejectAreaGreaterThanRemainingPlantedArea() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting()));
         when(plantingStepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(new BigDecimal("20.00"));
@@ -115,7 +125,7 @@ class HarvestStepServiceTest {
     @Test
     void shouldRejectHarvestBeforeAnyAreaWasPlanted() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting()));
         when(plantingStepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(BigDecimal.ZERO);
@@ -132,7 +142,7 @@ class HarvestStepServiceTest {
         UUID stepId = UUID.randomUUID();
         Planting planting = planting();
         HarvestStep step = step(planting, "8.00", "640.000");
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(harvestRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.of(step));
@@ -162,6 +172,7 @@ class HarvestStepServiceTest {
         HarvestStep step = step(planting, "8.00", "640.000");
         step.linkDiaryEntry(diaryId);
         FieldDiaryEntry diaryEntry = new FieldDiaryEntry(
+                property,
                 planting,
                 LocalDate.of(2026, 7, 30),
                 ActivityType.HARVEST,
@@ -170,7 +181,7 @@ class HarvestStepServiceTest {
                 null,
                 null
         );
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(harvestRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.of(step));
@@ -193,7 +204,7 @@ class HarvestStepServiceTest {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting();
         planting.finish();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
 
         assertThatThrownBy(() ->
@@ -206,7 +217,7 @@ class HarvestStepServiceTest {
     void shouldNotAccessStepFromAnotherPlanting() {
         UUID plantingId = UUID.randomUUID();
         UUID stepId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId))
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting()));
         when(harvestRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.empty());
@@ -249,6 +260,7 @@ class HarvestStepServiceTest {
 
     private Planting planting() {
         return new Planting(
+                property,
                 "Milho",
                 "2026",
                 "Talhão 1",

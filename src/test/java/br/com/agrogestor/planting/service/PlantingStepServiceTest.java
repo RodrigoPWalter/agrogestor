@@ -12,6 +12,8 @@ import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +37,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlantingStepServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+    private final Property property = new Property("Teste");
+
     @Mock
     private PlantingStepRepository stepRepository;
 
@@ -46,6 +51,8 @@ class PlantingStepServiceTest {
 
     @Mock
     private HarvestStepRepository harvestRepository;
+    @Mock
+    private CurrentPropertyService currentProperty;
 
     private PlantingStepService service;
 
@@ -55,15 +62,18 @@ class PlantingStepServiceTest {
                 stepRepository,
                 plantingRepository,
                 diaryRepository,
-                harvestRepository
+                harvestRepository,
+                currentProperty
         );
+        org.mockito.Mockito.lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
+        org.mockito.Mockito.lenient().when(currentProperty.get()).thenReturn(property);
     }
 
     @Test
     void shouldAddStepAndCreateDiaryEntry() {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting("30.00");
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(stepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(BigDecimal.ZERO);
@@ -99,7 +109,7 @@ class PlantingStepServiceTest {
                 null,
                 null
         );
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(stepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(BigDecimal.ZERO);
@@ -116,7 +126,7 @@ class PlantingStepServiceTest {
     @Test
     void shouldRejectAreaGreaterThanRemainingArea() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting("30.00")));
         when(stepRepository.sumAreaByPlantingId(plantingId))
                 .thenReturn(new BigDecimal("25.00"));
@@ -131,7 +141,7 @@ class PlantingStepServiceTest {
     @Test
     void shouldRejectStepBeforePlantingStartDate() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting("30.00")));
 
         PlantingStepRequest request = new PlantingStepRequest(
@@ -153,7 +163,7 @@ class PlantingStepServiceTest {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting("30.00");
         planting.finish();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
 
         assertThatThrownBy(() -> service.create(plantingId, request("5.00")))
@@ -167,7 +177,7 @@ class PlantingStepServiceTest {
         UUID stepId = UUID.randomUUID();
         Planting planting = planting("30.00");
         planting.finish();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
 
         assertThatThrownBy(() -> service.delete(plantingId, stepId))
@@ -179,7 +189,7 @@ class PlantingStepServiceTest {
     @Test
     void shouldRejectInvalidTimeRange() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting("30.00")));
 
         PlantingStepRequest request = new PlantingStepRequest(
@@ -210,7 +220,7 @@ class PlantingStepServiceTest {
                 null,
                 null
         );
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(stepRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.of(step));
@@ -242,6 +252,7 @@ class PlantingStepServiceTest {
         );
         step.linkDiaryEntry(diaryId);
         FieldDiaryEntry diaryEntry = new FieldDiaryEntry(
+                property,
                 planting,
                 LocalDate.of(2026, 7, 2),
                 ActivityType.PLANTING,
@@ -250,7 +261,7 @@ class PlantingStepServiceTest {
                 null,
                 null
         );
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(stepRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.of(step));
@@ -268,7 +279,7 @@ class PlantingStepServiceTest {
     void shouldNotAccessStepBelongingToAnotherPlanting() {
         UUID plantingId = UUID.randomUUID();
         UUID stepId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId))
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting("30.00")));
         when(stepRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.empty());
@@ -281,7 +292,7 @@ class PlantingStepServiceTest {
     @Test
     void shouldRejectUnknownPlanting() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(plantingId, request("5.00")))
@@ -303,7 +314,7 @@ class PlantingStepServiceTest {
                 null,
                 null
         );
-        when(plantingRepository.findByIdForUpdate(plantingId))
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID))
                 .thenReturn(Optional.of(planting));
         when(stepRepository.findByIdAndPlantingId(stepId, plantingId))
                 .thenReturn(Optional.of(step));
@@ -331,6 +342,7 @@ class PlantingStepServiceTest {
 
     private Planting planting(String plannedArea) {
         return new Planting(
+                property,
                 "Soja",
                 "2026/2027",
                 "Talhão 2",

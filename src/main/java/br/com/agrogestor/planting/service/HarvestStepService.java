@@ -13,6 +13,7 @@ import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +29,20 @@ public class HarvestStepService {
     private final PlantingStepRepository plantingStepRepository;
     private final PlantingRepository plantingRepository;
     private final FieldDiaryRepository diaryRepository;
+    private final CurrentPropertyService currentProperty;
 
     public HarvestStepService(
             HarvestStepRepository harvestRepository,
             PlantingStepRepository plantingStepRepository,
             PlantingRepository plantingRepository,
-            FieldDiaryRepository diaryRepository
+            FieldDiaryRepository diaryRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.harvestRepository = harvestRepository;
         this.plantingStepRepository = plantingStepRepository;
         this.plantingRepository = plantingRepository;
         this.diaryRepository = diaryRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
@@ -205,6 +209,7 @@ public class HarvestStepService {
 
         if (diaryEntry == null) {
             diaryEntry = new FieldDiaryEntry(
+                    currentProperty.get(),
                     planting,
                     request.harvestDate(),
                     ActivityType.HARVEST,
@@ -245,14 +250,15 @@ public class HarvestStepService {
     }
 
     private Planting findPlanting(UUID plantingId) {
-        return plantingRepository.findById(plantingId)
+        return plantingRepository.findByIdAndPropertyId(plantingId, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Plantio não encontrado com o ID " + plantingId
                 ));
     }
 
     private Planting findPlantingForUpdate(UUID plantingId) {
-        return plantingRepository.findByIdForUpdate(plantingId)
+        return plantingRepository.findByIdAndPropertyIdForUpdate(
+                        plantingId, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Plantio não encontrado com o ID " + plantingId
                 ));

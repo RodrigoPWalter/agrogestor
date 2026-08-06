@@ -1,11 +1,15 @@
 package br.com.agrogestor.auth.entity;
 
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -23,6 +27,10 @@ public class Usuario {
     @GeneratedValue
     private UUID id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
+
     @Column(nullable = false, length = 120)
     private String nome;
 
@@ -36,6 +44,9 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     private UsuarioRole role;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -45,7 +56,8 @@ public class Usuario {
     protected Usuario() {
     }
 
-    public Usuario(String nome, String email, String senhaHash, UsuarioRole role) {
+    public Usuario(Property property, String nome, String email, String senhaHash, UsuarioRole role) {
+        this.property = property;
         atualizarDados(nome, email, role);
         atualizarSenha(senhaHash);
     }
@@ -84,6 +96,10 @@ public class Usuario {
         return id;
     }
 
+    public Property getProperty() {
+        return property;
+    }
+
     public String getNome() {
         return nome;
     }
@@ -98,6 +114,10 @@ public class Usuario {
 
     public UsuarioRole getRole() {
         return role;
+    }
+
+    public boolean isActive() {
+        return active;
     }
 
     public OffsetDateTime getCreatedAt() {

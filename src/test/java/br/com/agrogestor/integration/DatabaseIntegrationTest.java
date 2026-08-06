@@ -11,10 +11,15 @@ import br.com.agrogestor.inventory.entity.MeasurementUnit;
 import br.com.agrogestor.inventory.entity.ProductType;
 import br.com.agrogestor.inventory.service.InventoryService;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
+import br.com.agrogestor.auth.repository.UsuarioRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -23,7 +28,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(properties = "agrogestor.security.bootstrap-admin.enabled=false")
+@SpringBootTest
 @EnabledIfEnvironmentVariable(named = "RUN_DATABASE_TESTS", matches = "true")
 class DatabaseIntegrationTest {
 
@@ -38,6 +43,27 @@ class DatabaseIntegrationTest {
 
     @Autowired
     private DashboardService dashboardService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @BeforeEach
+    void authenticateDatabaseUser() {
+        var user = usuarioRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "O teste de banco precisa de uma conta cadastrada"
+                ));
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(
+                        user.getEmail(), null, java.util.List.of()
+                )
+        );
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     void shouldApplyAndReverseAProductUseInTheSameDatabase() {

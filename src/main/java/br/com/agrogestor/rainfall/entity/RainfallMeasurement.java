@@ -1,6 +1,7 @@
 package br.com.agrogestor.rainfall.entity;
 
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -14,6 +15,9 @@ import java.util.UUID;
 public class RainfallMeasurement {
     @Id @GeneratedValue
     private UUID id;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
     @Column(name = "measurement_date", nullable = false)
     private LocalDate measurementDate;
     @ManyToOne(fetch = FetchType.LAZY)
@@ -30,16 +34,18 @@ public class RainfallMeasurement {
 
     protected RainfallMeasurement() {}
 
-    public RainfallMeasurement(LocalDate measurementDate, BigDecimal millimeters, String notes) {
-        this(null, measurementDate, millimeters, notes);
+    public RainfallMeasurement(Property property, LocalDate measurementDate, BigDecimal millimeters, String notes) {
+        this(property, null, measurementDate, millimeters, notes);
     }
 
     public RainfallMeasurement(
+            Property property,
             Planting planting,
             LocalDate measurementDate,
             BigDecimal millimeters,
             String notes
     ) {
+        this.property = property;
         this.planting = planting;
         update(measurementDate, millimeters, notes);
     }
@@ -58,6 +64,7 @@ public class RainfallMeasurement {
     @PreUpdate void preUpdate() { updatedAt = OffsetDateTime.now(ZoneOffset.UTC); }
 
     public UUID getId() { return id; }
+    public Property getProperty() { return property; }
     public Planting getPlanting() { return planting; }
     public LocalDate getMeasurementDate() { return measurementDate; }
     public BigDecimal getMillimeters() { return millimeters; }

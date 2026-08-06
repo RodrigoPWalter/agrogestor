@@ -3,6 +3,7 @@ package br.com.agrogestor.auth.service;
 import br.com.agrogestor.auth.entity.Usuario;
 import br.com.agrogestor.auth.entity.UsuarioRole;
 import br.com.agrogestor.auth.repository.UsuarioRepository;
+import br.com.agrogestor.property.repository.PropertyRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +19,7 @@ public class InitialAdminService implements ApplicationRunner {
     private static final Logger LOGGER = LoggerFactory.getLogger(InitialAdminService.class);
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
+    private final PropertyRepository propertyRepository;
     private final boolean enabled;
     private final String name;
     private final String email;
@@ -26,6 +28,7 @@ public class InitialAdminService implements ApplicationRunner {
     public InitialAdminService(
             UsuarioRepository repository,
             PasswordEncoder passwordEncoder,
+            PropertyRepository propertyRepository,
             @Value("${agrogestor.security.bootstrap-admin.enabled}") boolean enabled,
             @Value("${agrogestor.security.bootstrap-admin.name}") String name,
             @Value("${agrogestor.security.bootstrap-admin.email}") String email,
@@ -33,6 +36,7 @@ public class InitialAdminService implements ApplicationRunner {
     ) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.propertyRepository = propertyRepository;
         this.enabled = enabled;
         this.name = name;
         this.email = email;
@@ -45,7 +49,12 @@ public class InitialAdminService implements ApplicationRunner {
         if (!enabled || repository.count() > 0) {
             return;
         }
+        var property = propertyRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "A propriedade inicial não foi criada pela migração"
+                ));
         repository.save(new Usuario(
+                property,
                 name,
                 email,
                 passwordEncoder.encode(password),

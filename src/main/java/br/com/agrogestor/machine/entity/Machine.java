@@ -1,5 +1,6 @@
 package br.com.agrogestor.machine.entity;
 
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -12,6 +13,9 @@ import java.util.UUID;
 public class Machine {
     @Id @GeneratedValue
     private UUID id;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
     @Column(nullable = false, length = 120)
     private String model;
     @Column(nullable = false, length = 100)
@@ -27,7 +31,8 @@ public class Machine {
 
     protected Machine() {}
 
-    public Machine(String model, String brand, Integer manufactureYear, BigDecimal usageHours) {
+    public Machine(Property property, String model, String brand, Integer manufactureYear, BigDecimal usageHours) {
+        this.property = property;
         update(model, brand, manufactureYear, usageHours);
     }
 
@@ -46,6 +51,7 @@ public class Machine {
     @PreUpdate void preUpdate() { updatedAt = OffsetDateTime.now(ZoneOffset.UTC); }
 
     public UUID getId() { return id; }
+    public Property getProperty() { return property; }
     public String getModel() { return model; }
     public String getBrand() { return brand; }
     public Integer getManufactureYear() { return manufactureYear; }

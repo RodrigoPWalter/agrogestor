@@ -24,6 +24,8 @@ import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,6 +46,9 @@ import static org.mockito.Mockito.when;
 
 class FieldDiaryServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+    private final Property property = new Property("Teste");
+
     private FieldDiaryRepository diaryRepository;
     private PlantingRepository plantingRepository;
     private FieldDiaryProductRepository diaryProductRepository;
@@ -53,6 +58,7 @@ class FieldDiaryServiceTest {
     private MachineRepository machineRepository;
     private MaintenanceRepository maintenanceRepository;
     private ExpenseRepository expenseRepository;
+    private CurrentPropertyService currentProperty;
     private FieldDiaryService service;
 
     @BeforeEach
@@ -66,6 +72,9 @@ class FieldDiaryServiceTest {
         machineRepository = mock(MachineRepository.class);
         maintenanceRepository = mock(MaintenanceRepository.class);
         expenseRepository = mock(ExpenseRepository.class);
+        currentProperty = mock(CurrentPropertyService.class);
+        when(currentProperty.id()).thenReturn(PROPERTY_ID);
+        when(currentProperty.get()).thenReturn(property);
         service = new FieldDiaryService(
                 diaryRepository,
                 plantingRepository,
@@ -75,14 +84,15 @@ class FieldDiaryServiceTest {
                 rainfallRepository,
                 machineRepository,
                 maintenanceRepository,
-                expenseRepository
+                expenseRepository,
+                currentProperty
         );
     }
 
     @Test
     void shouldNormalizeTextWhenCreatingEntry() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting()));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(diaryRepository.save(any(FieldDiaryEntry.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -97,7 +107,7 @@ class FieldDiaryServiceTest {
     @Test
     void shouldRejectUnknownPlanting() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.empty());
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(request(plantingId, "Vistoria")))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -109,8 +119,8 @@ class FieldDiaryServiceTest {
         UUID plantingId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
         InventoryProduct product = product(productId, "10.000");
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting()));
-        when(inventoryRepository.findByIdForUpdate(productId))
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting()));
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
                 .thenReturn(Optional.of(product));
         when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
             FieldDiaryEntry entry = invocation.getArgument(0);
@@ -133,8 +143,8 @@ class FieldDiaryServiceTest {
         UUID plantingId = UUID.randomUUID();
         UUID productId = UUID.randomUUID();
         InventoryProduct product = product(productId, "2.000");
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting()));
-        when(inventoryRepository.findByIdForUpdate(productId))
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting()));
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
                 .thenReturn(Optional.of(product));
         when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
             FieldDiaryEntry entry = invocation.getArgument(0);
@@ -155,14 +165,14 @@ class FieldDiaryServiceTest {
         UUID productId = UUID.randomUUID();
         InventoryProduct product = product(productId, "7.000");
         FieldDiaryEntry entry = new FieldDiaryEntry(
-                planting(), LocalDate.now(), ActivityType.APPLICATION,
+                property, planting(), LocalDate.now(), ActivityType.APPLICATION,
                 "Aplicação de adubo", null, null, null);
         ReflectionTestUtils.setField(entry, "id", entryId);
-        when(diaryRepository.findById(entryId)).thenReturn(Optional.of(entry));
+        when(diaryRepository.findByIdAndPropertyId(entryId, PROPERTY_ID)).thenReturn(Optional.of(entry));
         when(diaryProductRepository.findByEntryId(entryId))
                 .thenReturn(List.of(new FieldDiaryProduct(
                         entry, product, new BigDecimal("3.000"))));
-        when(inventoryRepository.findByIdForUpdate(productId))
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
                 .thenReturn(Optional.of(product));
 
         service.delete(entryId);
@@ -178,7 +188,7 @@ class FieldDiaryServiceTest {
     void shouldAddPurchasedProductToInventory() {
         UUID productId = UUID.randomUUID();
         InventoryProduct product = product(productId, "2.000");
-        when(inventoryRepository.findByIdForUpdate(productId))
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
                 .thenReturn(Optional.of(product));
         when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
             FieldDiaryEntry entry = invocation.getArgument(0);
@@ -255,7 +265,7 @@ class FieldDiaryServiceTest {
 
     private InventoryProduct product(UUID id, String quantity) {
         InventoryProduct product = new InventoryProduct(
-                "Adubo", ProductType.FERTILIZER, new BigDecimal(quantity),
+                property, "Adubo", ProductType.FERTILIZER, new BigDecimal(quantity),
                 MeasurementUnit.KILOGRAM, BigDecimal.ONE, null);
         ReflectionTestUtils.setField(product, "id", id);
         return product;
@@ -263,6 +273,7 @@ class FieldDiaryServiceTest {
 
     private Planting planting() {
         return new Planting(
+                property,
                 "Soja",
                 "2026/2027",
                 new BigDecimal("18.50"),

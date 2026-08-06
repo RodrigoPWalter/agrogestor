@@ -23,6 +23,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 ## Funcionalidades principais
 
 - **Autenticação com JWT:** Login protegido, sessão no frontend e envio automático do token nas requisições privadas.
+- **Contas com dados isolados:** Cada conta criada pelo administrador possui sua própria propriedade, sem acesso aos plantios, gastos, estoque ou demais registros de outra conta.
 - **Controle de Plantios:** Cadastro antecipado da safra com área prevista, talhão, variedade, distância entre linhas, taxa de semeadura em `kg/ha` ou `sementes/ha` e custos desde a preparação do campo.
 - **Progresso da Semeadura:** Registro dos hectares e da variedade utilizada em cada etapa, com área restante, percentual, histórico editável e lançamento automático no Diário.
 - **Colheita por Etapas:** Registro da área e produção colhidas em cada dia, cálculo de produtividade e atualização automática do fechamento da safra.
@@ -81,6 +82,7 @@ br.com.agrogestor
 ├── inventory
 ├── machine
 ├── planting
+├── property
 ├── quotation
 ├── rainfall
 └── shared
@@ -95,6 +97,7 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | Domínio           | Rota base                    |
 | ----------------- | ---------------------------- |
 | Autenticação      | `/api/v1/auth`               |
+| Contas (administrador) | `/api/v1/users`          |
 | Visão geral       | `/api/v1/dashboard`          |
 | Plantios          | `/api/v1/plantings`          |
 | Etapas de plantio | `/api/v1/plantings/{id}/steps` |

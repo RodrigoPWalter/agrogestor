@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FieldDiaryRepository extends JpaRepository<FieldDiaryEntry, UUID> {
-    Page<FieldDiaryEntry> findByPlantingId(UUID plantingId, Pageable pageable);
+    Page<FieldDiaryEntry> findByPropertyId(UUID propertyId, Pageable pageable);
+    Page<FieldDiaryEntry> findByPropertyIdAndPlantingId(UUID propertyId, UUID plantingId, Pageable pageable);
+    java.util.Optional<FieldDiaryEntry> findByIdAndPropertyId(UUID id, UUID propertyId);
 
     List<FieldDiaryEntry> findByPlantingIdAndActivityType(UUID plantingId, ActivityType activityType);
 }

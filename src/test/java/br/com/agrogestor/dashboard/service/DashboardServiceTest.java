@@ -12,6 +12,7 @@ import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.repository.PlantingAreaTotalProjection;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +34,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DashboardServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+
     @Mock
     private PlantingRepository plantingRepository;
     @Mock
@@ -41,6 +44,8 @@ class DashboardServiceTest {
     private ExpenseRepository expenseRepository;
     @Mock
     private InventoryProductRepository inventoryProductRepository;
+    @Mock
+    private CurrentPropertyService currentProperty;
 
     private DashboardService service;
 
@@ -50,8 +55,10 @@ class DashboardServiceTest {
                 plantingRepository,
                 plantingStepRepository,
                 expenseRepository,
-                inventoryProductRepository
+                inventoryProductRepository,
+                currentProperty
         );
+        when(currentProperty.id()).thenReturn(PROPERTY_ID);
     }
 
     @Test
@@ -64,16 +71,17 @@ class DashboardServiceTest {
                 PlantingAreaTotalProjection.class
         );
 
-        when(plantingStepRepository.sumAreaByPlantingStatus(PlantingStatus.ACTIVE))
+        when(plantingStepRepository.sumAreaByPlantingPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(new BigDecimal("15"));
-        when(plantingRepository.sumPlannedAreaByStatus(PlantingStatus.ACTIVE))
+        when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(new BigDecimal("30"));
-        when(expenseRepository.sumAllAmounts()).thenReturn(new BigDecimal("16400"));
-        when(plantingRepository.countByStatus(PlantingStatus.ACTIVE)).thenReturn(2L);
-        when(expenseRepository.count()).thenReturn(7L);
-        when(inventoryProductRepository.count()).thenReturn(4L);
-        when(inventoryProductRepository.countLowStock()).thenReturn(1L);
-        when(plantingRepository.findByStatusOrderByStartDateDescCropAsc(
+        when(expenseRepository.sumAllAmountsByPropertyId(PROPERTY_ID)).thenReturn(new BigDecimal("16400"));
+        when(plantingRepository.countByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE)).thenReturn(2L);
+        when(expenseRepository.countByPropertyId(PROPERTY_ID)).thenReturn(7L);
+        when(inventoryProductRepository.countByPropertyId(PROPERTY_ID)).thenReturn(4L);
+        when(inventoryProductRepository.countLowStock(PROPERTY_ID)).thenReturn(1L);
+        when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
+                any(UUID.class),
                 any(PlantingStatus.class),
                 any(Pageable.class)
         )).thenReturn(List.of(planting));
@@ -81,10 +89,11 @@ class DashboardServiceTest {
         when(areaProjection.getPlantedArea()).thenReturn(new BigDecimal("15"));
         when(plantingStepRepository.sumAreasByPlantingIds(anyCollection()))
                 .thenReturn(List.of(areaProjection));
-        when(expenseRepository.findAllByOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+                any(UUID.class),
                 any(Pageable.class)
         )).thenReturn(List.of(expense));
-        when(inventoryProductRepository.findForDashboard(any(Pageable.class)))
+        when(inventoryProductRepository.findForDashboard(any(UUID.class), any(Pageable.class)))
                 .thenReturn(List.of(product));
 
         var summary = service.summarize();
@@ -114,19 +123,21 @@ class DashboardServiceTest {
 
     @Test
     void returnsZeroCostWhenThereIsNoActiveArea() {
-        when(plantingStepRepository.sumAreaByPlantingStatus(PlantingStatus.ACTIVE))
+        when(plantingStepRepository.sumAreaByPlantingPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(null);
-        when(plantingRepository.sumPlannedAreaByStatus(PlantingStatus.ACTIVE))
+        when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(BigDecimal.ZERO);
-        when(expenseRepository.sumAllAmounts()).thenReturn(new BigDecimal("150"));
-        when(plantingRepository.findByStatusOrderByStartDateDescCropAsc(
+        when(expenseRepository.sumAllAmountsByPropertyId(PROPERTY_ID)).thenReturn(new BigDecimal("150"));
+        when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
+                any(UUID.class),
                 any(PlantingStatus.class),
                 any(Pageable.class)
         )).thenReturn(List.of());
-        when(expenseRepository.findAllByOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+                any(UUID.class),
                 any(Pageable.class)
         )).thenReturn(List.of());
-        when(inventoryProductRepository.findForDashboard(any(Pageable.class)))
+        when(inventoryProductRepository.findForDashboard(any(UUID.class), any(Pageable.class)))
                 .thenReturn(List.of());
 
         var summary = service.summarize();

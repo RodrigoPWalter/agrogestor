@@ -2,6 +2,7 @@ package br.com.agrogestor.inventory.entity;
 
 import jakarta.persistence.*;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
+import br.com.agrogestor.property.entity.Property;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,6 +17,10 @@ public class InventoryProduct {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
 
     @Column(nullable = false, length = 140)
     private String name;
@@ -46,8 +51,9 @@ public class InventoryProduct {
     protected InventoryProduct() {
     }
 
-    public InventoryProduct(String name, ProductType productType, BigDecimal quantity,
+    public InventoryProduct(Property property, String name, ProductType productType, BigDecimal quantity,
                             MeasurementUnit unit, BigDecimal minimumStock, LocalDate expirationDate) {
+        this.property = property;
         this.quantity = quantity;
         update(name, productType, unit, minimumStock, expirationDate);
     }
@@ -84,6 +90,7 @@ public class InventoryProduct {
     }
 
     public UUID getId() { return id; }
+    public Property getProperty() { return property; }
     public String getName() { return name; }
     public ProductType getProductType() { return productType; }
     public BigDecimal getQuantity() { return quantity; }

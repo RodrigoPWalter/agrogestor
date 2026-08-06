@@ -9,7 +9,7 @@ import br.com.agrogestor.machine.entity.Maintenance;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
-import org.springframework.data.domain.Sort;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,18 +22,22 @@ import java.util.UUID;
 public class MachineService {
     private final MachineRepository machineRepository;
     private final MaintenanceRepository maintenanceRepository;
+    private final CurrentPropertyService currentProperty;
 
     public MachineService(
             MachineRepository machineRepository,
-            MaintenanceRepository maintenanceRepository
+            MaintenanceRepository maintenanceRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.machineRepository = machineRepository;
         this.maintenanceRepository = maintenanceRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
     public MachineResponse create(MachineRequest request) {
         return toResponse(machineRepository.save(new Machine(
+                currentProperty.get(),
                 normalize(request.model()), normalize(request.brand()), request.manufactureYear(),
                 hours(request.usageHours())
         )));
@@ -41,7 +45,7 @@ public class MachineService {
 
     @Transactional(readOnly = true)
     public List<MachineResponse> findAll() {
-        return machineRepository.findAll(Sort.by("brand", "model"))
+        return machineRepository.findByPropertyIdOrderByBrandAscModelAsc(currentProperty.id())
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -101,12 +105,12 @@ public class MachineService {
     }
 
     private Machine findMachine(UUID id) {
-        return machineRepository.findById(id).orElseThrow(() ->
+        return machineRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Máquina não encontrada com o ID " + id));
     }
 
     private Maintenance findMaintenance(UUID id) {
-        return maintenanceRepository.findById(id)
+        return maintenanceRepository.findByIdAndMachinePropertyId(id, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Manutenção não encontrada com o ID " + id
                 ));

@@ -32,9 +32,12 @@ public interface PlantingStepRepository extends JpaRepository<PlantingStep, UUID
     @Query("""
             select coalesce(sum(step.plantedAreaHectares), 0)
             from PlantingStep step
-            where step.planting.status = :status
+            where step.planting.property.id = :propertyId
+              and step.planting.status = :status
             """)
-    BigDecimal sumAreaByPlantingStatus(@Param("status") PlantingStatus status);
+    BigDecimal sumAreaByPlantingPropertyIdAndStatus(
+            @Param("propertyId") UUID propertyId,
+            @Param("status") PlantingStatus status);
 
     @Query("""
             select step.planting.id as plantingId,

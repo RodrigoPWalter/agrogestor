@@ -4,6 +4,7 @@ import br.com.agrogestor.rainfall.dto.*;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,14 +17,17 @@ import java.util.UUID;
 @Service
 public class RainfallService {
     private final RainfallRepository repository;
+    private final CurrentPropertyService currentProperty;
 
-    public RainfallService(RainfallRepository repository) {
+    public RainfallService(RainfallRepository repository, CurrentPropertyService currentProperty) {
         this.repository = repository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
     public RainfallResponse create(RainfallRequest request) {
         return toResponse(repository.save(new RainfallMeasurement(
+                currentProperty.get(),
                 request.measurementDate(),
                 amount(request.millimeters()),
                 normalizeNullable(request.notes())
@@ -32,14 +36,15 @@ public class RainfallService {
 
     @Transactional(readOnly = true)
     public List<RainfallResponse> findAll() {
-        return repository.findAllByOrderByMeasurementDateDesc().stream()
+        return repository.findByPropertyIdOrderByMeasurementDateDesc(currentProperty.id()).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<RainfallResponse> findByPlanting(UUID plantingId) {
-        return repository.findByPlantingIdOrderByMeasurementDateDesc(plantingId).stream()
+        return repository.findByPropertyIdAndPlantingIdOrderByMeasurementDateDesc(
+                        currentProperty.id(), plantingId).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -64,13 +69,15 @@ public class RainfallService {
     public RainfallSummaryResponse summary() {
         LocalDate today = LocalDate.now();
         List<RainfallMeasurement> recent =
-                repository.findByMeasurementDateGreaterThanEqual(today.minusDays(29));
+                repository.findByPropertyIdAndMeasurementDateGreaterThanEqual(
+                        currentProperty.id(), today.minusDays(29));
         BigDecimal thirtyDays = total(recent);
         BigDecimal currentMonth = total(recent.stream()
                 .filter(item -> item.getMeasurementDate().getMonth() == today.getMonth()
                         && item.getMeasurementDate().getYear() == today.getYear())
                 .toList());
-        var last = repository.findFirstByOrderByMeasurementDateDesc().orElse(null);
+        var last = repository.findFirstByPropertyIdOrderByMeasurementDateDesc(
+                currentProperty.id()).orElse(null);
         return new RainfallSummaryResponse(
                 amount(currentMonth),
                 amount(thirtyDays),
@@ -80,7 +87,7 @@ public class RainfallService {
     }
 
     private RainfallMeasurement find(UUID id) {
-        return repository.findById(id).orElseThrow(() ->
+        return repository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Registro de chuva não encontrado com o ID " + id));
     }
 

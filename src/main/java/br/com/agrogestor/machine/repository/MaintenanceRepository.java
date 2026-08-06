@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface MaintenanceRepository extends JpaRepository<Maintenance, UUID> {
     List<Maintenance> findByMachineIdOrderByMaintenanceDateDesc(UUID machineId);
     Optional<Maintenance> findFirstByMachineIdAndNextReviewHoursIsNotNullOrderByMaintenanceDateDesc(UUID machineId);
+    Optional<Maintenance> findByIdAndMachinePropertyId(UUID id, UUID propertyId);
 }

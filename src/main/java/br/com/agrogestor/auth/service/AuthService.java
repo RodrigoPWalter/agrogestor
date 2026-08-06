@@ -91,7 +91,9 @@ public class AuthService {
                         usuario.getId(),
                         usuario.getNome(),
                         usuario.getEmail(),
-                        usuario.getRole()
+                        usuario.getRole(),
+                        usuario.getProperty().getId(),
+                        usuario.getProperty().getName()
                 )
         );
     }

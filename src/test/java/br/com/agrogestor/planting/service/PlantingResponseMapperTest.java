@@ -4,6 +4,7 @@ import br.com.agrogestor.planting.entity.HarvestProgressStatus;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.PlantingProgressStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
+import br.com.agrogestor.property.entity.Property;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -64,6 +65,7 @@ class PlantingResponseMapperTest {
 
     private Planting planting() {
         return new Planting(
+                new Property("Teste"),
                 "Milho",
                 "2026",
                 "Talhão 1",

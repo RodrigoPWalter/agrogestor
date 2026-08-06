@@ -1,6 +1,7 @@
 package br.com.agrogestor.diary.entity;
 
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,6 +28,10 @@ public class FieldDiaryEntry {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "planting_id")
@@ -88,6 +93,7 @@ public class FieldDiaryEntry {
     }
 
     public FieldDiaryEntry(
+            Property property,
             Planting planting,
             LocalDate entryDate,
             ActivityType activityType,
@@ -96,6 +102,7 @@ public class FieldDiaryEntry {
             String appliedProducts,
             String observations
     ) {
+        this.property = property;
         update(
                 planting,
                 entryDate,
@@ -155,6 +162,10 @@ public class FieldDiaryEntry {
 
     public UUID getId() {
         return id;
+    }
+
+    public Property getProperty() {
+        return property;
     }
 
     public Planting getPlanting() {

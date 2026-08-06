@@ -1,6 +1,7 @@
 package br.com.agrogestor.planting.entity;
 
 import br.com.agrogestor.shared.exception.BusinessRuleException;
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +11,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +28,10 @@ public class Planting {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
 
     @Column(nullable = false, length = 80)
     private String crop;
@@ -73,6 +81,7 @@ public class Planting {
     }
 
     public Planting(
+            Property property,
             String crop,
             String harvest,
             String fieldName,
@@ -84,6 +93,7 @@ public class Planting {
             SeedRateUnit seedRateUnit,
             String observations
     ) {
+        this.property = property;
         update(
                 crop,
                 harvest,
@@ -99,6 +109,7 @@ public class Planting {
     }
 
     public Planting(
+            Property property,
             String crop,
             String harvest,
             String fieldName,
@@ -110,6 +121,7 @@ public class Planting {
             String observations
     ) {
         this(
+                property,
                 crop,
                 harvest,
                 fieldName,
@@ -124,6 +136,7 @@ public class Planting {
     }
 
     public Planting(
+            Property property,
             String crop,
             String harvest,
             BigDecimal plannedAreaHectares,
@@ -134,6 +147,7 @@ public class Planting {
             String observations
     ) {
         this(
+                property,
                 crop,
                 harvest,
                 null,
@@ -201,6 +215,10 @@ public class Planting {
 
     public UUID getId() {
         return id;
+    }
+
+    public Property getProperty() {
+        return property;
     }
 
     public String getCrop() {

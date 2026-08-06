@@ -11,6 +11,7 @@ import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -31,19 +32,23 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final PlantingRepository plantingRepository;
+    private final CurrentPropertyService currentProperty;
 
     public ExpenseService(
             ExpenseRepository expenseRepository,
-            PlantingRepository plantingRepository
+            PlantingRepository plantingRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.expenseRepository = expenseRepository;
         this.plantingRepository = plantingRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
     public ExpenseResponse create(ExpenseRequest request) {
         Planting planting = findOptionalPlanting(request.plantingId());
         Expense expense = new Expense(
+                currentProperty.get(),
                 planting,
                 normalize(request.description()),
                 request.category(),
@@ -68,11 +73,12 @@ public class ExpenseService {
         );
 
         Page<Expense> result;
+        UUID propertyId = currentProperty.id();
         if (plantingId == null) {
-            result = expenseRepository.findAll(pageable);
+            result = expenseRepository.findByPropertyId(propertyId, pageable);
         } else {
             findPlanting(plantingId);
-            result = expenseRepository.findByPlantingId(plantingId, pageable);
+            result = expenseRepository.findByPropertyIdAndPlantingId(propertyId, plantingId, pageable);
         }
 
         return PageResponse.from(result.map(this::toResponse));
@@ -143,14 +149,14 @@ public class ExpenseService {
     }
 
     private Expense findExpense(UUID id) {
-        return expenseRepository.findById(id)
+        return expenseRepository.findByIdAndPropertyId(id, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Gasto não encontrado com o ID " + id
                 ));
     }
 
     private Planting findPlanting(UUID id) {
-        return plantingRepository.findById(id)
+        return plantingRepository.findByIdAndPropertyId(id, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Plantio não encontrado com o ID " + id
                 ));

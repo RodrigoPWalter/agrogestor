@@ -1,6 +1,7 @@
 package br.com.agrogestor.expense.entity;
 
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,6 +28,10 @@ public class Expense {
     @Id
     @GeneratedValue
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "property_id", nullable = false)
+    private Property property;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "planting_id")
@@ -58,6 +63,7 @@ public class Expense {
     }
 
     public Expense(
+            Property property,
             Planting planting,
             String description,
             ExpenseCategory category,
@@ -65,6 +71,7 @@ public class Expense {
             LocalDate expenseDate,
             String observations
     ) {
+        this.property = property;
         update(planting, description, category, amount, expenseDate, observations);
     }
 
@@ -98,6 +105,10 @@ public class Expense {
 
     public UUID getId() {
         return id;
+    }
+
+    public Property getProperty() {
+        return property;
     }
 
     public Planting getPlanting() {

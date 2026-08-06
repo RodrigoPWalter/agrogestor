@@ -29,6 +29,7 @@ import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,6 +54,7 @@ public class FieldDiaryService {
     private final MachineRepository machineRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final ExpenseRepository expenseRepository;
+    private final CurrentPropertyService currentProperty;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
@@ -63,7 +65,8 @@ public class FieldDiaryService {
             RainfallRepository rainfallRepository,
             MachineRepository machineRepository,
             MaintenanceRepository maintenanceRepository,
-            ExpenseRepository expenseRepository
+            ExpenseRepository expenseRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
@@ -74,6 +77,7 @@ public class FieldDiaryService {
         this.machineRepository = machineRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.expenseRepository = expenseRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
@@ -81,6 +85,7 @@ public class FieldDiaryService {
         validate(request);
         Planting planting = findOptionalPlanting(request.plantingId());
         FieldDiaryEntry entry = new FieldDiaryEntry(
+                currentProperty.get(),
                 planting,
                 request.entryDate(),
                 request.activityType(),
@@ -102,8 +107,9 @@ public class FieldDiaryService {
                 Sort.by(Sort.Direction.DESC, "entryDate")
                         .and(Sort.by(Sort.Direction.DESC, "createdAt")));
         Page<FieldDiaryEntry> entries = plantingId == null
-                ? diaryRepository.findAll(pageable)
-                : diaryRepository.findByPlantingId(plantingId, pageable);
+                ? diaryRepository.findByPropertyId(currentProperty.id(), pageable)
+                : diaryRepository.findByPropertyIdAndPlantingId(
+                        currentProperty.id(), plantingId, pageable);
         return PageResponse.from(entries.map(this::toResponse));
     }
 
@@ -187,12 +193,14 @@ public class FieldDiaryService {
     ) {
         if (request.activityType() == ActivityType.RAIN) {
             RainfallMeasurement rainfall = rainfallRepository.save(new RainfallMeasurement(
+                    currentProperty.get(),
                     planting, request.entryDate(), request.rainfallMillimeters(),
                     normalizeNullable(request.observations())));
             entry.linkRainfall(rainfall.getId());
         }
         if (request.activityType() == ActivityType.MAINTENANCE) {
-            var machine = machineRepository.findById(request.machineId())
+            var machine = machineRepository.findByIdAndPropertyId(
+                            request.machineId(), currentProperty.id())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Máquina não encontrada com o ID " + request.machineId()));
             Maintenance maintenance = maintenanceRepository.save(new Maintenance(
@@ -207,6 +215,7 @@ public class FieldDiaryService {
             ExpenseCategory category = request.activityType() == ActivityType.MAINTENANCE
                     ? ExpenseCategory.MAINTENANCE : productExpenseCategory(request.productType());
             Expense expense = expenseRepository.save(new Expense(
+                    currentProperty.get(),
                     planting, activityDescription(request), category, request.amount(),
                     request.entryDate(), normalizeNullable(request.observations())));
             entry.linkExpense(expense.getId());
@@ -257,13 +266,15 @@ public class FieldDiaryService {
 
     private InventoryProduct findOrCreateProduct(FieldDiaryRequest request) {
         String name = normalize(request.productName());
-        return inventoryRepository.findFirstByNameIgnoreCase(name).orElseGet(() -> {
+        return inventoryRepository.findFirstByPropertyIdAndNameIgnoreCase(
+                currentProperty.id(), name).orElseGet(() -> {
             ProductType productType = request.productType() == null
                     ? ProductType.PESTICIDE : request.productType();
             MeasurementUnit unit = request.unit() == null
                     ? MeasurementUnit.UNIT : request.unit();
             return inventoryRepository.save(new InventoryProduct(
-                    name, productType, BigDecimal.ZERO, unit, BigDecimal.ZERO, null));
+                    currentProperty.get(), name, productType, BigDecimal.ZERO,
+                    unit, BigDecimal.ZERO, null));
         });
     }
 
@@ -273,7 +284,8 @@ public class FieldDiaryService {
             BigDecimal quantity,
             MovementType type
     ) {
-        InventoryProduct product = inventoryRepository.findByIdForUpdate(productId)
+        InventoryProduct product = inventoryRepository.findByIdAndPropertyIdForUpdate(
+                        productId, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Produto não encontrado com o ID " + productId));
         product.applyMovement(type, quantity);
@@ -290,7 +302,8 @@ public class FieldDiaryService {
     ) {
         products.stream().filter(FieldDiaryProduct::isStockDeducted).forEach(item -> {
             InventoryProduct product = inventoryRepository
-                    .findByIdForUpdate(item.getProduct().getId())
+                    .findByIdAndPropertyIdForUpdate(
+                            item.getProduct().getId(), currentProperty.id())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Produto não encontrado com o ID " + item.getProduct().getId()));
             MovementType reverse = item.getMovementType() == MovementType.ENTRY
@@ -314,13 +327,13 @@ public class FieldDiaryService {
     }
 
     private FieldDiaryEntry findEntry(UUID id) {
-        return diaryRepository.findById(id).orElseThrow(() ->
+        return diaryRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Registro do diário não encontrado com o ID " + id));
     }
 
     private Planting findOptionalPlanting(UUID id) {
         if (id == null) return null;
-        return plantingRepository.findById(id).orElseThrow(() ->
+        return plantingRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
     }
 

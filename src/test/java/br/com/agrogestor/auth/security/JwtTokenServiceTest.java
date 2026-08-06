@@ -2,6 +2,7 @@ package br.com.agrogestor.auth.security;
 
 import br.com.agrogestor.auth.entity.Usuario;
 import br.com.agrogestor.auth.entity.UsuarioRole;
+import br.com.agrogestor.property.entity.Property;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,7 @@ class JwtTokenServiceTest {
 
     private Usuario usuario() {
         Usuario usuario = new Usuario(
+                new Property("Teste"),
                 "Administrador",
                 "admin@agrogestor.local",
                 "hash",

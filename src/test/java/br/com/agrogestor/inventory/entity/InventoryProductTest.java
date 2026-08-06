@@ -1,6 +1,7 @@
 package br.com.agrogestor.inventory.entity;
 
 import br.com.agrogestor.shared.exception.BusinessRuleException;
+import br.com.agrogestor.property.entity.Property;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -12,6 +13,7 @@ class InventoryProductTest {
     @Test
     void shouldApplyEntriesAndExits() {
         var product = new InventoryProduct(
+                new Property("Teste"),
                 "Semente", ProductType.SEED, new BigDecimal("100.000"),
                 MeasurementUnit.KILOGRAM, BigDecimal.TEN, null
         );
@@ -25,6 +27,7 @@ class InventoryProductTest {
     @Test
     void shouldRejectExitGreaterThanAvailableStock() {
         var product = new InventoryProduct(
+                new Property("Teste"),
                 "Defensivo", ProductType.PESTICIDE, BigDecimal.TEN,
                 MeasurementUnit.LITER, BigDecimal.ONE, null
         );

@@ -17,6 +17,8 @@ import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.planting.entity.PlantingStatus;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +45,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlantingServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+    private final Property property = new Property("Teste");
+
     @Mock
     private PlantingRepository repository;
 
@@ -57,6 +62,8 @@ class PlantingServiceTest {
 
     @Mock
     private HarvestStepRepository harvestStepRepository;
+    @Mock
+    private CurrentPropertyService currentProperty;
 
     private PlantingService service;
 
@@ -73,12 +80,15 @@ class PlantingServiceTest {
         lenient().when(harvestStepRepository
                         .findByPlantingIdOrderByHarvestDateAscCreatedAtAsc(any()))
                 .thenReturn(List.of());
+        lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
+        lenient().when(currentProperty.get()).thenReturn(property);
         service = new PlantingService(
                 repository,
                 expenseRepository,
                 diaryRepository,
                 stepRepository,
-                harvestStepRepository
+                harvestStepRepository,
+                currentProperty
         );
     }
 
@@ -150,7 +160,7 @@ class PlantingServiceTest {
     @Test
     void shouldFilterListByHarvest() {
         Planting planting = planting();
-        when(repository.findByHarvestIgnoreCase(any(), any(Pageable.class)))
+        when(repository.findByPropertyIdAndHarvestIgnoreCase(any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(planting)));
 
         var result = service.findAll(" 2026/2027 ", 0, 20);
@@ -158,19 +168,20 @@ class PlantingServiceTest {
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().getFirst().harvest()).isEqualTo("2026/2027");
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(repository).findByHarvestIgnoreCase(
+        verify(repository).findByPropertyIdAndHarvestIgnoreCase(
+                org.mockito.ArgumentMatchers.eq(PROPERTY_ID),
                 org.mockito.ArgumentMatchers.eq("2026/2027"),
                 pageableCaptor.capture()
         );
         assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(20);
-        verify(repository, never()).findAll(any(Pageable.class));
+        verify(repository, never()).findByPropertyId(any(), any(Pageable.class));
     }
 
     @Test
     void shouldThrowClearErrorWhenPlantingDoesNotExist() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findById(id))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -181,7 +192,7 @@ class PlantingServiceTest {
     void shouldUpdateExistingPlanting() {
         UUID id = UUID.randomUUID();
         Planting planting = planting();
-        when(repository.findById(id)).thenReturn(Optional.of(planting));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting));
 
         var response = service.update(id, request("Milho", null));
 
@@ -192,7 +203,7 @@ class PlantingServiceTest {
     @Test
     void shouldRejectPlannedAreaBelowAlreadyPlantedArea() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(stepRepository.sumAreaByPlantingId(id))
                 .thenReturn(new BigDecimal("20.00"));
 
@@ -215,7 +226,7 @@ class PlantingServiceTest {
     @Test
     void shouldMarkProgressAsCompletedWhenPlantedAreaReachesPlan() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(stepRepository.sumAreaByPlantingId(id))
                 .thenReturn(new BigDecimal("18.50"));
 
@@ -231,7 +242,7 @@ class PlantingServiceTest {
     void shouldDeleteOnlyExistingPlanting() {
         UUID id = UUID.randomUUID();
         Planting planting = planting();
-        when(repository.findById(id)).thenReturn(Optional.of(planting));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting));
 
         service.delete(id);
 
@@ -243,7 +254,7 @@ class PlantingServiceTest {
         UUID id = UUID.randomUUID();
         Planting planting = planting();
         planting.finish();
-        when(repository.findById(id)).thenReturn(Optional.of(planting));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting));
 
         var response = service.reactivate(id);
 
@@ -254,7 +265,7 @@ class PlantingServiceTest {
     @Test
     void shouldRejectFinishingBeforeAllPlantedAreaIsHarvested() {
         UUID id = UUID.randomUUID();
-        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(stepRepository.sumAreaByPlantingId(id))
                 .thenReturn(new BigDecimal("18.50"));
         when(harvestStepRepository.sumAreaByPlantingId(id))
@@ -268,7 +279,7 @@ class PlantingServiceTest {
     @Test
     void shouldFinishAfterAllPlantedAreaIsHarvested() {
         UUID id = UUID.randomUUID();
-        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(stepRepository.sumAreaByPlantingId(id))
                 .thenReturn(new BigDecimal("18.50"));
         when(harvestStepRepository.sumAreaByPlantingId(id))
@@ -284,7 +295,7 @@ class PlantingServiceTest {
     @Test
     void shouldBuildSeasonClosingWithRevenueEstimate() {
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(expenseRepository.summarizeByCategory(id)).thenReturn(List.of(
                 expenseProjection(ExpenseCategory.SEEDS, "3000.00"),
                 expenseProjection(ExpenseCategory.FUEL, "2000.00")
@@ -319,6 +330,7 @@ class PlantingServiceTest {
 
     private Planting planting() {
         return new Planting(
+                property,
                 "Soja",
                 "2026/2027",
                 new BigDecimal("18.50"),
@@ -349,6 +361,7 @@ class PlantingServiceTest {
 
     private FieldDiaryEntry harvestEntry(String unit, String quantity) {
         FieldDiaryEntry entry = new FieldDiaryEntry(
+                property,
                 planting(),
                 LocalDate.of(2026, 2, 10),
                 ActivityType.HARVEST,

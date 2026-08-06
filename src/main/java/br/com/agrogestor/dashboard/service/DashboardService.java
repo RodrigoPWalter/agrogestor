@@ -14,6 +14,7 @@ import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.repository.PlantingAreaTotalProjection;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.planting.repository.PlantingStepRepository;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,33 +35,38 @@ public class DashboardService {
     private final PlantingStepRepository plantingStepRepository;
     private final ExpenseRepository expenseRepository;
     private final InventoryProductRepository inventoryProductRepository;
+    private final CurrentPropertyService currentProperty;
 
     public DashboardService(
             PlantingRepository plantingRepository,
             PlantingStepRepository plantingStepRepository,
             ExpenseRepository expenseRepository,
-            InventoryProductRepository inventoryProductRepository
+            InventoryProductRepository inventoryProductRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.plantingRepository = plantingRepository;
         this.plantingStepRepository = plantingStepRepository;
         this.expenseRepository = expenseRepository;
         this.inventoryProductRepository = inventoryProductRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse summarize() {
         PlantingStatus activeStatus = PlantingStatus.ACTIVE;
+        UUID propertyId = currentProperty.id();
         BigDecimal plantedArea = valueOrZero(
-                plantingStepRepository.sumAreaByPlantingStatus(activeStatus)
+                plantingStepRepository.sumAreaByPlantingPropertyIdAndStatus(propertyId, activeStatus)
         );
         BigDecimal plannedArea = valueOrZero(
-                plantingRepository.sumPlannedAreaByStatus(activeStatus)
+                plantingRepository.sumPlannedAreaByPropertyIdAndStatus(propertyId, activeStatus)
         );
-        BigDecimal totalExpenses = valueOrZero(expenseRepository.sumAllAmounts());
+        BigDecimal totalExpenses = valueOrZero(
+                expenseRepository.sumAllAmountsByPropertyId(propertyId));
 
         List<Planting> recentPlantings = plantingRepository
-                .findByStatusOrderByStartDateDescCropAsc(
-                        activeStatus,
+                .findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
+                        propertyId, activeStatus,
                         PageRequest.of(0, DASHBOARD_LIST_SIZE)
                 );
         Map<UUID, BigDecimal> plantedAreas = plantedAreas(recentPlantings);
@@ -69,25 +75,25 @@ public class DashboardService {
                 new DashboardMetricsResponse(
                         area(plantedArea),
                         area(plannedArea),
-                        plantingRepository.countByStatus(activeStatus),
+                        plantingRepository.countByPropertyIdAndStatus(propertyId, activeStatus),
                         money(totalExpenses),
-                        expenseRepository.count(),
-                        inventoryProductRepository.count(),
-                        inventoryProductRepository.countLowStock(),
+                        expenseRepository.countByPropertyId(propertyId),
+                        inventoryProductRepository.countByPropertyId(propertyId),
+                        inventoryProductRepository.countLowStock(propertyId),
                         costPerHectare(totalExpenses, plannedArea)
                 ),
                 recentPlantings.stream()
                         .map(planting -> toResponse(planting, plantedAreas))
                         .toList(),
                 expenseRepository
-                        .findAllByOrderByExpenseDateDescCreatedAtDesc(
-                                PageRequest.of(0, DASHBOARD_LIST_SIZE)
+                        .findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+                                propertyId, PageRequest.of(0, DASHBOARD_LIST_SIZE)
                         )
                         .stream()
                         .map(this::toResponse)
                         .toList(),
                 inventoryProductRepository
-                        .findForDashboard(PageRequest.of(0, DASHBOARD_LIST_SIZE))
+                        .findForDashboard(propertyId, PageRequest.of(0, DASHBOARD_LIST_SIZE))
                         .stream()
                         .map(this::toResponse)
                         .toList()

@@ -8,6 +8,8 @@ import br.com.agrogestor.inventory.entity.MovementType;
 import br.com.agrogestor.inventory.entity.ProductType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,12 +27,15 @@ class InventoryServiceTest {
     private InventoryProductRepository productRepository;
     private InventoryMovementRepository movementRepository;
     private InventoryService service;
+    private CurrentPropertyService currentProperty;
 
     @BeforeEach
     void setUp() {
         productRepository = mock(InventoryProductRepository.class);
         movementRepository = mock(InventoryMovementRepository.class);
-        service = new InventoryService(productRepository, movementRepository);
+        currentProperty = mock(CurrentPropertyService.class);
+        when(currentProperty.get()).thenReturn(new Property("Teste"));
+        service = new InventoryService(productRepository, movementRepository, currentProperty);
     }
 
     @Test

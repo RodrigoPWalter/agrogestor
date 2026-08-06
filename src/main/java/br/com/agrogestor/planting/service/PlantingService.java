@@ -22,6 +22,7 @@ import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -48,24 +49,28 @@ public class PlantingService {
     private final FieldDiaryRepository diaryRepository;
     private final PlantingStepRepository stepRepository;
     private final HarvestStepRepository harvestStepRepository;
+    private final CurrentPropertyService currentProperty;
 
     public PlantingService(
             PlantingRepository repository,
             ExpenseRepository expenseRepository,
             FieldDiaryRepository diaryRepository,
             PlantingStepRepository stepRepository,
-            HarvestStepRepository harvestStepRepository
+            HarvestStepRepository harvestStepRepository,
+            CurrentPropertyService currentProperty
     ) {
         this.repository = repository;
         this.expenseRepository = expenseRepository;
         this.diaryRepository = diaryRepository;
         this.stepRepository = stepRepository;
         this.harvestStepRepository = harvestStepRepository;
+        this.currentProperty = currentProperty;
     }
 
     @Transactional
     public PlantingResponse create(PlantingRequest request) {
         Planting planting = new Planting(
+                currentProperty.get(),
                 normalize(request.crop()),
                 request.harvest().trim(),
                 normalizeNullable(request.fieldName()),
@@ -99,16 +104,17 @@ public class PlantingService {
         );
 
         boolean hasHarvest = harvest != null && !harvest.isBlank();
+        UUID propertyId = currentProperty.id();
         Page<Planting> result;
         if (status == null) {
             result = hasHarvest
-                    ? repository.findByHarvestIgnoreCase(harvest.trim(), pageable)
-                    : repository.findAll(pageable);
+                    ? repository.findByPropertyIdAndHarvestIgnoreCase(propertyId, harvest.trim(), pageable)
+                    : repository.findByPropertyId(propertyId, pageable);
         } else {
             result = hasHarvest
-                    ? repository.findByHarvestIgnoreCaseAndStatus(
-                            harvest.trim(), status, pageable)
-                    : repository.findByStatus(status, pageable);
+                    ? repository.findByPropertyIdAndHarvestIgnoreCaseAndStatus(
+                            propertyId, harvest.trim(), status, pageable)
+                    : repository.findByPropertyIdAndStatus(propertyId, status, pageable);
         }
 
         Map<UUID, BigDecimal> plantedAreas = plantedAreas(result.getContent());
@@ -214,7 +220,7 @@ public class PlantingService {
 
     @Transactional(readOnly = true)
     public List<String> findHarvestHistory() {
-        return repository.findDistinctHarvests();
+        return repository.findDistinctHarvests(currentProperty.id());
     }
 
     @Transactional(readOnly = true)
@@ -272,12 +278,12 @@ public class PlantingService {
     }
 
     private Planting findEntity(UUID id) {
-        return repository.findById(id)
+        return repository.findByIdAndPropertyId(id, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
     }
 
     private Planting findEntityForUpdate(UUID id) {
-        return repository.findByIdForUpdate(id)
+        return repository.findByIdAndPropertyIdForUpdate(id, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Plantio não encontrado com o ID " + id
                 ));

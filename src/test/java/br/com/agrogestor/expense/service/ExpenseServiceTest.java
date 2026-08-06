@@ -9,6 +9,8 @@ import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.property.entity.Property;
+import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,24 +33,31 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
 
+    private static final UUID PROPERTY_ID = UUID.randomUUID();
+    private final Property property = new Property("Teste");
+
     @Mock
     private ExpenseRepository expenseRepository;
 
     @Mock
     private PlantingRepository plantingRepository;
+    @Mock
+    private CurrentPropertyService currentProperty;
 
     private ExpenseService service;
 
     @BeforeEach
     void setUp() {
-        service = new ExpenseService(expenseRepository, plantingRepository);
+        service = new ExpenseService(expenseRepository, plantingRepository, currentProperty);
+        org.mockito.Mockito.lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
+        org.mockito.Mockito.lenient().when(currentProperty.get()).thenReturn(property);
     }
 
     @Test
     void shouldCreateAndNormalizeExpense() {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting));
         when(expenseRepository.save(any(Expense.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -64,7 +73,7 @@ class ExpenseServiceTest {
     @Test
     void shouldRejectExpenseForUnknownPlanting() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.empty());
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(request(plantingId, "Adubo")))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -75,7 +84,7 @@ class ExpenseServiceTest {
     void shouldSummarizeExpensesByCategoryAndHectare() {
         UUID plantingId = UUID.randomUUID();
         Planting planting = planting();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting));
         when(expenseRepository.summarizeByCategory(plantingId)).thenReturn(List.of(
                 projection(ExpenseCategory.FERTILIZERS, "6000.00"),
                 projection(ExpenseCategory.FUEL, "4000.00")
@@ -95,7 +104,7 @@ class ExpenseServiceTest {
     @Test
     void shouldReturnZeroSummaryWhenPlantingHasNoExpenses() {
         UUID plantingId = UUID.randomUUID();
-        when(plantingRepository.findById(plantingId)).thenReturn(Optional.of(planting()));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting()));
         when(expenseRepository.summarizeByCategory(plantingId)).thenReturn(List.of());
 
         var summary = service.summarizeByPlanting(plantingId);
@@ -118,6 +127,7 @@ class ExpenseServiceTest {
 
     private Planting planting() {
         return new Planting(
+                property,
                 "Soja",
                 "2026/2027",
                 new BigDecimal("100.00"),
