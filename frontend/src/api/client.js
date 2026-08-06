@@ -79,6 +79,12 @@ export const api = {
       method: "PUT",
       data,
     }),
+  getUsers: () => request("/api/v1/users"),
+  createUser: (data) =>
+    request("/api/v1/users", {
+      method: "POST",
+      data,
+    }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getPlantings: () =>
     requestAllPages("/api/v1/plantings", { status: "ACTIVE" }),

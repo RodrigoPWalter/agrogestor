@@ -14,6 +14,7 @@ import {
   LogOut,
   KeyRound,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
@@ -26,6 +27,7 @@ import { useAuth } from "../auth/AuthContext";
 import { preloadPrivatePage } from "../routes/pageLoaders";
 import { BrandMark } from "./BrandMark";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
+import { UserManagementModal } from "./UserManagementModal";
 
 const navigation = [
   {
@@ -55,6 +57,7 @@ export function AppLayout() {
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
   const { user, logout, updateProfile } = useAuth();
   const connectionStatus = useSyncExternalStore(
     subscribeConnectionStatus,
@@ -169,6 +172,7 @@ export function AppLayout() {
                     <span>
                       <strong>{user?.nome}</strong>
                       <small>{user?.email}</small>
+                      {user?.propertyName && <small>{user.propertyName}</small>}
                     </span>
                   </div>
                   <button
@@ -182,6 +186,19 @@ export function AppLayout() {
                     <KeyRound size={15} />
                     Alterar acesso
                   </button>
+                  {user?.role === "ADMIN" && (
+                    <button
+                      className="profile-dropdown__settings"
+                      type="button"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        setUserManagementOpen(true);
+                      }}
+                    >
+                      <UsersRound size={15} />
+                      Gerenciar contas
+                    </button>
+                  )}
                   <button type="button" onClick={logout}>
                     <LogOut size={15} />
                     Sair da conta
@@ -203,6 +220,10 @@ export function AppLayout() {
           onSave={updateProfile}
           onClose={() => setProfileSettingsOpen(false)}
         />
+      )}
+
+      {userManagementOpen && (
+        <UserManagementModal onClose={() => setUserManagementOpen(false)} />
       )}
 
       {moreMenuOpen && (
