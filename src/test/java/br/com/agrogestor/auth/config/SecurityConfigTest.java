@@ -25,7 +25,8 @@ class SecurityConfigTest {
         );
         assertThat(cors.getAllowedMethods()).contains("GET", "POST", "OPTIONS");
         assertThat(cors.getAllowedHeaders()).contains(
-                "Authorization", "Content-Type"
+                "Authorization", "Content-Type", "X-Idempotency-Key"
         );
+        assertThat(cors.getExposedHeaders()).contains("X-Idempotent-Replay");
     }
 }

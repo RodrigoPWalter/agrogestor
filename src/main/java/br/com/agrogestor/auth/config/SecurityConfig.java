@@ -5,6 +5,7 @@ import br.com.agrogestor.auth.security.LoginRateLimitFilter;
 import br.com.agrogestor.auth.security.RestAccessDeniedHandler;
 import br.com.agrogestor.auth.security.RestAuthenticationEntryPoint;
 import br.com.agrogestor.auth.security.UsuarioDetailsService;
+import br.com.agrogestor.shared.idempotency.IdempotencyFilter;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +45,7 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtFilter,
+            IdempotencyFilter idempotencyFilter,
             LoginRateLimitFilter loginRateLimitFilter,
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler
@@ -68,6 +70,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(idempotencyFilter, JwtAuthenticationFilter.class)
                 .build();
     }
 
@@ -84,8 +87,10 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(List.of("Location"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", IdempotencyFilter.IDEMPOTENCY_HEADER
+        ));
+        configuration.setExposedHeaders(List.of("Location", "X-Idempotent-Replay"));
         configuration.setMaxAge(3600L);
 
         var source = new UrlBasedCorsConfigurationSource();
