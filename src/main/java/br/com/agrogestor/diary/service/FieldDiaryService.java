@@ -196,6 +196,7 @@ public class FieldDiaryService {
             Planting planting,
             List<FieldDiaryProduct> products
     ) {
+        Maintenance maintenance = null;
         if (request.activityType() == ActivityType.RAIN) {
             RainfallMeasurement rainfall = rainfallRepository.save(new RainfallMeasurement(
                     currentProperty.get(),
@@ -208,7 +209,7 @@ public class FieldDiaryService {
                             request.machineId(), currentProperty.id())
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Máquina não encontrada com o ID " + request.machineId()));
-            Maintenance maintenance = maintenanceRepository.save(new Maintenance(
+            maintenance = maintenanceRepository.save(new Maintenance(
                     machine, request.entryDate(), MaintenanceType.CORRECTIVE,
                     activityDescription(request), moneyOrZero(request.amount()), null,
                     normalizeNullable(request.observations())));
@@ -219,13 +220,16 @@ public class FieldDiaryService {
                 || request.activityType() == ActivityType.MAINTENANCE)) {
             ExpenseCategory category = request.activityType() == ActivityType.MAINTENANCE
                     ? ExpenseCategory.MAINTENANCE : productCategory(products, request.productType());
-            Planting expensePlanting = request.activityType() == ActivityType.PRODUCT_PURCHASE
-                    ? null : planting;
+            ExpenseOrigin origin = request.activityType() == ActivityType.MAINTENANCE
+                    ? ExpenseOrigin.MAINTENANCE : ExpenseOrigin.DIRECT;
             Expense expense = expenseRepository.save(new Expense(
                     currentProperty.get(),
-                    expensePlanting, activityDescription(request), category, request.amount(),
-                    request.entryDate(), normalizeNullable(request.observations())));
+                    null, activityDescription(request), category, request.amount(),
+                    request.entryDate(), normalizeNullable(request.observations()), origin));
             entry.linkExpense(expense.getId());
+            if (maintenance != null) {
+                maintenance.linkExpense(expense.getId());
+            }
         }
         if (request.activityType() == ActivityType.PRODUCT_USE && planting != null) {
             BigDecimal allocatedCost = products.stream()

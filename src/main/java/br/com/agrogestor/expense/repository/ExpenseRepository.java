@@ -17,15 +17,15 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
     Page<Expense> findByPropertyId(UUID propertyId, Pageable pageable);
 
-    Page<Expense> findByPropertyIdAndOrigin(
+    Page<Expense> findByPropertyIdAndOriginNot(
             UUID propertyId,
-            ExpenseOrigin origin,
+            ExpenseOrigin excludedOrigin,
             Pageable pageable
     );
 
-    Page<Expense> findByPropertyIdAndPlantingIsNullAndOrigin(
+    Page<Expense> findByPropertyIdAndPlantingIsNullAndOriginNot(
             UUID propertyId,
-            ExpenseOrigin origin,
+            ExpenseOrigin excludedOrigin,
             Pageable pageable
     );
 
@@ -38,18 +38,32 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     @Query("""
             select coalesce(sum(expense.amount), 0)
             from Expense expense
-            where expense.property.id = :propertyId and expense.origin = :origin
+            where expense.property.id = :propertyId
+              and expense.origin <> :excludedOrigin
             """)
-    BigDecimal sumAllAmountsByPropertyIdAndOrigin(
+    BigDecimal sumAllAmountsByPropertyIdAndOriginNot(
             @Param("propertyId") UUID propertyId,
-            @Param("origin") ExpenseOrigin origin
+            @Param("excludedOrigin") ExpenseOrigin excludedOrigin
     );
 
-    long countByPropertyIdAndOrigin(UUID propertyId, ExpenseOrigin origin);
+    @Query("""
+            select coalesce(sum(expense.amount), 0)
+            from Expense expense
+            where expense.property.id = :propertyId
+              and expense.planting is not null
+            """)
+    BigDecimal sumPlantingAmountsByPropertyId(
+            @Param("propertyId") UUID propertyId
+    );
 
-    long countByPropertyIdAndPlantingIsNullAndOrigin(
+    long countByPropertyIdAndOriginNot(
             UUID propertyId,
-            ExpenseOrigin origin
+            ExpenseOrigin excludedOrigin
+    );
+
+    long countByPropertyIdAndPlantingIsNullAndOriginNot(
+            UUID propertyId,
+            ExpenseOrigin excludedOrigin
     );
 
     @EntityGraph(attributePaths = "planting")
@@ -57,8 +71,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             UUID propertyId, Pageable pageable);
 
     @EntityGraph(attributePaths = "planting")
-    List<Expense> findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
-            UUID propertyId, ExpenseOrigin origin, Pageable pageable);
+    List<Expense> findByPropertyIdAndOriginNotOrderByExpenseDateDescCreatedAtDesc(
+            UUID propertyId,
+            ExpenseOrigin excludedOrigin,
+            Pageable pageable
+    );
 
     @Query("""
             select e.category as category, sum(e.amount) as total
@@ -76,12 +93,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             from Expense e
             where e.property.id = :propertyId
               and e.planting is null
-              and e.origin = :origin
+              and e.origin <> :excludedOrigin
             group by e.category
             order by e.category
             """)
     List<ExpenseCategoryTotalProjection> summarizeUnassignedByCategory(
             @Param("propertyId") UUID propertyId,
-            @Param("origin") ExpenseOrigin origin
+            @Param("excludedOrigin") ExpenseOrigin excludedOrigin
     );
 }

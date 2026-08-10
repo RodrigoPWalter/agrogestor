@@ -33,7 +33,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio, valor do saldo, validade e alerta de estoque baixo.
 - **Diário da Lavoura:** Registro de acontecimentos da propriedade com plantio opcional, múltiplos produtos e integração transacional com estoque e custos.
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
-- **Máquinas e Manutenções:** Cadastro da frota, horímetro, manutenções preventivas/corretivas e custos.
+- **Máquinas e Manutenções:** Cadastro da frota, horímetro e manutenções preventivas/corretivas, com lançamento automático do custo nos gastos da propriedade.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
 - **PWA:** Manifesto e service worker para instalação pelo navegador no Android e iPhone.
 - **Uso em conexão lenta:** Bloqueio de envios repetidos, mensagens específicas de conexão e recuperação de rascunhos de plantios, gastos e atividades do Diário.

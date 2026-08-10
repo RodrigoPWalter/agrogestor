@@ -22,6 +22,8 @@ import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
+import br.com.agrogestor.machine.entity.Machine;
+import br.com.agrogestor.machine.entity.Maintenance;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
@@ -306,6 +308,51 @@ class FieldDiaryServiceTest {
         verify(rainfallRepository).save(rainfall.capture());
         assertThat(rainfall.getValue().getMillimeters()).isEqualByComparingTo("24.50");
         assertThat(rainfall.getValue().getPlanting()).isNull();
+    }
+
+    @Test
+    void shouldLinkDiaryMaintenanceToPropertyExpense() {
+        UUID machineId = UUID.randomUUID();
+        UUID maintenanceId = UUID.randomUUID();
+        UUID expenseId = UUID.randomUUID();
+        Machine machine = new Machine(
+                property, "6110J", "John Deere", 2020, new BigDecimal("100.0"));
+        ReflectionTestUtils.setField(machine, "id", machineId);
+        when(machineRepository.findByIdAndPropertyId(machineId, PROPERTY_ID))
+                .thenReturn(Optional.of(machine));
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+        when(maintenanceRepository.save(any(Maintenance.class))).thenAnswer(invocation -> {
+            Maintenance maintenance = invocation.getArgument(0);
+            ReflectionTestUtils.setField(maintenance, "id", maintenanceId);
+            return maintenance;
+        });
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> {
+            Expense expense = invocation.getArgument(0);
+            ReflectionTestUtils.setField(expense, "id", expenseId);
+            return expense;
+        });
+
+        service.create(new FieldDiaryRequest(
+                null, LocalDate.now(), ActivityType.MAINTENANCE,
+                "Troca de filtro", null, null, null,
+                "Revisão da máquina", null, null, null, null,
+                null, null, null, new BigDecimal("200.00"), machineId,
+                null, null));
+
+        ArgumentCaptor<Maintenance> maintenance =
+                ArgumentCaptor.forClass(Maintenance.class);
+        verify(maintenanceRepository).save(maintenance.capture());
+        assertThat(maintenance.getValue().getExpenseId()).isEqualTo(expenseId);
+
+        ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(expense.capture());
+        assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.MAINTENANCE);
+        assertThat(expense.getValue().getPlanting()).isNull();
+        assertThat(expense.getValue().getAmount()).isEqualByComparingTo("200.00");
     }
 
     private FieldDiaryRequest request(UUID plantingId, String activity) {

@@ -2,7 +2,8 @@ package br.com.agrogestor.expense.entity;
 
 public enum ExpenseOrigin {
     DIRECT("Gasto direto"),
-    STOCK_ALLOCATION("Custo transferido do estoque");
+    STOCK_ALLOCATION("Custo transferido do estoque"),
+    MAINTENANCE("Manutenção de máquina");
 
     private final String displayName;
 

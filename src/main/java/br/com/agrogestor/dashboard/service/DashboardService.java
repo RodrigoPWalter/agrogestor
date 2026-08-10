@@ -63,8 +63,10 @@ public class DashboardService {
                 plantingRepository.sumPlannedAreaByPropertyIdAndStatus(propertyId, activeStatus)
         );
         BigDecimal totalExpenses = valueOrZero(
-                expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
-                        propertyId, ExpenseOrigin.DIRECT));
+                expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
+                        propertyId, ExpenseOrigin.STOCK_ALLOCATION));
+        BigDecimal plantingExpenses = valueOrZero(
+                expenseRepository.sumPlantingAmountsByPropertyId(propertyId));
 
         List<Planting> recentPlantings = plantingRepository
                 .findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
@@ -79,18 +81,18 @@ public class DashboardService {
                         area(plannedArea),
                         plantingRepository.countByPropertyIdAndStatus(propertyId, activeStatus),
                         money(totalExpenses),
-                        expenseRepository.countByPropertyIdAndOrigin(
-                                propertyId, ExpenseOrigin.DIRECT),
+                        expenseRepository.countByPropertyIdAndOriginNot(
+                                propertyId, ExpenseOrigin.STOCK_ALLOCATION),
                         inventoryProductRepository.countByPropertyId(propertyId),
                         inventoryProductRepository.countLowStock(propertyId),
-                        costPerHectare(totalExpenses, plannedArea)
+                        costPerHectare(plantingExpenses, plannedArea)
                 ),
                 recentPlantings.stream()
                         .map(planting -> toResponse(planting, plantedAreas))
                         .toList(),
                 expenseRepository
-                        .findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
-                                propertyId, ExpenseOrigin.DIRECT,
+                        .findByPropertyIdAndOriginNotOrderByExpenseDateDescCreatedAtDesc(
+                                propertyId, ExpenseOrigin.STOCK_ALLOCATION,
                                 PageRequest.of(0, DASHBOARD_LIST_SIZE)
                         )
                         .stream()

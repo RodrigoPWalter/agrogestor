@@ -76,11 +76,13 @@ class DashboardServiceTest {
                 .thenReturn(new BigDecimal("15"));
         when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(new BigDecimal("30"));
-        when(expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
-                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(new BigDecimal("16400"));
+        when(expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
+                PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(new BigDecimal("17000"));
+        when(expenseRepository.sumPlantingAmountsByPropertyId(PROPERTY_ID))
+                .thenReturn(new BigDecimal("16400"));
         when(plantingRepository.countByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE)).thenReturn(2L);
-        when(expenseRepository.countByPropertyIdAndOrigin(
-                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(7L);
+        when(expenseRepository.countByPropertyIdAndOriginNot(
+                PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(8L);
         when(inventoryProductRepository.countByPropertyId(PROPERTY_ID)).thenReturn(4L);
         when(inventoryProductRepository.countLowStock(PROPERTY_ID)).thenReturn(1L);
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
@@ -92,7 +94,7 @@ class DashboardServiceTest {
         when(areaProjection.getPlantedArea()).thenReturn(new BigDecimal("15"));
         when(plantingStepRepository.sumAreasByPlantingIds(anyCollection()))
                 .thenReturn(List.of(areaProjection));
-        when(expenseRepository.findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdAndOriginNotOrderByExpenseDateDescCreatedAtDesc(
                 any(UUID.class),
                 any(ExpenseOrigin.class),
                 any(Pageable.class)
@@ -104,10 +106,10 @@ class DashboardServiceTest {
 
         assertThat(summary.metrics().plantedAreaHectares())
                 .isEqualByComparingTo("15.00");
-        assertThat(summary.metrics().totalExpenses()).isEqualByComparingTo("16400.00");
+        assertThat(summary.metrics().totalExpenses()).isEqualByComparingTo("17000.00");
         assertThat(summary.metrics().costPerHectare()).isEqualByComparingTo("546.67");
         assertThat(summary.metrics().activePlantingsCount()).isEqualTo(2);
-        assertThat(summary.metrics().expenseCount()).isEqualTo(7);
+        assertThat(summary.metrics().expenseCount()).isEqualTo(8);
         assertThat(summary.metrics().inventoryProductCount()).isEqualTo(4);
         assertThat(summary.metrics().lowStockProductCount()).isEqualTo(1);
         assertThat(summary.recentPlantings()).singleElement()
@@ -131,14 +133,16 @@ class DashboardServiceTest {
                 .thenReturn(null);
         when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(BigDecimal.ZERO);
-        when(expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
-                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(new BigDecimal("150"));
+        when(expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
+                PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(new BigDecimal("150"));
+        when(expenseRepository.sumPlantingAmountsByPropertyId(PROPERTY_ID))
+                .thenReturn(BigDecimal.ZERO);
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
                 any(UUID.class),
                 any(PlantingStatus.class),
                 any(Pageable.class)
         )).thenReturn(List.of());
-        when(expenseRepository.findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdAndOriginNotOrderByExpenseDateDescCreatedAtDesc(
                 any(UUID.class),
                 any(ExpenseOrigin.class),
                 any(Pageable.class)

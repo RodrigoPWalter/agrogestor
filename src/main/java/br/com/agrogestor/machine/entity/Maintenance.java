@@ -29,6 +29,8 @@ public class Maintenance {
     private BigDecimal nextReviewHours;
     @Column(length = 1000)
     private String notes;
+    @Column(name = "expense_id", unique = true)
+    private UUID expenseId;
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
     @Column(name = "updated_at", nullable = false)
@@ -52,6 +54,9 @@ public class Maintenance {
         this.notes = notes;
     }
 
+    public void linkExpense(UUID expenseId) { this.expenseId = expenseId; }
+    public void unlinkExpense() { this.expenseId = null; }
+
     @PrePersist void prePersist() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         createdAt = now;
@@ -67,6 +72,7 @@ public class Maintenance {
     public BigDecimal getCost() { return cost; }
     public BigDecimal getNextReviewHours() { return nextReviewHours; }
     public String getNotes() { return notes; }
+    public UUID getExpenseId() { return expenseId; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
     public OffsetDateTime getUpdatedAt() { return updatedAt; }
 }

@@ -1,5 +1,9 @@
 package br.com.agrogestor.machine.service;
 
+import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
+import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.machine.dto.MachineRequest;
 import br.com.agrogestor.machine.dto.MachineResponse;
 import br.com.agrogestor.machine.dto.MaintenanceRequest;
@@ -16,21 +20,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
 public class MachineService {
     private final MachineRepository machineRepository;
     private final MaintenanceRepository maintenanceRepository;
+    private final ExpenseRepository expenseRepository;
     private final CurrentPropertyService currentProperty;
 
     public MachineService(
             MachineRepository machineRepository,
             MaintenanceRepository maintenanceRepository,
+            ExpenseRepository expenseRepository,
             CurrentPropertyService currentProperty
     ) {
         this.machineRepository = machineRepository;
         this.maintenanceRepository = maintenanceRepository;
+        this.expenseRepository = expenseRepository;
         this.currentProperty = currentProperty;
     }
 
@@ -66,18 +74,30 @@ public class MachineService {
 
     @Transactional
     public void delete(UUID id) {
-        machineRepository.delete(findMachine(id));
+        Machine machine = findMachine(id);
+        List<UUID> expenseIds = maintenanceRepository
+                .findByMachineIdOrderByMaintenanceDateDesc(machine.getId())
+                .stream()
+                .map(Maintenance::getExpenseId)
+                .filter(expenseId -> expenseId != null)
+                .toList();
+
+        machineRepository.delete(machine);
+        machineRepository.flush();
+        expenseRepository.deleteAllById(expenseIds);
     }
 
     @Transactional
     public MaintenanceResponse createMaintenance(UUID machineId, MaintenanceRequest request) {
         Machine machine = findMachine(machineId);
-        return toResponse(maintenanceRepository.save(new Maintenance(
+        Maintenance maintenance = maintenanceRepository.save(new Maintenance(
                 machine, request.maintenanceDate(), request.maintenanceType(),
                 normalizeNullable(request.replacedParts()), money(request.cost()),
                 request.nextReviewHours() == null ? null : hours(request.nextReviewHours()),
                 normalizeNullable(request.notes())
-        )));
+        ));
+        syncExpense(maintenance);
+        return toResponse(maintenance);
     }
 
     @Transactional(readOnly = true)
@@ -96,12 +116,80 @@ public class MachineService {
                 normalizeNullable(request.replacedParts()), money(request.cost()),
                 request.nextReviewHours() == null ? null : hours(request.nextReviewHours()),
                 normalizeNullable(request.notes()));
+        syncExpense(maintenance);
         return toResponse(maintenance);
     }
 
     @Transactional
     public void deleteMaintenance(UUID id) {
-        maintenanceRepository.delete(findMaintenance(id));
+        Maintenance maintenance = findMaintenance(id);
+        UUID expenseId = maintenance.getExpenseId();
+        maintenanceRepository.delete(maintenance);
+        maintenanceRepository.flush();
+        if (expenseId != null) {
+            expenseRepository.deleteById(expenseId);
+        }
+    }
+
+    private void syncExpense(Maintenance maintenance) {
+        UUID expenseId = maintenance.getExpenseId();
+        if (maintenance.getCost().signum() <= 0) {
+            if (expenseId != null) {
+                maintenance.unlinkExpense();
+                maintenanceRepository.flush();
+                expenseRepository.deleteById(expenseId);
+            }
+            return;
+        }
+
+        Expense expense = expenseId == null
+                ? null
+                : expenseRepository.findByIdAndPropertyId(expenseId, currentProperty.id())
+                        .orElse(null);
+        if (expense == null) {
+            expense = expenseRepository.save(new Expense(
+                    currentProperty.get(),
+                    null,
+                    expenseDescription(maintenance),
+                    ExpenseCategory.MAINTENANCE,
+                    maintenance.getCost(),
+                    maintenance.getMaintenanceDate(),
+                    expenseNotes(maintenance),
+                    ExpenseOrigin.MAINTENANCE
+            ));
+            maintenance.linkExpense(expense.getId());
+            return;
+        }
+
+        expense.update(
+                null,
+                expenseDescription(maintenance),
+                ExpenseCategory.MAINTENANCE,
+                maintenance.getCost(),
+                maintenance.getMaintenanceDate(),
+                expenseNotes(maintenance)
+        );
+    }
+
+    private String expenseDescription(Maintenance maintenance) {
+        String description = "Manutenção "
+                + maintenance.getMaintenanceType().getDisplayName().toLowerCase(Locale.ROOT)
+                + " — " + maintenance.getMachine().getBrand()
+                + " " + maintenance.getMachine().getModel();
+        return truncate(description, 160);
+    }
+
+    private String expenseNotes(Maintenance maintenance) {
+        String parts = maintenance.getReplacedParts() == null
+                ? null : "Peças: " + maintenance.getReplacedParts();
+        String notes = maintenance.getNotes();
+        if (parts == null) return notes;
+        if (notes == null) return truncate(parts, 1000);
+        return truncate(parts + System.lineSeparator() + notes, 1000);
+    }
+
+    private String truncate(String value, int maxLength) {
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private Machine findMachine(UUID id) {

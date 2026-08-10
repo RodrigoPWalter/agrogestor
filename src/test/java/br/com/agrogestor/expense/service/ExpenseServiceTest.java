@@ -118,12 +118,12 @@ class ExpenseServiceTest {
     @Test
     void shouldSummarizeOnlyUnassignedPropertyExpenses() {
         when(expenseRepository.summarizeUnassignedByCategory(
-                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(List.of(
+                PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(List.of(
                 projection(ExpenseCategory.MAINTENANCE, "750.00"),
                 projection(ExpenseCategory.OTHER, "250.00")
         ));
-        when(expenseRepository.countByPropertyIdAndPlantingIsNullAndOrigin(
-                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(3L);
+        when(expenseRepository.countByPropertyIdAndPlantingIsNullAndOriginNot(
+                PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(3L);
 
         var summary = service.summarizeUnassigned();
 

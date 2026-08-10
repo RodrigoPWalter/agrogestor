@@ -214,6 +214,9 @@ export function PlantingExpensesSection({
                 {item.managedByInventory && (
                   <small className="expense-origin-label">Do estoque</small>
                 )}
+                {item.managedByMaintenance && (
+                  <small className="expense-origin-label">Manutenção</small>
+                )}
               </span>
               <strong>{formatCurrency(item.amount)}</strong>
             </div>

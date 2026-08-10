@@ -43,6 +43,7 @@ const propertyExpense = {
   categoryDisplayName: "Manutenção",
   amount: 600,
   expenseDate: "2026-07-22",
+  managedByMaintenance: true,
 };
 
 describe("ExpensesPage", () => {
@@ -97,6 +98,8 @@ describe("ExpensesPage", () => {
     expect(api.getPropertyExpenseSummary).toHaveBeenCalledOnce();
     expect(screen.getByText("Total da propriedade")).toBeInTheDocument();
     expect(screen.getByText("Média por lançamento")).toBeInTheDocument();
+    expect(screen.getByText("Gerenciado em Máquinas")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar gasto" })).toBeNull();
   });
 
   it("registra um gasto da propriedade sem vincular plantio", async () => {

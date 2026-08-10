@@ -83,11 +83,11 @@ public class ExpenseService {
             result = expenseRepository.findByPropertyIdAndPlantingId(
                     propertyId, plantingId, pageable);
         } else if (unassignedOnly) {
-            result = expenseRepository.findByPropertyIdAndPlantingIsNullAndOrigin(
-                    propertyId, ExpenseOrigin.DIRECT, pageable);
+            result = expenseRepository.findByPropertyIdAndPlantingIsNullAndOriginNot(
+                    propertyId, ExpenseOrigin.STOCK_ALLOCATION, pageable);
         } else {
-            result = expenseRepository.findByPropertyIdAndOrigin(
-                    propertyId, ExpenseOrigin.DIRECT, pageable);
+            result = expenseRepository.findByPropertyIdAndOriginNot(
+                    propertyId, ExpenseOrigin.STOCK_ALLOCATION, pageable);
         }
 
         return PageResponse.from(result.map(this::toResponse));
@@ -165,14 +165,14 @@ public class ExpenseService {
         UUID propertyId = currentProperty.id();
         List<ExpenseCategoryTotalProjection> totals =
                 expenseRepository.summarizeUnassignedByCategory(
-                        propertyId, ExpenseOrigin.DIRECT);
+                        propertyId, ExpenseOrigin.STOCK_ALLOCATION);
 
         BigDecimal totalExpenses = totals.stream()
                 .map(ExpenseCategoryTotalProjection::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         long expenseCount = expenseRepository
-                .countByPropertyIdAndPlantingIsNullAndOrigin(
-                        propertyId, ExpenseOrigin.DIRECT);
+                .countByPropertyIdAndPlantingIsNullAndOriginNot(
+                        propertyId, ExpenseOrigin.STOCK_ALLOCATION);
 
         List<ExpenseCategorySummaryResponse> categories = totals.stream()
                 .map(item -> new ExpenseCategorySummaryResponse(
@@ -233,6 +233,7 @@ public class ExpenseService {
                 expense.getOrigin(),
                 expense.getOrigin().getDisplayName(),
                 expense.getOrigin() == ExpenseOrigin.STOCK_ALLOCATION,
+                expense.getOrigin() == ExpenseOrigin.MAINTENANCE,
                 expense.getCreatedAt(),
                 expense.getUpdatedAt()
         );
@@ -259,10 +260,13 @@ public class ExpenseService {
     }
 
     private void ensureDirectExpense(Expense expense) {
-        if (expense.getOrigin() == ExpenseOrigin.STOCK_ALLOCATION) {
+        if (expense.getOrigin() != ExpenseOrigin.DIRECT) {
+            String source = expense.getOrigin() == ExpenseOrigin.MAINTENANCE
+                    ? "em Máquinas"
+                    : "pelo uso do produto no estoque";
             throw new BusinessRuleException(
-                    "Este custo é controlado pelo uso do produto no estoque. "
-                            + "Edite ou exclua o lançamento correspondente no Diário"
+                    "Este custo é controlado " + source + ". "
+                            + "Edite ou exclua o registro no módulo de origem"
             );
         }
     }

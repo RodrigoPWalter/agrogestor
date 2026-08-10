@@ -17,6 +17,7 @@ erDiagram
     INVENTORY_PRODUCTS ||--o{ FIELD_DIARY_PRODUCTS : utilizado_em
     INVENTORY_PRODUCTS ||--o{ INVENTORY_MOVEMENTS : movimenta
     MACHINES ||--o{ MAINTENANCES : recebe
+    MAINTENANCES o|--o| EXPENSES : gera
 ```
 
 ## Tabelas em uso
@@ -55,9 +56,9 @@ Cada etapa cria um lançamento de colheita no Diário dentro da mesma transaçã
 
 ### `expenses`
 
-Registra os desembolsos financeiros e os custos atribuídos a um plantio. O campo `origin` diferencia um gasto realmente pago (`DIRECT`) de uma transferência de custo já reconhecido na compra do estoque (`STOCK_ALLOCATION`). Assim, o custo do insumo aparece na safra em que foi usado sem aumentar novamente o total pago pela propriedade.
+Registra os desembolsos financeiros e os custos atribuídos a um plantio. O campo `origin` diferencia um gasto lançado manualmente (`DIRECT`), uma transferência de custo já reconhecido na compra do estoque (`STOCK_ALLOCATION`) e um custo gerado por manutenção de máquina (`MAINTENANCE`). Assim, o custo do insumo aparece na safra em que foi usado sem aumentar novamente o total pago pela propriedade.
 
-Custos com origem no estoque são gerenciados pelo lançamento correspondente no Diário. O vínculo com o plantio usa restrição para evitar exclusão acidental de uma safra com histórico de custos.
+Custos com origem no estoque são gerenciados pelo lançamento correspondente no Diário. Gastos de manutenção são gerenciados no módulo de Máquinas, de modo que editar ou excluir a manutenção também atualiza o financeiro. O vínculo com o plantio usa restrição para evitar exclusão acidental de uma safra com histórico de custos.
 
 ### `inventory_products`
 
@@ -87,7 +88,7 @@ Armazena marca, modelo, ano e horímetro atual da máquina.
 
 ### `maintenances`
 
-Registra manutenção preventiva ou corretiva, peças trocadas, custo e horímetro previsto para a próxima revisão.
+Registra manutenção preventiva ou corretiva, peças trocadas, custo e horímetro previsto para a próxima revisão. Quando existe custo, `expense_id` identifica o gasto geral criado automaticamente; o vínculo permite manter os dois módulos sincronizados sem duplicar lançamentos feitos pelo Diário.
 
 ### `weather_location`
 
