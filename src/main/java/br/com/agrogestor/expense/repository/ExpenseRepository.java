@@ -23,6 +23,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             Pageable pageable
     );
 
+    Page<Expense> findByPropertyIdAndPlantingIsNullAndOrigin(
+            UUID propertyId,
+            ExpenseOrigin origin,
+            Pageable pageable
+    );
+
     Page<Expense> findByPropertyIdAndPlantingId(UUID propertyId, UUID plantingId, Pageable pageable);
 
     java.util.Optional<Expense> findByIdAndPropertyId(UUID id, UUID propertyId);
@@ -41,6 +47,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
     long countByPropertyIdAndOrigin(UUID propertyId, ExpenseOrigin origin);
 
+    long countByPropertyIdAndPlantingIsNullAndOrigin(
+            UUID propertyId,
+            ExpenseOrigin origin
+    );
+
     @EntityGraph(attributePaths = "planting")
     List<Expense> findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
             UUID propertyId, Pageable pageable);
@@ -58,5 +69,19 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             """)
     List<ExpenseCategoryTotalProjection> summarizeByCategory(
             @Param("plantingId") UUID plantingId
+    );
+
+    @Query("""
+            select e.category as category, sum(e.amount) as total
+            from Expense e
+            where e.property.id = :propertyId
+              and e.planting is null
+              and e.origin = :origin
+            group by e.category
+            order by e.category
+            """)
+    List<ExpenseCategoryTotalProjection> summarizeUnassignedByCategory(
+            @Param("propertyId") UUID propertyId,
+            @Param("origin") ExpenseOrigin origin
     );
 }

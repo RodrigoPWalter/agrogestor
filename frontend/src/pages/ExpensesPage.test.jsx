@@ -8,7 +8,9 @@ vi.mock("../api/client", () => ({
   api: {
     getAllPlantings: vi.fn(),
     getExpenses: vi.fn(),
+    getPropertyExpenses: vi.fn(),
     getExpenseSummary: vi.fn(),
+    getPropertyExpenseSummary: vi.fn(),
     createExpense: vi.fn(),
     updateExpense: vi.fn(),
     deleteExpense: vi.fn(),
@@ -33,6 +35,16 @@ const expense = {
   expenseDate: "2026-07-20",
 };
 
+const propertyExpense = {
+  id: "expense-property-1",
+  plantingId: null,
+  description: "Troca de óleo do trator",
+  category: "MAINTENANCE",
+  categoryDisplayName: "Manutenção",
+  amount: 600,
+  expenseDate: "2026-07-22",
+};
+
 describe("ExpensesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,6 +63,78 @@ describe("ExpensesPage", () => {
         },
       ],
     });
+    api.getPropertyExpenses.mockResolvedValue({ content: [propertyExpense] });
+    api.getPropertyExpenseSummary.mockResolvedValue({
+      totalExpenses: 600,
+      averageExpense: 600,
+      expenseCount: 1,
+      categories: [
+        {
+          category: "MAINTENANCE",
+          categoryDisplayName: "Manutenção",
+          total: 600,
+          percentage: 100,
+        },
+      ],
+    });
+  });
+
+  it("separa os gastos gerais da propriedade dos custos do plantio", async () => {
+    render(
+      <MemoryRouter>
+        <ExpensesPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Adubo de base")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Da propriedade" }));
+
+    expect(
+      await screen.findByText("Troca de óleo do trator"),
+    ).toBeInTheDocument();
+    expect(api.getPropertyExpenses).toHaveBeenCalledOnce();
+    expect(api.getPropertyExpenseSummary).toHaveBeenCalledOnce();
+    expect(screen.getByText("Total da propriedade")).toBeInTheDocument();
+    expect(screen.getByText("Média por lançamento")).toBeInTheDocument();
+  });
+
+  it("registra um gasto da propriedade sem vincular plantio", async () => {
+    api.createExpense.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <ExpensesPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText("Adubo de base");
+    fireEvent.click(screen.getByRole("tab", { name: "Da propriedade" }));
+    await screen.findByText("Troca de óleo do trator");
+    fireEvent.click(screen.getByRole("button", { name: "Registrar gasto" }));
+
+    expect(screen.queryByLabelText("Plantio relacionado")).toBeNull();
+    expect(screen.getByText("Gasto da propriedade")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Descrição"), {
+      target: { value: "Balde de graxa" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor (R$)"), {
+      target: { value: "180" },
+    });
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Registrar gasto" }).at(-1),
+    );
+
+    await waitFor(() =>
+      expect(api.createExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plantingId: null,
+          description: "Balde de graxa",
+          amount: 180,
+        }),
+      ),
+    );
   });
 
   it("carrega o resumo e permite pesquisar os gastos do plantio", async () => {

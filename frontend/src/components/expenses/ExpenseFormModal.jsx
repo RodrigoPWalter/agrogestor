@@ -14,6 +14,7 @@ export function ExpenseFormModal({
   editing,
   form,
   plantings,
+  scope,
   saving,
   draftRecovered,
   onChange,
@@ -30,27 +31,38 @@ export function ExpenseFormModal({
       description={
         draftRecovered
           ? "Recuperamos o rascunho que estava salvo neste aparelho."
-          : "Informe o valor e a categoria para manter o custo atualizado."
+          : scope === "property"
+            ? "Registre um custo geral que não pertence a um plantio específico."
+            : "Informe o valor e a categoria para manter o custo atualizado."
       }
       onClose={onClose}
       dismissible={!saving}
     >
       <form className="form" onSubmit={onSubmit}>
         <div className="form-grid">
-          <label className="form-grid__full">
-            <span>Plantio relacionado</span>
-            <select
-              required
-              value={form.plantingId}
-              onChange={(event) => update("plantingId", event.target.value)}
-            >
-              {plantings.map((planting) => (
-                <option key={planting.id} value={planting.id}>
-                  {planting.crop} — {planting.harvest}
-                </option>
-              ))}
-            </select>
-          </label>
+          {scope === "property" ? (
+            <div className="expense-form-scope-note form-grid__full">
+              <strong>Gasto da propriedade</strong>
+              <span>
+                Este valor não será incluído no custo de nenhum plantio.
+              </span>
+            </div>
+          ) : (
+            <label className="form-grid__full">
+              <span>Plantio relacionado</span>
+              <select
+                required
+                value={form.plantingId}
+                onChange={(event) => update("plantingId", event.target.value)}
+              >
+                {plantings.map((planting) => (
+                  <option key={planting.id} value={planting.id}>
+                    {planting.crop} — {planting.harvest}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="form-grid__full">
             <span>Descrição</span>
             <input

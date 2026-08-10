@@ -3,6 +3,7 @@ package br.com.agrogestor.expense.controller;
 import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.dto.ExpenseResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
+import br.com.agrogestor.expense.dto.PropertyExpenseSummaryResponse;
 import br.com.agrogestor.expense.service.ExpenseService;
 import br.com.agrogestor.shared.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,13 +53,18 @@ public class ExpenseController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar gastos", description = "Aceita filtro opcional por plantio")
+    @Operation(
+            summary = "Listar gastos",
+            description = "Aceita filtro por plantio ou somente gastos sem plantio"
+    )
     public ResponseEntity<PageResponse<ExpenseResponse>> findAll(
             @RequestParam(required = false) UUID plantingId,
+            @RequestParam(defaultValue = "false") boolean unassignedOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
-        return ResponseEntity.ok(service.findAll(plantingId, page, size));
+        return ResponseEntity.ok(service.findAll(
+                plantingId, unassignedOnly, page, size));
     }
 
     @GetMapping("/{id}")
@@ -89,5 +95,11 @@ public class ExpenseController {
             @PathVariable UUID plantingId
     ) {
         return ResponseEntity.ok(service.summarizeByPlanting(plantingId));
+    }
+
+    @GetMapping("/property/summary")
+    @Operation(summary = "Resumir gastos gerais da propriedade por categoria")
+    public ResponseEntity<PropertyExpenseSummaryResponse> summarizeProperty() {
+        return ResponseEntity.ok(service.summarizeUnassigned());
     }
 }

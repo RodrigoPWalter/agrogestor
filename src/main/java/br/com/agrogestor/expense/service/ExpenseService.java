@@ -4,6 +4,7 @@ import br.com.agrogestor.expense.dto.ExpenseCategorySummaryResponse;
 import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.dto.ExpenseResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
+import br.com.agrogestor.expense.dto.PropertyExpenseSummaryResponse;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
@@ -64,6 +65,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public PageResponse<ExpenseResponse> findAll(
             UUID plantingId,
+            boolean unassignedOnly,
             int page,
             int size
     ) {
@@ -76,12 +78,16 @@ public class ExpenseService {
 
         Page<Expense> result;
         UUID propertyId = currentProperty.id();
-        if (plantingId == null) {
-            result = expenseRepository.findByPropertyIdAndOrigin(
+        if (plantingId != null) {
+            findPlanting(plantingId);
+            result = expenseRepository.findByPropertyIdAndPlantingId(
+                    propertyId, plantingId, pageable);
+        } else if (unassignedOnly) {
+            result = expenseRepository.findByPropertyIdAndPlantingIsNullAndOrigin(
                     propertyId, ExpenseOrigin.DIRECT, pageable);
         } else {
-            findPlanting(plantingId);
-            result = expenseRepository.findByPropertyIdAndPlantingId(propertyId, plantingId, pageable);
+            result = expenseRepository.findByPropertyIdAndOrigin(
+                    propertyId, ExpenseOrigin.DIRECT, pageable);
         }
 
         return PageResponse.from(result.map(this::toResponse));
@@ -150,6 +156,45 @@ public class ExpenseService {
                 money(totalExpenses),
                 expensePerHectare,
                 expenseRepository.countByPlantingId(plantingId),
+                categories
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PropertyExpenseSummaryResponse summarizeUnassigned() {
+        UUID propertyId = currentProperty.id();
+        List<ExpenseCategoryTotalProjection> totals =
+                expenseRepository.summarizeUnassignedByCategory(
+                        propertyId, ExpenseOrigin.DIRECT);
+
+        BigDecimal totalExpenses = totals.stream()
+                .map(ExpenseCategoryTotalProjection::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        long expenseCount = expenseRepository
+                .countByPropertyIdAndPlantingIsNullAndOrigin(
+                        propertyId, ExpenseOrigin.DIRECT);
+
+        List<ExpenseCategorySummaryResponse> categories = totals.stream()
+                .map(item -> new ExpenseCategorySummaryResponse(
+                        item.getCategory(),
+                        item.getCategory().getDisplayName(),
+                        money(item.getTotal()),
+                        percentage(item.getTotal(), totalExpenses)
+                ))
+                .toList();
+
+        BigDecimal averageExpense = expenseCount == 0
+                ? money(BigDecimal.ZERO)
+                : totalExpenses.divide(
+                        BigDecimal.valueOf(expenseCount),
+                        MONEY_SCALE,
+                        ROUNDING_MODE
+                );
+
+        return new PropertyExpenseSummaryResponse(
+                money(totalExpenses),
+                averageExpense,
+                expenseCount,
                 categories
         );
     }

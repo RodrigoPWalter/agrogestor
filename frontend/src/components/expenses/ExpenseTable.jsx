@@ -6,7 +6,8 @@ export function ExpenseTable({
   expenses,
   filteredExpenses,
   searchQuery,
-  selectedPlantingId,
+  canCreate,
+  scope,
   onSearchChange,
   onCreate,
   onEdit,
@@ -17,7 +18,11 @@ export function ExpenseTable({
       <div className="panel__header">
         <div>
           <span className="eyebrow">Histórico</span>
-          <h2>Gastos registrados</h2>
+          <h2>
+            {scope === "property"
+              ? "Gastos da propriedade"
+              : "Gastos registrados"}
+          </h2>
         </div>
         <span className="record-count">
           {filteredExpenses.length} de {expenses.length} itens
@@ -38,7 +43,7 @@ export function ExpenseTable({
         <button
           className="button button--primary"
           onClick={onCreate}
-          disabled={!selectedPlantingId}
+          disabled={!canCreate}
         >
           <Plus size={17} /> Registrar gasto
         </button>
@@ -46,8 +51,16 @@ export function ExpenseTable({
 
       {expenses.length === 0 ? (
         <EmptyState
-          title="Nenhum gasto neste plantio"
-          description="Registre a primeira despesa para começar o controle."
+          title={
+            scope === "property"
+              ? "Nenhum gasto geral registrado"
+              : "Nenhum gasto neste plantio"
+          }
+          description={
+            scope === "property"
+              ? "Use esta área para despesas que não pertencem a uma safra específica."
+              : "Registre a primeira despesa para começar o controle."
+          }
         />
       ) : (
         <div className="expense-table-wrapper">

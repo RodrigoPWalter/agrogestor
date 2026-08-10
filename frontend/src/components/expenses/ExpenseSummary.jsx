@@ -1,18 +1,26 @@
 import { CircleDollarSign, LandPlot, ReceiptText, Tags } from "lucide-react";
 import { formatCurrency } from "../../utils/formatters";
 
-export function ExpenseSummary({ summary, expenseCount }) {
+export function ExpenseSummary({ summary, expenseCount, scope }) {
+  const propertyScope = scope === "property";
+
   return (
     <section
       className="expense-summary-strip"
-      aria-label="Resumo financeiro do plantio"
+      aria-label={
+        propertyScope
+          ? "Resumo dos gastos da propriedade"
+          : "Resumo financeiro do plantio"
+      }
     >
       <article className="expense-summary-item expense-summary-item--financial">
         <span>
           <CircleDollarSign size={21} />
         </span>
         <div>
-          <small>Total registrado</small>
+          <small>
+            {propertyScope ? "Total da propriedade" : "Total registrado"}
+          </small>
           <strong>{formatCurrency(summary?.totalExpenses)}</strong>
         </div>
       </article>
@@ -21,8 +29,16 @@ export function ExpenseSummary({ summary, expenseCount }) {
           <LandPlot size={21} />
         </span>
         <div>
-          <small>Custo por hectare</small>
-          <strong>{formatCurrency(summary?.expensePerHectare)}</strong>
+          <small>
+            {propertyScope ? "Média por lançamento" : "Custo por hectare"}
+          </small>
+          <strong>
+            {formatCurrency(
+              propertyScope
+                ? summary?.averageExpense
+                : summary?.expensePerHectare,
+            )}
+          </strong>
         </div>
       </article>
       <article className="expense-summary-item">

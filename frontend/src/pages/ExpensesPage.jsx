@@ -13,14 +13,14 @@ import {
   LoadingState,
   SuccessBanner,
 } from "../components/Feedback";
-import { toInputDate } from "../utils/formatters";
-import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useSingleFlight } from "../hooks/useSingleFlight";
 import {
   clearFormDraft,
   readFormDraft,
   writeFormDraft,
 } from "../utils/formDraft";
+import { toInputDate } from "../utils/formatters";
 
 function newExpenseForm(plantingId = "") {
   return {
@@ -33,8 +33,13 @@ function newExpenseForm(plantingId = "") {
   };
 }
 
+function expenseDraftKey(scope) {
+  return scope === "property" ? "gasto-propriedade" : "gasto-plantio";
+}
+
 export function ExpensesPage() {
   const requestConfirmation = useConfirmation();
+  const [scope, setScope] = useState("planting");
   const [plantings, setPlantings] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [expenses, setExpenses] = useState([]);
@@ -58,25 +63,32 @@ export function ExpensesPage() {
         if (page.content.length > 0) {
           setSelectedPlantingId(page.content[0].id);
         } else {
-          setLoading(false);
+          setScope("property");
         }
       })
       .catch((requestError) => {
         setError(requestError.message);
-        setLoading(false);
+        setScope("property");
       });
   }, []);
 
   const loadExpenseData = useCallback(
-    async (plantingId, { showLoading = true } = {}) => {
-      if (!plantingId) return;
+    async (targetScope, plantingId, { showLoading = true } = {}) => {
+      if (targetScope === "planting" && !plantingId) {
+        setExpenses([]);
+        setSummary(null);
+        setLoading(false);
+        return;
+      }
+
       const isCurrentRequest = beginExpenseRequest();
       if (showLoading) setLoading(true);
       try {
-        const [expensePage, expenseSummary] = await Promise.all([
-          api.getExpenses(plantingId),
-          api.getExpenseSummary(plantingId),
-        ]);
+        const requests =
+          targetScope === "property"
+            ? [api.getPropertyExpenses(), api.getPropertyExpenseSummary()]
+            : [api.getExpenses(plantingId), api.getExpenseSummary(plantingId)];
+        const [expensePage, expenseSummary] = await Promise.all(requests);
         if (isCurrentRequest()) {
           setExpenses(expensePage.content);
           setSummary(expenseSummary);
@@ -92,14 +104,14 @@ export function ExpensesPage() {
   );
 
   useEffect(() => {
-    loadExpenseData(selectedPlantingId);
-  }, [selectedPlantingId, loadExpenseData]);
+    loadExpenseData(scope, selectedPlantingId);
+  }, [scope, selectedPlantingId, loadExpenseData]);
 
   useEffect(() => {
     if (modalOpen && !editing) {
-      writeFormDraft("gasto", form);
+      writeFormDraft(expenseDraftKey(scope), form);
     }
-  }, [editing, form, modalOpen]);
+  }, [editing, form, modalOpen, scope]);
 
   const filteredExpenses = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("pt-BR");
@@ -117,10 +129,17 @@ export function ExpensesPage() {
     );
   }, [expenses, searchQuery]);
 
+  function changeScope(nextScope) {
+    setScope(nextScope);
+    setSearchQuery("");
+    setError("");
+  }
+
   function openCreate() {
-    const draft = readFormDraft("gasto");
+    const draft = readFormDraft(expenseDraftKey(scope));
+    const plantingId = scope === "property" ? "" : selectedPlantingId;
     setEditing(null);
-    setForm({ ...newExpenseForm(selectedPlantingId), ...draft });
+    setForm({ ...newExpenseForm(plantingId), ...draft, plantingId });
     setDraftRecovered(Boolean(draft));
     setModalOpen(true);
     setError("");
@@ -130,7 +149,7 @@ export function ExpensesPage() {
     setDraftRecovered(false);
     setEditing(expense);
     setForm({
-      plantingId: expense.plantingId,
+      plantingId: expense.plantingId || "",
       description: expense.description,
       category: expense.category,
       amount: expense.amount,
@@ -142,7 +161,7 @@ export function ExpensesPage() {
   }
 
   function closeForm() {
-    if (!editing) clearFormDraft("gasto");
+    if (!editing) clearFormDraft(expenseDraftKey(scope));
     setDraftRecovered(false);
     setModalOpen(false);
   }
@@ -153,6 +172,7 @@ export function ExpensesPage() {
       setError("");
       const payload = {
         ...form,
+        plantingId: scope === "property" ? null : form.plantingId || null,
         amount: Number(form.amount),
         observations: form.observations || null,
       };
@@ -162,15 +182,21 @@ export function ExpensesPage() {
           setSuccess("Gasto atualizado com sucesso.");
         } else {
           await api.createExpense(payload);
-          clearFormDraft("gasto");
+          clearFormDraft(expenseDraftKey(scope));
           setDraftRecovered(false);
-          setSuccess("Gasto registrado com sucesso.");
+          setSuccess(
+            scope === "property"
+              ? "Gasto da propriedade registrado com sucesso."
+              : "Gasto registrado com sucesso.",
+          );
         }
         setModalOpen(false);
-        if (form.plantingId !== selectedPlantingId) {
+        if (scope === "planting" && form.plantingId !== selectedPlantingId) {
           setSelectedPlantingId(form.plantingId);
         } else {
-          await loadExpenseData(selectedPlantingId, { showLoading: false });
+          await loadExpenseData(scope, selectedPlantingId, {
+            showLoading: false,
+          });
         }
       } catch (requestError) {
         setError(requestError.message);
@@ -179,9 +205,10 @@ export function ExpensesPage() {
   }
 
   async function handleDelete(expense) {
+    const location = scope === "property" ? "da propriedade" : "do plantio";
     const confirmed = await requestConfirmation({
       title: "Excluir gasto?",
-      description: `O lançamento “${expense.description}” será removido do plantio.`,
+      description: `O lançamento “${expense.description}” será removido ${location}.`,
       confirmLabel: "Excluir gasto",
     });
     if (!confirmed) return;
@@ -189,17 +216,23 @@ export function ExpensesPage() {
     try {
       await api.deleteExpense(expense.id);
       setSuccess("Gasto excluído.");
-      await loadExpenseData(selectedPlantingId, { showLoading: false });
+      await loadExpenseData(scope, selectedPlantingId, {
+        showLoading: false,
+      });
     } catch (requestError) {
       setError(requestError.message);
     }
   }
 
+  const noPlantings = scope === "planting" && plantings.length === 0;
+
   return (
     <div className="page">
       <ExpensesHeader
         plantings={plantings}
+        scope={scope}
         selectedPlantingId={selectedPlantingId}
+        onScopeChange={changeScope}
         onPlantingChange={(event) => {
           setSelectedPlantingId(event.target.value);
           setSearchQuery("");
@@ -209,42 +242,40 @@ export function ExpensesPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      {plantings.length === 0 && !loading ? (
+      {noPlantings && !loading ? (
         <EmptyState
-          title="Cadastre um plantio primeiro"
-          description="Todo gasto precisa estar ligado a uma cultura e safra."
+          title="Nenhum plantio cadastrado"
+          description="Cadastre uma safra ou use a aba Da propriedade para registrar despesas gerais."
           action={
             <Link className="button button--primary" to="/plantios">
               Ir para plantios
             </Link>
           }
         />
+      ) : loading ? (
+        <LoadingState label="Calculando os gastos..." />
       ) : (
         <>
-          {loading ? (
-            <LoadingState label="Calculando os gastos..." />
-          ) : (
-            <>
-              <ExpenseSummary
-                summary={summary}
-                expenseCount={expenses.length}
-              />
+          <ExpenseSummary
+            summary={summary}
+            expenseCount={expenses.length}
+            scope={scope}
+          />
 
-              <div className="expenses-layout">
-                <ExpenseTable
-                  expenses={expenses}
-                  filteredExpenses={filteredExpenses}
-                  searchQuery={searchQuery}
-                  selectedPlantingId={selectedPlantingId}
-                  onSearchChange={(event) => setSearchQuery(event.target.value)}
-                  onCreate={openCreate}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                />
-                <ExpenseCategoryBreakdown categories={summary?.categories} />
-              </div>
-            </>
-          )}
+          <div className="expenses-layout">
+            <ExpenseTable
+              expenses={expenses}
+              filteredExpenses={filteredExpenses}
+              searchQuery={searchQuery}
+              canCreate={scope === "property" || Boolean(selectedPlantingId)}
+              scope={scope}
+              onSearchChange={(event) => setSearchQuery(event.target.value)}
+              onCreate={openCreate}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+            />
+            <ExpenseCategoryBreakdown categories={summary?.categories} />
+          </div>
         </>
       )}
 
@@ -253,6 +284,7 @@ export function ExpensesPage() {
           editing={Boolean(editing)}
           form={form}
           plantings={plantings}
+          scope={scope}
           saving={saving}
           draftRecovered={draftRecovered}
           onChange={setForm}

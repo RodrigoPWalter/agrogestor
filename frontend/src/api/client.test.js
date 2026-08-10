@@ -78,6 +78,21 @@ describe("cliente da API", () => {
     );
   });
 
+  it("carrega somente os gastos sem plantio na visão da propriedade", async () => {
+    httpClient.request.mockResolvedValueOnce({
+      status: 200,
+      data: pagedResponse([{ id: "gasto-geral-1" }], 0, 1),
+    });
+
+    await api.getPropertyExpenses();
+
+    expect(httpClient.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "/api/v1/expenses?unassignedOnly=true&page=0&size=100",
+      }),
+    );
+  });
+
   it("envia a alteração de perfil pela rota autenticada", async () => {
     const data = {
       nome: "Rodrigo",

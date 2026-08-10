@@ -29,7 +29,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Colheita por Etapas:** Registro da área e produção colhidas em cada dia, cálculo de produtividade e atualização automática do fechamento da safra.
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
 - **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
-- **Gestão de Gastos:** Lançamento de despesas por plantio, cálculo de totais e transferência proporcional do custo dos insumos utilizados.
+- **Gestão de Gastos:** Separação entre despesas por plantio e custos gerais da propriedade, com totais por categoria e transferência proporcional do custo dos insumos utilizados.
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio, valor do saldo, validade e alerta de estoque baixo.
 - **Diário da Lavoura:** Registro de acontecimentos da propriedade com plantio opcional, múltiplos produtos e integração transacional com estoque e custos.
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.

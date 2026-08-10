@@ -3,6 +3,7 @@ package br.com.agrogestor.expense.service;
 import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.entity.Planting;
@@ -112,6 +113,26 @@ class ExpenseServiceTest {
         assertThat(summary.totalExpenses()).isEqualByComparingTo("0.00");
         assertThat(summary.expensePerHectare()).isEqualByComparingTo("0.00");
         assertThat(summary.categories()).isEmpty();
+    }
+
+    @Test
+    void shouldSummarizeOnlyUnassignedPropertyExpenses() {
+        when(expenseRepository.summarizeUnassignedByCategory(
+                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(List.of(
+                projection(ExpenseCategory.MAINTENANCE, "750.00"),
+                projection(ExpenseCategory.OTHER, "250.00")
+        ));
+        when(expenseRepository.countByPropertyIdAndPlantingIsNullAndOrigin(
+                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(3L);
+
+        var summary = service.summarizeUnassigned();
+
+        assertThat(summary.totalExpenses()).isEqualByComparingTo("1000.00");
+        assertThat(summary.averageExpense()).isEqualByComparingTo("333.33");
+        assertThat(summary.expenseCount()).isEqualTo(3);
+        assertThat(summary.categories()).hasSize(2);
+        assertThat(summary.categories().get(0).percentage())
+                .isEqualByComparingTo("75.00");
     }
 
     private ExpenseRequest request(UUID plantingId, String description) {

@@ -155,6 +155,8 @@ export const api = {
 
   getExpenses: (plantingId) =>
     requestAllPages("/api/v1/expenses", { plantingId }),
+  getPropertyExpenses: () =>
+    requestAllPages("/api/v1/expenses", { unassignedOnly: true }),
   createExpense: (data) =>
     request("/api/v1/expenses", {
       method: "POST",
@@ -171,6 +173,7 @@ export const api = {
     request(`/api/v1/expenses/${id}`, { method: "DELETE" }),
   getExpenseSummary: (plantingId) =>
     request(`/api/v1/expenses/plantings/${plantingId}/summary`),
+  getPropertyExpenseSummary: () => request("/api/v1/expenses/property/summary"),
 
   getInventoryProducts: () => request("/api/v1/inventory/products"),
   createInventoryProduct: (data) =>
