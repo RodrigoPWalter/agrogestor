@@ -30,7 +30,10 @@ jobs:
       DB_URL: jdbc:postgresql://localhost:5432/agrogestor_test
       DB_USERNAME: agrogestor
       DB_PASSWORD: agrogestor
-      APP_ADMIN_ENABLED: "false"
+      APP_ADMIN_ENABLED: "true"
+      APP_ADMIN_NAME: "Teste de integração"
+      APP_ADMIN_EMAIL: "integracao@agrogestor.test"
+      APP_ADMIN_PASSWORD: "AgroGestor-CI-2026"
       RUN_DATABASE_TESTS: "true"
 
     steps:
