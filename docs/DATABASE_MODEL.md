@@ -55,15 +55,17 @@ Cada etapa cria um lançamento de colheita no Diário dentro da mesma transaçã
 
 ### `expenses`
 
-Registra gastos financeiros ligados a um plantio. O vínculo usa restrição para evitar exclusão acidental de uma safra com histórico de custos.
+Registra os desembolsos financeiros e os custos atribuídos a um plantio. O campo `origin` diferencia um gasto realmente pago (`DIRECT`) de uma transferência de custo já reconhecido na compra do estoque (`STOCK_ALLOCATION`). Assim, o custo do insumo aparece na safra em que foi usado sem aumentar novamente o total pago pela propriedade.
+
+Custos com origem no estoque são gerenciados pelo lançamento correspondente no Diário. O vínculo com o plantio usa restrição para evitar exclusão acidental de uma safra com histórico de custos.
 
 ### `inventory_products`
 
-Mantém o saldo atual de sementes, fertilizantes, defensivos e outros insumos. Também guarda unidade de medida, estoque mínimo e validade. Quantidade e limite mínimo não podem ser negativos.
+Mantém o saldo atual de sementes, fertilizantes, defensivos e outros insumos. Também guarda unidade de medida, estoque mínimo, validade e o valor financeiro ainda armazenado. O custo médio é calculado dividindo `inventory_value` pela quantidade disponível. Quantidade, valor e limite mínimo não podem ser negativos.
 
 ### `inventory_movements`
 
-Registra entradas e saídas do estoque. A atualização do saldo e a criação da movimentação acontecem dentro da mesma transação.
+Registra entradas e saídas do estoque, incluindo custo unitário e custo total no momento da movimentação. A atualização do saldo, do valor financeiro e a criação da movimentação acontecem dentro da mesma transação.
 
 ### `field_diary_entries`
 
@@ -73,7 +75,7 @@ Essa tabela também guarda data, tipo de atividade, condição do tempo, descri�
 
 ### `field_diary_products`
 
-Relaciona uma atividade do diário aos produtos do estoque. É usada principalmente para registros de uso de produto, permitindo baixar automaticamente a quantidade aplicada.
+Relaciona uma atividade do diário aos produtos do estoque. Guarda a quantidade, o tipo de movimento e o custo utilizado naquela operação. Na compra, aumenta quantidade e valor do saldo; no uso vinculado a um plantio, baixa o estoque e transfere o custo proporcional para a safra.
 
 ### `rainfall_measurements`
 
@@ -103,6 +105,6 @@ Tabela mantida por compatibilidade com migrations antigas. O módulo de previsã
 
 ## Próximas evoluções de banco
 
-- Adicionar `property_id` para suportar múltiplas propriedades.
+- Permitir que mais de um usuário trabalhe na mesma propriedade com permissões diferentes.
 - Criar tabelas de backup/exportação, caso o sistema evolua para uso local/offline.
 - Persistir relatórios de fechamento de safra quando houver necessidade de auditoria histórica.

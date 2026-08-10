@@ -1,5 +1,9 @@
 import { AlertTriangle, ArrowDownToLine, Edit3, Trash2 } from "lucide-react";
-import { formatDate, formatNumber } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "../../utils/formatters";
 
 export function InventoryProductList({
   products,
@@ -59,6 +63,17 @@ export function InventoryProductList({
                   ? formatDate(product.expirationDate)
                   : "Não informada"}
               </dd>
+            </div>
+            <div>
+              <dt>Custo médio</dt>
+              <dd>
+                {formatCurrency(product.averageUnitCost)} por{" "}
+                {product.unitName.toLowerCase()}
+              </dd>
+            </div>
+            <div>
+              <dt>Valor no estoque</dt>
+              <dd>{formatCurrency(product.inventoryValue)}</dd>
             </div>
           </dl>
           {(product.lowStock || product.expired) && (

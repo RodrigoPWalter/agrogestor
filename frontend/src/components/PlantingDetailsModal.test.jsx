@@ -13,7 +13,9 @@ vi.mock("../api/client", () => ({
     getSeasonClosing: vi.fn(),
     getPlantingSteps: vi.fn(),
     getHarvestSteps: vi.fn(),
+    getInventoryProducts: vi.fn(),
     createExpense: vi.fn(),
+    createDiaryEntry: vi.fn(),
     createPlantingStep: vi.fn(),
     updatePlantingStep: vi.fn(),
     deletePlantingStep: vi.fn(),
@@ -70,6 +72,7 @@ describe("PlantingDetailsModal", () => {
     });
     api.getPlantingSteps.mockResolvedValue([]);
     api.getHarvestSteps.mockResolvedValue([]);
+    api.getInventoryProducts.mockResolvedValue([]);
   });
 
   it("reúne o resumo, gastos, diário e chuvas do plantio", async () => {
@@ -235,6 +238,68 @@ describe("PlantingDetailsModal", () => {
     expect(screen.getByText("8 ha colhidos")).toBeInTheDocument();
     expect(screen.getAllByText(/640 sacas de 60 kg/)).toHaveLength(2);
     expect(screen.getByText("80 sc/ha")).toBeInTheDocument();
+    expect(onChanged).toHaveBeenCalledOnce();
+  });
+
+  it("usa produto do estoque e transfere o custo para o plantio", async () => {
+    const onChanged = vi.fn();
+    api.getInventoryProducts.mockResolvedValue([
+      {
+        id: "product-1",
+        name: "Adubo",
+        quantity: 3,
+        unitName: "unidades",
+        averageUnitCost: 5000,
+      },
+    ]);
+    api.createDiaryEntry.mockResolvedValue({ id: "diary-1" });
+
+    render(
+      <MemoryRouter>
+        <PlantingDetailsModal
+          planting={planting}
+          onClose={vi.fn()}
+          onFinish={vi.fn()}
+          onReactivate={vi.fn()}
+          onChanged={onChanged}
+        />
+      </MemoryRouter>,
+    );
+
+    const registerButtons = await screen.findAllByRole("button", {
+      name: "Registrar gasto",
+    });
+    fireEvent.click(registerButtons[0]);
+    fireEvent.click(screen.getByText("Usar do estoque"));
+    fireEvent.change(screen.getByLabelText("Produto disponível"), {
+      target: { value: "product-1" },
+    });
+    fireEvent.change(screen.getByLabelText("Quantidade usada"), {
+      target: { value: "1" },
+    });
+
+    expect(
+      screen.getByText("Custo transferido: R$ 5.000,00"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Usar e transferir custo" }),
+    );
+
+    await waitFor(() => {
+      expect(api.createDiaryEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          plantingId: planting.id,
+          activityType: "PRODUCT_USE",
+          productId: "product-1",
+          quantity: 1,
+        }),
+      );
+    });
+    expect(
+      await screen.findByText(
+        "Produto usado e custo transferido para o plantio.",
+      ),
+    ).toBeInTheDocument();
     expect(onChanged).toHaveBeenCalledOnce();
   });
 });

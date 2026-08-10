@@ -13,6 +13,7 @@ public record InventoryProductResponse(
         BigDecimal quantity, MeasurementUnit unit, String unitName,
         BigDecimal minimumStock, LocalDate expirationDate,
         boolean lowStock, boolean expired,
+        BigDecimal averageUnitCost, BigDecimal inventoryValue,
         OffsetDateTime createdAt, OffsetDateTime updatedAt
 ) {
 }

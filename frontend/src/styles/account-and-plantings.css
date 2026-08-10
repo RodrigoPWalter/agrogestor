@@ -1020,6 +1020,95 @@
   max-width: 100%;
 }
 
+.planting-cost-form {
+  display: grid;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft, #f7f9f6);
+}
+
+.expense-source-picker {
+  width: min(100%, 440px);
+}
+
+.expense-source-picker label {
+  gap: 7px;
+}
+
+.quick-stock-use-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 2fr) minmax(120px, 1fr) minmax(
+      145px,
+      1fr
+    );
+  gap: 9px;
+  align-items: end;
+}
+
+.quick-stock-use-form label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.quick-stock-use-form label > span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.quick-stock-use-form input,
+.quick-stock-use-form select {
+  width: 100%;
+  min-width: 0;
+}
+
+.stock-use-notes,
+.stock-cost-preview {
+  grid-column: span 2;
+}
+
+.stock-cost-preview {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 11px;
+  border: 1px solid #ccddce;
+  border-radius: 7px;
+  color: var(--muted);
+  background: #edf6eb;
+  font-size: 0.68rem;
+}
+
+.stock-cost-preview strong {
+  color: var(--green-900);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: nowrap;
+}
+
+.expense-origin-label {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: var(--green-800);
+  background: #e8f3e5;
+  font-size: 0.58rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.managed-expense-copy {
+  color: var(--muted);
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+
 .dynamic-diary-form {
   padding: 2px;
 }
@@ -1047,11 +1136,22 @@
 
   .planting-detail__columns,
   .quick-expense-form,
+  .quick-stock-use-form,
   .season-closing-grid,
   .season-price-form,
   .planting-progress-summary,
   .harvest-production-summary {
     grid-template-columns: 1fr;
+  }
+
+  .stock-use-notes,
+  .stock-cost-preview {
+    grid-column: auto;
+  }
+
+  .stock-cost-preview {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .planting-progress-summary > div {

@@ -30,6 +30,12 @@ public class InventoryMovement {
     @Column(name = "movement_date", nullable = false)
     private LocalDate movementDate;
 
+    @Column(name = "unit_cost", nullable = false, precision = 16, scale = 6)
+    private BigDecimal unitCost;
+
+    @Column(name = "total_cost", nullable = false, precision = 16, scale = 2)
+    private BigDecimal totalCost;
+
     @Column(length = 500)
     private String notes;
 
@@ -41,11 +47,26 @@ public class InventoryMovement {
 
     public InventoryMovement(InventoryProduct product, MovementType movementType,
                              BigDecimal quantity, LocalDate movementDate, String notes) {
+        this(product, movementType, quantity, movementDate, notes,
+                BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
+    public InventoryMovement(
+            InventoryProduct product,
+            MovementType movementType,
+            BigDecimal quantity,
+            LocalDate movementDate,
+            String notes,
+            BigDecimal unitCost,
+            BigDecimal totalCost
+    ) {
         this.product = product;
         this.movementType = movementType;
         this.quantity = quantity;
         this.movementDate = movementDate;
         this.notes = notes;
+        this.unitCost = unitCost;
+        this.totalCost = totalCost;
     }
 
     @PrePersist
@@ -58,6 +79,8 @@ public class InventoryMovement {
     public MovementType getMovementType() { return movementType; }
     public BigDecimal getQuantity() { return quantity; }
     public LocalDate getMovementDate() { return movementDate; }
+    public BigDecimal getUnitCost() { return unitCost; }
+    public BigDecimal getTotalCost() { return totalCost; }
     public String getNotes() { return notes; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
 }

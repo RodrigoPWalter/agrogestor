@@ -2,15 +2,15 @@
 
 Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de cada decisão e o que ainda precisa evoluir. A intenção é deixar explícito o raciocínio por trás do projeto, não vender o sistema como algo mais maduro do que ele realmente é.
 
-## 1. Aplicação inicialmente focada em uma propriedade
+## 1. Dados isolados por propriedade
 
-**Decisão:** o MVP foi construído para uma propriedade familiar específica, sem `property_id` nas tabelas de negócio.
+**Decisão:** cada conta pertence a uma propriedade, e as tabelas principais possuem `property_id`. Os services obtêm a propriedade pela identidade autenticada e os repositories filtram os registros por esse contexto.
 
-**Motivo:** o primeiro objetivo é validar o fluxo real de uso: plantio, gastos, estoque, diário, chuvas, manutenção e fechamento de safra. Para esse cenário, adicionar multiempresa desde o início aumentaria bastante a complexidade.
+**Motivo:** o sistema começou atendendo uma única propriedade familiar, mas a criação de contas de teste mostrou que compartilhar todos os dados seria incorreto e inseguro.
 
-**Trade-off:** a tabela de usuários já existe, mas os dados ainda não são isolados por usuário ou propriedade. Portanto, o sistema não está pronto para virar SaaS multiusuário sem uma migração estrutural.
+**Trade-off:** hoje uma nova conta recebe uma propriedade própria. O modelo ainda não representa equipes com vários usuários trabalhando na mesma propriedade.
 
-**Evolução prevista:** criar `properties`, vincular usuários a propriedades e incluir `property_id` nas tabelas principais. A partir disso, todos os repositories devem filtrar pelo contexto autenticado.
+**Evolução prevista:** criar associação de membros, convites e permissões por propriedade caso o AgroGestor evolua para uso comercial.
 
 ## 2. JWT simples no frontend
 
@@ -81,3 +81,13 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 **Trade-off:** os rascunhos ficam no `localStorage` do aparelho e não são sincronizados. Por isso não armazenam senhas, são separados pelo e-mail autenticado e expiram em sete dias.
 
 **Evolução prevista:** quando houver sincronização offline, substituir os rascunhos por uma fila persistente com identificadores idempotentes e estado visível de envio.
+
+## 9. Compra como desembolso e uso como custo da safra
+
+**Decisão:** a compra de um produto continua sendo um gasto da propriedade. Quando parte desse produto é usada em um plantio, o sistema transfere o custo médio proporcional para a safra sem registrar um novo pagamento.
+
+**Motivo:** o dinheiro sai na data da compra, mas o custo produtivo pertence à cultura que consumiu o insumo. Separar essas duas visões evita tanto perder o custo do plantio quanto contar a mesma compra duas vezes.
+
+**Trade-off:** o custo médio ponderado é mais simples e previsível para o uso familiar, mas não identifica exatamente qual lote físico foi consumido. Saldos antigos sem compra valorizada permanecem com custo desconhecido até existir informação suficiente no Diário.
+
+**Evolução prevista:** adicionar lotes de compra e critérios FIFO ou custo específico somente se a rastreabilidade por lote se tornar necessária.

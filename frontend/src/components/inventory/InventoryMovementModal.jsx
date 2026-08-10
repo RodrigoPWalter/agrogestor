@@ -1,5 +1,9 @@
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import { formatDate, formatNumber } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "../../utils/formatters";
 import { Modal } from "../Modal";
 
 export function InventoryMovementModal({
@@ -88,6 +92,9 @@ export function InventoryMovementModal({
                 </span>
                 <b>
                   {formatNumber(item.quantity, 3)} {product.unitName}
+                  {Number(item.totalCost) > 0 && (
+                    <small> · {formatCurrency(item.totalCost)}</small>
+                  )}
                 </b>
               </div>
             ))}

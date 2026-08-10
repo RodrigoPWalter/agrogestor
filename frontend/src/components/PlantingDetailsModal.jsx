@@ -21,6 +21,13 @@ const emptyExpense = {
   observations: "",
 };
 
+const emptyStockUse = {
+  productId: "",
+  quantity: "",
+  entryDate: toInputDate(),
+  observations: "",
+};
+
 function emptyStep(seedVariety = "") {
   return {
     stepDate: toInputDate(),
@@ -58,6 +65,8 @@ export function PlantingDetailsModal({
   const [success, setSuccess] = useState("");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [expense, setExpense] = useState(emptyExpense);
+  const [expenseFormMode, setExpenseFormMode] = useState("DIRECT");
+  const [stockUse, setStockUse] = useState(emptyStockUse);
   const [salePrice, setSalePrice] = useState("");
   const { pending: closingLoading, run: runClosing } = useSingleFlight();
   const { pending: saving, run: runSaving } = useSingleFlight();
@@ -74,16 +83,25 @@ export function PlantingDetailsModal({
 
   const load = useCallback(async () => {
     try {
-      const [summary, expenses, diary, rainfall, closing, steps, harvestSteps] =
-        await Promise.all([
-          api.getExpenseSummary(planting.id),
-          api.getExpenses(planting.id),
-          api.getDiaryEntries(planting.id),
-          api.getRainfallByPlanting(planting.id).catch(() => []),
-          api.getSeasonClosing(planting.id),
-          api.getPlantingSteps(planting.id),
-          api.getHarvestSteps(planting.id),
-        ]);
+      const [
+        summary,
+        expenses,
+        diary,
+        rainfall,
+        closing,
+        steps,
+        harvestSteps,
+        inventoryProducts,
+      ] = await Promise.all([
+        api.getExpenseSummary(planting.id),
+        api.getExpenses(planting.id),
+        api.getDiaryEntries(planting.id),
+        api.getRainfallByPlanting(planting.id).catch(() => []),
+        api.getSeasonClosing(planting.id),
+        api.getPlantingSteps(planting.id),
+        api.getHarvestSteps(planting.id),
+        api.getInventoryProducts(),
+      ]);
       setData({
         summary,
         expenses: expenses.content,
@@ -92,6 +110,7 @@ export function PlantingDetailsModal({
         closing,
         steps,
         harvestSteps,
+        inventoryProducts,
       });
       setError("");
     } catch (requestError) {
@@ -308,6 +327,43 @@ export function PlantingDetailsModal({
     });
   }
 
+  async function registerStockUse(event) {
+    event.preventDefault();
+    await runSaving(async () => {
+      setError("");
+      try {
+        await api.createDiaryEntry({
+          plantingId: planting.id,
+          entryDate: stockUse.entryDate,
+          activityType: "PRODUCT_USE",
+          activity: null,
+          weatherCondition: null,
+          appliedProducts: null,
+          products: [],
+          observations: stockUse.observations || null,
+          rainfallMillimeters: null,
+          productId: stockUse.productId,
+          productName: null,
+          productType: null,
+          quantity: Number(stockUse.quantity),
+          unit: null,
+          supplier: null,
+          amount: null,
+          machineId: null,
+          harvestQuantity: null,
+          harvestUnit: null,
+        });
+        setStockUse({ ...emptyStockUse, entryDate: toInputDate() });
+        setShowExpenseForm(false);
+        setSuccess("Produto usado e custo transferido para o plantio.");
+        await load();
+        await onChanged();
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    });
+  }
+
   async function updateClosing(event) {
     event.preventDefault();
     await runClosing(async () => {
@@ -383,11 +439,17 @@ export function PlantingDetailsModal({
             <PlantingExpensesSection
               expenses={data.expenses}
               expense={expense}
+              stockUse={stockUse}
+              inventoryProducts={data.inventoryProducts}
+              formMode={expenseFormMode}
               formOpen={showExpenseForm}
               saving={saving}
               onExpenseChange={setExpense}
+              onStockUseChange={setStockUse}
+              onFormModeChange={setExpenseFormMode}
               onToggleForm={() => setShowExpenseForm(!showExpenseForm)}
               onSubmit={registerExpense}
+              onStockSubmit={registerStockUse}
             />
             <PlantingActivitySections
               diary={data.diary}

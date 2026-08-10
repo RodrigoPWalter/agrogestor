@@ -172,7 +172,7 @@ export function InventoryPage() {
       <PageHeader
         eyebrow="Insumos e defensivos"
         title="Estoque"
-        description="Acompanhe saldos, validade e todas as entradas e saídas."
+        description="Acompanhe saldos, custos, validade e todas as entradas e saídas."
         action={
           <button className="button button--primary" onClick={openCreate}>
             <Plus size={18} /> Novo produto

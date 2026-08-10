@@ -11,6 +11,7 @@ public record InventoryMovementResponse(
         UUID id, UUID productId, String productName,
         MovementType movementType, String movementTypeName,
         BigDecimal quantity, LocalDate movementDate, String notes,
+        BigDecimal unitCost, BigDecimal totalCost,
         OffsetDateTime createdAt
 ) {
 }

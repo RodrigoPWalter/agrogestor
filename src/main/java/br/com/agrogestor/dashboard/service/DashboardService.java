@@ -6,6 +6,7 @@ import br.com.agrogestor.dashboard.dto.DashboardMetricsResponse;
 import br.com.agrogestor.dashboard.dto.DashboardPlantingResponse;
 import br.com.agrogestor.dashboard.dto.DashboardSummaryResponse;
 import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
@@ -62,7 +63,8 @@ public class DashboardService {
                 plantingRepository.sumPlannedAreaByPropertyIdAndStatus(propertyId, activeStatus)
         );
         BigDecimal totalExpenses = valueOrZero(
-                expenseRepository.sumAllAmountsByPropertyId(propertyId));
+                expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
+                        propertyId, ExpenseOrigin.DIRECT));
 
         List<Planting> recentPlantings = plantingRepository
                 .findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
@@ -77,7 +79,8 @@ public class DashboardService {
                         area(plannedArea),
                         plantingRepository.countByPropertyIdAndStatus(propertyId, activeStatus),
                         money(totalExpenses),
-                        expenseRepository.countByPropertyId(propertyId),
+                        expenseRepository.countByPropertyIdAndOrigin(
+                                propertyId, ExpenseOrigin.DIRECT),
                         inventoryProductRepository.countByPropertyId(propertyId),
                         inventoryProductRepository.countLowStock(propertyId),
                         costPerHectare(totalExpenses, plannedArea)
@@ -86,8 +89,9 @@ public class DashboardService {
                         .map(planting -> toResponse(planting, plantedAreas))
                         .toList(),
                 expenseRepository
-                        .findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
-                                propertyId, PageRequest.of(0, DASHBOARD_LIST_SIZE)
+                        .findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
+                                propertyId, ExpenseOrigin.DIRECT,
+                                PageRequest.of(0, DASHBOARD_LIST_SIZE)
                         )
                         .stream()
                         .map(this::toResponse)

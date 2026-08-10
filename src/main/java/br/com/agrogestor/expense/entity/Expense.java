@@ -53,6 +53,10 @@ public class Expense {
     @Column(length = 1000)
     private String observations;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private ExpenseOrigin origin;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -71,7 +75,22 @@ public class Expense {
             LocalDate expenseDate,
             String observations
     ) {
+        this(property, planting, description, category, amount, expenseDate,
+                observations, ExpenseOrigin.DIRECT);
+    }
+
+    public Expense(
+            Property property,
+            Planting planting,
+            String description,
+            ExpenseCategory category,
+            BigDecimal amount,
+            LocalDate expenseDate,
+            String observations,
+            ExpenseOrigin origin
+    ) {
         this.property = property;
+        this.origin = origin;
         update(planting, description, category, amount, expenseDate, observations);
     }
 
@@ -133,6 +152,10 @@ public class Expense {
 
     public String getObservations() {
         return observations;
+    }
+
+    public ExpenseOrigin getOrigin() {
+        return origin;
     }
 
     public OffsetDateTime getCreatedAt() {

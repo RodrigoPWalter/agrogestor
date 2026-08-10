@@ -23,6 +23,8 @@ import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
+import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
@@ -207,6 +209,80 @@ class FieldDiaryServiceTest {
                 ArgumentCaptor.forClass(InventoryMovement.class);
         verify(movementRepository).save(movement.capture());
         assertThat(movement.getValue().getMovementType()).isEqualTo(MovementType.ENTRY);
+    }
+
+    @Test
+    void shouldKeepPurchaseAsPropertyExpenseAndValueTheStock() {
+        UUID plantingId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        InventoryProduct product = product(productId, "0.000");
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
+                .thenReturn(Optional.of(planting()));
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
+                .thenReturn(Optional.of(product));
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> {
+            Expense expense = invocation.getArgument(0);
+            ReflectionTestUtils.setField(expense, "id", UUID.randomUUID());
+            return expense;
+        });
+
+        service.create(new FieldDiaryRequest(
+                plantingId, LocalDate.now(), ActivityType.PRODUCT_PURCHASE, null,
+                null, null, null, "Compra na cooperativa",
+                null, productId, null, null, new BigDecimal("3.000"),
+                null, "Cotricampo", new BigDecimal("15000.00"),
+                null, null, null));
+
+        assertThat(product.getQuantity()).isEqualByComparingTo("3.000");
+        assertThat(product.getInventoryValue()).isEqualByComparingTo("15000.00");
+        assertThat(product.getAverageUnitCost()).isEqualByComparingTo("5000.000000");
+        ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(expense.capture());
+        assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.DIRECT);
+        assertThat(expense.getValue().getPlanting()).isNull();
+    }
+
+    @Test
+    void shouldTransferUsedStockCostToPlantingWithoutNewPropertyExpense() {
+        UUID plantingId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+        Planting planting = planting();
+        InventoryProduct product = product(productId, "0.000");
+        product.applyEntry(new BigDecimal("3.000"), new BigDecimal("15000.00"));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
+                .thenReturn(Optional.of(product));
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> {
+            Expense expense = invocation.getArgument(0);
+            ReflectionTestUtils.setField(expense, "id", UUID.randomUUID());
+            return expense;
+        });
+
+        service.create(new FieldDiaryRequest(
+                plantingId, LocalDate.now(), ActivityType.PRODUCT_USE, null,
+                null, null, null, "Adubação do talhão",
+                null, productId, null, null, new BigDecimal("1.000"),
+                null, null, null, null, null, null));
+
+        assertThat(product.getQuantity()).isEqualByComparingTo("2.000");
+        assertThat(product.getInventoryValue()).isEqualByComparingTo("10000.00");
+        ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(expense.capture());
+        assertThat(expense.getValue().getOrigin())
+                .isEqualTo(ExpenseOrigin.STOCK_ALLOCATION);
+        assertThat(expense.getValue().getAmount()).isEqualByComparingTo("5000.00");
+        assertThat(expense.getValue().getPlanting()).isSameAs(planting);
     }
 
     @Test

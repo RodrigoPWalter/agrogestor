@@ -1,6 +1,7 @@
 package br.com.agrogestor.expense.dto;
 
 import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +19,9 @@ public record ExpenseResponse(
         BigDecimal amount,
         LocalDate expenseDate,
         String observations,
+        ExpenseOrigin origin,
+        String originDisplayName,
+        boolean managedByInventory,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

@@ -22,6 +22,10 @@ public class FieldDiaryProduct {
     private BigDecimal quantity;
     @Column(name = "stock_deducted", nullable = false)
     private boolean stockDeducted;
+    @Column(name = "unit_cost", nullable = false, precision = 16, scale = 6)
+    private BigDecimal unitCost;
+    @Column(name = "total_cost", nullable = false, precision = 16, scale = 2)
+    private BigDecimal totalCost;
     @Enumerated(EnumType.STRING)
     @Column(name = "movement_type", nullable = false, length = 10)
     private MovementType movementType;
@@ -32,13 +36,26 @@ public class FieldDiaryProduct {
             FieldDiaryEntry entry,
             InventoryProduct product,
             BigDecimal quantity,
-            MovementType movementType
+            MovementType movementType,
+            BigDecimal unitCost,
+            BigDecimal totalCost
     ) {
         this.entry = entry;
         this.product = product;
         this.quantity = quantity;
         this.stockDeducted = true;
         this.movementType = movementType;
+        this.unitCost = unitCost;
+        this.totalCost = totalCost;
+    }
+
+    public FieldDiaryProduct(
+            FieldDiaryEntry entry,
+            InventoryProduct product,
+            BigDecimal quantity,
+            MovementType movementType
+    ) {
+        this(entry, product, quantity, movementType, BigDecimal.ZERO, BigDecimal.ZERO);
     }
 
     public FieldDiaryProduct(
@@ -54,4 +71,6 @@ public class FieldDiaryProduct {
     public BigDecimal getQuantity() { return quantity; }
     public boolean isStockDeducted() { return stockDeducted; }
     public MovementType getMovementType() { return movementType; }
+    public BigDecimal getUnitCost() { return unitCost; }
+    public BigDecimal getTotalCost() { return totalCost; }
 }

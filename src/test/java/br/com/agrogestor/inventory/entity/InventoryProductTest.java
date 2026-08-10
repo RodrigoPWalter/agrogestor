@@ -37,4 +37,38 @@ class InventoryProductTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("estoque disponível");
     }
+
+    @Test
+    void shouldTransferAverageCostWhenProductLeavesInventory() {
+        var product = new InventoryProduct(
+                new Property("Teste"),
+                "Adubo", ProductType.FERTILIZER, BigDecimal.ZERO,
+                MeasurementUnit.UNIT, BigDecimal.ONE, null
+        );
+
+        product.applyEntry(new BigDecimal("3.000"), new BigDecimal("15000.00"));
+        InventoryMovementCost cost = product.applyExit(new BigDecimal("1.000"));
+
+        assertThat(cost.unitCost()).isEqualByComparingTo("5000.000000");
+        assertThat(cost.totalCost()).isEqualByComparingTo("5000.00");
+        assertThat(product.getQuantity()).isEqualByComparingTo("2.000");
+        assertThat(product.getInventoryValue()).isEqualByComparingTo("10000.00");
+    }
+
+    @Test
+    void shouldUseWeightedAverageForPurchasesAtDifferentPrices() {
+        var product = new InventoryProduct(
+                new Property("Teste"),
+                "Semente", ProductType.SEED, BigDecimal.ZERO,
+                MeasurementUnit.KILOGRAM, BigDecimal.ONE, null
+        );
+
+        product.applyEntry(new BigDecimal("10.000"), new BigDecimal("1000.00"));
+        product.applyEntry(new BigDecimal("10.000"), new BigDecimal("1400.00"));
+
+        assertThat(product.getAverageUnitCost()).isEqualByComparingTo("120.000000");
+        assertThat(product.applyExit(new BigDecimal("5.000")).totalCost())
+                .isEqualByComparingTo("600.00");
+        assertThat(product.getInventoryValue()).isEqualByComparingTo("1800.00");
+    }
 }

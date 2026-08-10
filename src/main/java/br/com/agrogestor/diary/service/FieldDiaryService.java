@@ -10,8 +10,10 @@ import br.com.agrogestor.diary.repository.FieldDiaryProductRepository;
 import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.inventory.entity.InventoryMovement;
+import br.com.agrogestor.inventory.entity.InventoryMovementCost;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
 import br.com.agrogestor.inventory.entity.MeasurementUnit;
 import br.com.agrogestor.inventory.entity.MovementType;
@@ -38,9 +40,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class FieldDiaryService {
@@ -96,8 +100,8 @@ public class FieldDiaryService {
         );
         updateDetails(entry, request);
         FieldDiaryEntry saved = diaryRepository.save(entry);
-        replaceProducts(saved, request, List.of());
-        createIntegratedRecords(saved, request, planting);
+        List<FieldDiaryProduct> products = replaceProducts(saved, request, List.of());
+        createIntegratedRecords(saved, request, planting, products);
         return toResponse(saved);
     }
 
@@ -135,8 +139,8 @@ public class FieldDiaryService {
                 normalizeNullable(request.observations())
         );
         updateDetails(entry, request);
-        replaceProducts(entry, request, previousProducts);
-        createIntegratedRecords(entry, request, entry.getPlanting());
+        List<FieldDiaryProduct> products = replaceProducts(entry, request, previousProducts);
+        createIntegratedRecords(entry, request, entry.getPlanting(), products);
         return toResponse(entry);
     }
 
@@ -189,7 +193,8 @@ public class FieldDiaryService {
     private void createIntegratedRecords(
             FieldDiaryEntry entry,
             FieldDiaryRequest request,
-            Planting planting
+            Planting planting,
+            List<FieldDiaryProduct> products
     ) {
         if (request.activityType() == ActivityType.RAIN) {
             RainfallMeasurement rainfall = rainfallRepository.save(new RainfallMeasurement(
@@ -213,12 +218,32 @@ public class FieldDiaryService {
                 && (request.activityType() == ActivityType.PRODUCT_PURCHASE
                 || request.activityType() == ActivityType.MAINTENANCE)) {
             ExpenseCategory category = request.activityType() == ActivityType.MAINTENANCE
-                    ? ExpenseCategory.MAINTENANCE : productExpenseCategory(request.productType());
+                    ? ExpenseCategory.MAINTENANCE : productCategory(products, request.productType());
+            Planting expensePlanting = request.activityType() == ActivityType.PRODUCT_PURCHASE
+                    ? null : planting;
             Expense expense = expenseRepository.save(new Expense(
                     currentProperty.get(),
-                    planting, activityDescription(request), category, request.amount(),
+                    expensePlanting, activityDescription(request), category, request.amount(),
                     request.entryDate(), normalizeNullable(request.observations())));
             entry.linkExpense(expense.getId());
+        }
+        if (request.activityType() == ActivityType.PRODUCT_USE && planting != null) {
+            BigDecimal allocatedCost = products.stream()
+                    .map(FieldDiaryProduct::getTotalCost)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (allocatedCost.signum() > 0) {
+                Expense expense = expenseRepository.save(new Expense(
+                        currentProperty.get(),
+                        planting,
+                        stockAllocationDescription(products),
+                        productCategory(products, null),
+                        allocatedCost,
+                        request.entryDate(),
+                        normalizeNullable(request.observations()),
+                        ExpenseOrigin.STOCK_ALLOCATION
+                ));
+                entry.linkExpense(expense.getId());
+            }
         }
     }
 
@@ -235,12 +260,12 @@ public class FieldDiaryService {
         entry.clearIntegrationLinks();
     }
 
-    private void replaceProducts(
+    private List<FieldDiaryProduct> replaceProducts(
             FieldDiaryEntry entry,
             FieldDiaryRequest request,
             List<FieldDiaryProduct> previousProducts
     ) {
-        if (entry.getId() == null) return;
+        if (entry.getId() == null) return List.of();
         restoreStock(previousProducts, entry, "Estorno por edição no diário: ");
         diaryProductRepository.deleteByEntryId(entry.getId());
         diaryProductRepository.flush();
@@ -260,8 +285,18 @@ public class FieldDiaryService {
             InventoryProduct created = findOrCreateProduct(request);
             quantities.merge(created.getId(), request.quantity(), BigDecimal::add);
         }
-        quantities.forEach((productId, quantity) ->
-                applyProductMovement(entry, productId, quantity, type));
+        BigDecimal purchaseCost = type == MovementType.ENTRY
+                ? moneyOrZero(request.amount()) : BigDecimal.ZERO;
+        if (purchaseCost.signum() > 0 && quantities.size() != 1) {
+            throw new BusinessRuleException(
+                    "Para calcular o custo do estoque, registre um produto por compra"
+            );
+        }
+
+        List<FieldDiaryProduct> savedProducts = new ArrayList<>();
+        quantities.forEach((productId, quantity) -> savedProducts.add(
+                applyProductMovement(entry, productId, quantity, type, purchaseCost)));
+        return savedProducts;
     }
 
     private InventoryProduct findOrCreateProduct(FieldDiaryRequest request) {
@@ -278,21 +313,28 @@ public class FieldDiaryService {
         });
     }
 
-    private void applyProductMovement(
+    private FieldDiaryProduct applyProductMovement(
             FieldDiaryEntry entry,
             UUID productId,
             BigDecimal quantity,
-            MovementType type
+            MovementType type,
+            BigDecimal entryCost
     ) {
         InventoryProduct product = inventoryRepository.findByIdAndPropertyIdForUpdate(
                         productId, currentProperty.id())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Produto não encontrado com o ID " + productId));
-        product.applyMovement(type, quantity);
+        InventoryMovementCost cost = type == MovementType.ENTRY
+                ? product.applyEntry(quantity, entryCost)
+                : product.applyExit(quantity);
         movementRepository.save(new InventoryMovement(
                 product, type, quantity, entry.getEntryDate(),
-                entry.getActivityType().getDisplayName() + " pelo diário"));
-        diaryProductRepository.save(new FieldDiaryProduct(entry, product, quantity, type));
+                entry.getActivityType().getDisplayName() + " pelo diário",
+                cost.unitCost(), cost.totalCost()));
+        FieldDiaryProduct diaryProduct = new FieldDiaryProduct(
+                entry, product, quantity, type, cost.unitCost(), cost.totalCost());
+        diaryProductRepository.save(diaryProduct);
+        return diaryProduct;
     }
 
     private void restoreStock(
@@ -308,10 +350,12 @@ public class FieldDiaryService {
                             "Produto não encontrado com o ID " + item.getProduct().getId()));
             MovementType reverse = item.getMovementType() == MovementType.ENTRY
                     ? MovementType.EXIT : MovementType.ENTRY;
-            product.applyMovement(reverse, item.getQuantity());
+            product.reverseMovement(
+                    item.getMovementType(), item.getQuantity(), item.getTotalCost());
             movementRepository.save(new InventoryMovement(
                     product, reverse, item.getQuantity(), entry.getEntryDate(),
-                    notePrefix + entry.getActivity()));
+                    notePrefix + entry.getActivity(),
+                    item.getUnitCost(), item.getTotalCost()));
         });
     }
 
@@ -344,7 +388,8 @@ public class FieldDiaryService {
                 : diaryProductRepository.findByEntryId(entry.getId()).stream()
                 .map(item -> new FieldDiaryProductResponse(
                         item.getProduct().getId(), item.getProduct().getName(),
-                        item.getQuantity(), item.getProduct().getUnit().getDisplayName()))
+                        item.getQuantity(), item.getProduct().getUnit().getDisplayName(),
+                        item.getUnitCost(), item.getTotalCost()))
                 .toList();
         return new FieldDiaryResponse(
                 entry.getId(),
@@ -381,6 +426,27 @@ public class FieldDiaryService {
             case FERTILIZER -> ExpenseCategory.FERTILIZERS;
             case PESTICIDE -> ExpenseCategory.PESTICIDES;
         };
+    }
+
+    private ExpenseCategory productCategory(
+            List<FieldDiaryProduct> products,
+            ProductType fallback
+    ) {
+        List<ProductType> types = products.stream()
+                .map(item -> item.getProduct().getProductType())
+                .distinct()
+                .toList();
+        return types.size() == 1
+                ? productExpenseCategory(types.getFirst())
+                : productExpenseCategory(fallback);
+    }
+
+    private String stockAllocationDescription(List<FieldDiaryProduct> products) {
+        String names = products.stream()
+                .map(item -> item.getProduct().getName())
+                .distinct()
+                .collect(Collectors.joining(", "));
+        return "Uso de estoque: " + names;
     }
 
     private BigDecimal moneyOrZero(BigDecimal value) {

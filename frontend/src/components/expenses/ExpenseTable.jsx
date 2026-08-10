@@ -76,28 +76,39 @@ export function ExpenseTable({
                       <strong className="expense-description">
                         {expense.description}
                       </strong>
+                      {expense.managedByInventory && (
+                        <small className="expense-origin-label">
+                          Do estoque
+                        </small>
+                      )}
                     </td>
                     <td>{expense.categoryDisplayName}</td>
                     <td className="expense-table-value">
                       {formatCurrency(expense.amount)}
                     </td>
                     <td className="expense-table-actions">
-                      <div>
-                        <button
-                          className="icon-button"
-                          onClick={() => onEdit(expense)}
-                          aria-label="Editar gasto"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          className="icon-button icon-button--danger"
-                          onClick={() => onDelete(expense)}
-                          aria-label="Excluir gasto"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      {expense.managedByInventory ? (
+                        <span className="managed-expense-copy">
+                          Gerenciado no Diário
+                        </span>
+                      ) : (
+                        <div>
+                          <button
+                            className="icon-button"
+                            onClick={() => onEdit(expense)}
+                            aria-label="Editar gasto"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            className="icon-button icon-button--danger"
+                            onClick={() => onDelete(expense)}
+                            aria-label="Excluir gasto"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

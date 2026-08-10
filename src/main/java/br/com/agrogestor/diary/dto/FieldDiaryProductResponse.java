@@ -7,5 +7,7 @@ public record FieldDiaryProductResponse(
         UUID productId,
         String productName,
         BigDecimal quantity,
-        String unitName
+        String unitName,
+        BigDecimal unitCost,
+        BigDecimal totalCost
 ) {}

@@ -6,6 +6,7 @@ import br.com.agrogestor.inventory.dto.InventoryProductRequest;
 import br.com.agrogestor.inventory.dto.InventoryProductResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductUpdateRequest;
 import br.com.agrogestor.inventory.entity.InventoryMovement;
+import br.com.agrogestor.inventory.entity.InventoryMovementCost;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
 import br.com.agrogestor.inventory.entity.MovementType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
@@ -86,10 +87,12 @@ public class InventoryService {
     public InventoryProductResponse move(UUID id, InventoryMovementRequest request) {
         InventoryProduct product = findProduct(id);
         BigDecimal amount = quantity(request.quantity());
-        product.applyMovement(request.movementType(), amount);
+        InventoryMovementCost cost = request.movementType() == MovementType.ENTRY
+                ? product.applyEntry(amount, BigDecimal.ZERO)
+                : product.applyExit(amount);
         movementRepository.save(new InventoryMovement(
                 product, request.movementType(), amount, request.movementDate(),
-                normalizeNullable(request.notes())
+                normalizeNullable(request.notes()), cost.unitCost(), cost.totalCost()
         ));
         return toResponse(product);
     }
@@ -115,6 +118,7 @@ public class InventoryService {
                 product.getExpirationDate(),
                 product.getQuantity().compareTo(product.getMinimumStock()) <= 0,
                 product.getExpirationDate() != null && product.getExpirationDate().isBefore(LocalDate.now()),
+                product.getAverageUnitCost(), product.getInventoryValue(),
                 product.getCreatedAt(), product.getUpdatedAt()
         );
     }
@@ -124,6 +128,7 @@ public class InventoryService {
                 movement.getId(), movement.getProduct().getId(), movement.getProduct().getName(),
                 movement.getMovementType(), movement.getMovementType().getDisplayName(),
                 movement.getQuantity(), movement.getMovementDate(), movement.getNotes(),
+                movement.getUnitCost(), movement.getTotalCost(),
                 movement.getCreatedAt()
         );
     }

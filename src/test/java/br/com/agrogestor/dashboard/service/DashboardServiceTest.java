@@ -2,6 +2,7 @@ package br.com.agrogestor.dashboard.service;
 
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
 import br.com.agrogestor.inventory.entity.MeasurementUnit;
@@ -75,9 +76,11 @@ class DashboardServiceTest {
                 .thenReturn(new BigDecimal("15"));
         when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(new BigDecimal("30"));
-        when(expenseRepository.sumAllAmountsByPropertyId(PROPERTY_ID)).thenReturn(new BigDecimal("16400"));
+        when(expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
+                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(new BigDecimal("16400"));
         when(plantingRepository.countByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE)).thenReturn(2L);
-        when(expenseRepository.countByPropertyId(PROPERTY_ID)).thenReturn(7L);
+        when(expenseRepository.countByPropertyIdAndOrigin(
+                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(7L);
         when(inventoryProductRepository.countByPropertyId(PROPERTY_ID)).thenReturn(4L);
         when(inventoryProductRepository.countLowStock(PROPERTY_ID)).thenReturn(1L);
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
@@ -89,8 +92,9 @@ class DashboardServiceTest {
         when(areaProjection.getPlantedArea()).thenReturn(new BigDecimal("15"));
         when(plantingStepRepository.sumAreasByPlantingIds(anyCollection()))
                 .thenReturn(List.of(areaProjection));
-        when(expenseRepository.findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
                 any(UUID.class),
+                any(ExpenseOrigin.class),
                 any(Pageable.class)
         )).thenReturn(List.of(expense));
         when(inventoryProductRepository.findForDashboard(any(UUID.class), any(Pageable.class)))
@@ -127,14 +131,16 @@ class DashboardServiceTest {
                 .thenReturn(null);
         when(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(BigDecimal.ZERO);
-        when(expenseRepository.sumAllAmountsByPropertyId(PROPERTY_ID)).thenReturn(new BigDecimal("150"));
+        when(expenseRepository.sumAllAmountsByPropertyIdAndOrigin(
+                PROPERTY_ID, ExpenseOrigin.DIRECT)).thenReturn(new BigDecimal("150"));
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
                 any(UUID.class),
                 any(PlantingStatus.class),
                 any(Pageable.class)
         )).thenReturn(List.of());
-        when(expenseRepository.findByPropertyIdOrderByExpenseDateDescCreatedAtDesc(
+        when(expenseRepository.findByPropertyIdAndOriginOrderByExpenseDateDescCreatedAtDesc(
                 any(UUID.class),
+                any(ExpenseOrigin.class),
                 any(Pageable.class)
         )).thenReturn(List.of());
         when(inventoryProductRepository.findForDashboard(any(UUID.class), any(Pageable.class)))

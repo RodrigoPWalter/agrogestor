@@ -5,12 +5,14 @@ import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.dto.ExpenseResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
 import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -75,7 +77,8 @@ public class ExpenseService {
         Page<Expense> result;
         UUID propertyId = currentProperty.id();
         if (plantingId == null) {
-            result = expenseRepository.findByPropertyId(propertyId, pageable);
+            result = expenseRepository.findByPropertyIdAndOrigin(
+                    propertyId, ExpenseOrigin.DIRECT, pageable);
         } else {
             findPlanting(plantingId);
             result = expenseRepository.findByPropertyIdAndPlantingId(propertyId, plantingId, pageable);
@@ -92,6 +95,7 @@ public class ExpenseService {
     @Transactional
     public ExpenseResponse update(UUID id, ExpenseRequest request) {
         Expense expense = findExpense(id);
+        ensureDirectExpense(expense);
         Planting planting = findOptionalPlanting(request.plantingId());
         expense.update(
                 planting,
@@ -106,7 +110,9 @@ public class ExpenseService {
 
     @Transactional
     public void delete(UUID id) {
-        expenseRepository.delete(findExpense(id));
+        Expense expense = findExpense(id);
+        ensureDirectExpense(expense);
+        expenseRepository.delete(expense);
     }
 
     @Transactional(readOnly = true)
@@ -179,6 +185,9 @@ public class ExpenseService {
                 expense.getAmount(),
                 expense.getExpenseDate(),
                 expense.getObservations(),
+                expense.getOrigin(),
+                expense.getOrigin().getDisplayName(),
+                expense.getOrigin() == ExpenseOrigin.STOCK_ALLOCATION,
                 expense.getCreatedAt(),
                 expense.getUpdatedAt()
         );
@@ -202,5 +211,14 @@ public class ExpenseService {
 
     private String normalizeNullable(String value) {
         return value == null || value.isBlank() ? null : normalize(value);
+    }
+
+    private void ensureDirectExpense(Expense expense) {
+        if (expense.getOrigin() == ExpenseOrigin.STOCK_ALLOCATION) {
+            throw new BusinessRuleException(
+                    "Este custo é controlado pelo uso do produto no estoque. "
+                            + "Edite ou exclua o lançamento correspondente no Diário"
+            );
+        }
     }
 }
