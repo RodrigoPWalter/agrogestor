@@ -7,9 +7,11 @@ import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { AppUpdateNotice } from "./components/AppUpdateNotice";
 import { ConfirmationProvider } from "./components/ConfirmationProvider";
 import { registerAgroGestorServiceWorker } from "./pwa/registerServiceWorker";
+import { initializeOfflineSync } from "./offline/offlineSync";
 import "./styles.css";
 
 registerAgroGestorServiceWorker();
+initializeOfflineSync();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

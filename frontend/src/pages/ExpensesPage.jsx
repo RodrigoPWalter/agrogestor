@@ -15,6 +15,8 @@ import {
 } from "../components/Feedback";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 import {
   clearFormDraft,
   readFormDraft,
@@ -178,17 +180,28 @@ export function ExpensesPage() {
       };
       try {
         if (editing) {
-          await api.updateExpense(editing.id, payload);
-          setSuccess("Gasto atualizado com sucesso.");
+          const result = await api.updateExpense(editing.id, payload);
+          setSuccess(mutationFeedback(result, "Gasto atualizado com sucesso."));
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         } else {
-          await api.createExpense(payload);
+          const result = await api.createExpense(payload);
           clearFormDraft(expenseDraftKey(scope));
           setDraftRecovered(false);
           setSuccess(
-            scope === "property"
-              ? "Gasto da propriedade registrado com sucesso."
-              : "Gasto registrado com sucesso.",
+            mutationFeedback(
+              result,
+              scope === "property"
+                ? "Gasto da propriedade registrado com sucesso."
+                : "Gasto registrado com sucesso.",
+            ),
           );
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         }
         setModalOpen(false);
         if (scope === "planting" && form.plantingId !== selectedPlantingId) {
@@ -214,8 +227,9 @@ export function ExpensesPage() {
     if (!confirmed) return;
     setError("");
     try {
-      await api.deleteExpense(expense.id);
-      setSuccess("Gasto excluído.");
+      const result = await api.deleteExpense(expense.id);
+      setSuccess(mutationFeedback(result, "Gasto excluído."));
+      if (isOfflineResult(result)) return;
       await loadExpenseData(scope, selectedPlantingId, {
         showLoading: false,
       });

@@ -100,7 +100,9 @@ describe("cliente HTTP", () => {
           throw error;
         },
       }),
-    ).rejects.toThrow("Sem internet. Os dados não foram enviados");
+    ).rejects.toThrow(
+      "Sem internet. O lançamento ficará salvo neste aparelho.",
+    );
   });
 
   it("orienta a conferir a lista depois de um timeout", async () => {
@@ -114,6 +116,6 @@ describe("cliente HTTP", () => {
           throw error;
         },
       }),
-    ).rejects.toThrow("confira se ele apareceu na lista");
+    ).rejects.toThrow("O lançamento será sincronizado automaticamente.");
   });
 });

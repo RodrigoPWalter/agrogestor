@@ -116,6 +116,10 @@
   font-size: 0.62rem;
   font-weight: 650;
   white-space: nowrap;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .connection-status svg {
@@ -134,6 +138,88 @@
 
 .connection-status--checking svg {
   color: #fde68a;
+}
+
+.mobile-sync-status {
+  display: none;
+}
+
+.offline-sync-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.offline-sync-panel__empty {
+  margin: 0;
+  padding: 1rem;
+  color: var(--muted);
+  text-align: center;
+  background: var(--green-50);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.offline-sync-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.offline-sync-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.offline-sync-item > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.offline-sync-item span,
+.offline-sync-item small {
+  color: var(--muted);
+}
+
+.offline-sync-item small {
+  color: var(--red-600);
+}
+
+.offline-sync-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.offline-sync-item .status-pill {
+  padding: 0.3rem 0.5rem;
+  color: var(--green-800);
+  border-radius: 999px;
+  background: var(--green-50);
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.offline-sync-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 640px) {
+  .offline-sync-item {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .offline-sync-item__actions {
+    justify-content: flex-end;
+  }
 }
 
 .header-profile {
@@ -240,6 +326,27 @@
   .connection-status,
   .header-profile > div {
     display: none;
+  }
+
+  .mobile-sync-status {
+    position: fixed;
+    right: 12px;
+    bottom: 72px;
+    left: 12px;
+    z-index: 45;
+    display: flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 750;
+    border: 1px solid rgba(255, 222, 0, 0.38);
+    border-radius: 8px;
+    background: #173f2a;
+    box-shadow: 0 8px 24px rgba(8, 30, 20, 0.24);
   }
 
   .header-profile > span {

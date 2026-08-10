@@ -25,7 +25,7 @@ describe("sessão de autenticação", () => {
 
     saveSession(session);
 
-    expect(readSession()).toEqual(session);
+    expect(readSession()).toEqual({ ...session, offlineAccess: false });
     expect(getAccessToken()).toBe("token-valido");
   });
 
@@ -41,6 +41,30 @@ describe("sessão de autenticação", () => {
 
     expect(readSession()).toBeNull();
     expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
+  });
+
+  it("mantém o acesso local temporário quando o aparelho está offline", () => {
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: false,
+    });
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        accessToken: "token-expirado",
+        expiresAt: Date.now() - 1,
+        offlineAccessUntil: Date.now() + 60_000,
+        user: { email: "produtor@agrogestor.local" },
+      }),
+    );
+
+    expect(readSession()?.offlineAccess).toBe(true);
+    expect(getAccessToken()).toBeNull();
+
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: true,
+    });
   });
 
   it("limpa a sessão armazenada", () => {

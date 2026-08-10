@@ -22,6 +22,8 @@ import {
   readFormDraft,
   writeFormDraft,
 } from "../utils/formDraft";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 
 const emptyForm = {
   crop: "",
@@ -147,16 +149,22 @@ export function PlantingsPage() {
         observations: form.observations || null,
       };
       try {
+        let result;
         if (editing) {
-          await api.updatePlanting(editing.id, payload);
-          setSuccess("Plantio atualizado com sucesso.");
+          result = await api.updatePlanting(editing.id, payload);
+          setSuccess(
+            mutationFeedback(result, "Plantio atualizado com sucesso."),
+          );
         } else {
-          await api.createPlanting(payload);
+          result = await api.createPlanting(payload);
           clearFormDraft("plantio");
           setDraftRecovered(false);
-          setSuccess("Plantio cadastrado com sucesso.");
+          setSuccess(
+            mutationFeedback(result, "Plantio cadastrado com sucesso."),
+          );
         }
         setModalOpen(false);
+        if (isOfflineResult(result)) return;
         await loadPlantings({ showLoading: false });
       } catch (requestError) {
         setError(requestError.message);
@@ -174,8 +182,9 @@ export function PlantingsPage() {
     if (!confirmed) return;
     setError("");
     try {
-      await api.deletePlanting(planting.id);
-      setSuccess("Plantio excluído.");
+      const result = await api.deletePlanting(planting.id);
+      setSuccess(mutationFeedback(result, "Plantio excluído."));
+      if (isOfflineResult(result)) return;
       await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
@@ -192,9 +201,12 @@ export function PlantingsPage() {
     });
     if (!confirmed) return;
     try {
-      await api.finishPlanting(planting.id);
+      const result = await api.finishPlanting(planting.id);
       setSelectedPlanting(null);
-      setSuccess("Safra finalizada e movida para o histórico.");
+      setSuccess(
+        mutationFeedback(result, "Safra finalizada e movida para o histórico."),
+      );
+      if (isOfflineResult(result)) return;
       await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
@@ -210,9 +222,15 @@ export function PlantingsPage() {
     });
     if (!confirmed) return;
     try {
-      await api.reactivatePlanting(planting.id);
-      setSuccess("Plantio reativado e devolvido para a lista de ativos.");
+      const result = await api.reactivatePlanting(planting.id);
+      setSuccess(
+        mutationFeedback(
+          result,
+          "Plantio reativado e devolvido para a lista de ativos.",
+        ),
+      );
       setSelectedPlanting(null);
+      if (isOfflineResult(result)) return;
       await loadPlantings({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);

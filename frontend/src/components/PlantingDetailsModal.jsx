@@ -12,6 +12,8 @@ import { PlantingOverview } from "./planting-details/PlantingOverview";
 import { PlantingProgressSection } from "./planting-details/PlantingProgressSection";
 import { PlantingQuickActions } from "./planting-details/PlantingQuickActions";
 import { SeasonClosingPanel } from "./planting-details/SeasonClosingPanel";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 
 const emptyExpense = {
   description: "",
@@ -188,14 +190,25 @@ export function PlantingDetailsModal({
       };
 
       try {
+        let result;
         if (editingStep) {
-          await api.updatePlantingStep(planting.id, editingStep.id, payload);
-          setSuccess("Etapa de plantio atualizada.");
+          result = await api.updatePlantingStep(
+            planting.id,
+            editingStep.id,
+            payload,
+          );
+          setSuccess(mutationFeedback(result, "Etapa de plantio atualizada."));
         } else {
-          await api.createPlantingStep(planting.id, payload);
-          setSuccess("Etapa de plantio adicionada com sucesso.");
+          result = await api.createPlantingStep(planting.id, payload);
+          setSuccess(
+            mutationFeedback(
+              result,
+              "Etapa de plantio adicionada com sucesso.",
+            ),
+          );
         }
         closeStepForm();
+        if (isOfflineResult(result)) return;
         await refreshStepsAndDiary();
         await onChanged();
       } catch (requestError) {
@@ -215,8 +228,11 @@ export function PlantingDetailsModal({
 
     setError("");
     try {
-      await api.deletePlantingStep(planting.id, step.id);
-      setSuccess("Etapa excluída e progresso recalculado.");
+      const result = await api.deletePlantingStep(planting.id, step.id);
+      setSuccess(
+        mutationFeedback(result, "Etapa excluída e progresso recalculado."),
+      );
+      if (isOfflineResult(result)) return;
       await refreshStepsAndDiary();
       await onChanged();
     } catch (requestError) {
@@ -267,18 +283,22 @@ export function PlantingDetailsModal({
       };
 
       try {
+        let result;
         if (editingHarvestStep) {
-          await api.updateHarvestStep(
+          result = await api.updateHarvestStep(
             planting.id,
             editingHarvestStep.id,
             payload,
           );
-          setSuccess("Etapa de colheita atualizada.");
+          setSuccess(mutationFeedback(result, "Etapa de colheita atualizada."));
         } else {
-          await api.createHarvestStep(planting.id, payload);
-          setSuccess("Colheita do dia registrada com sucesso.");
+          result = await api.createHarvestStep(planting.id, payload);
+          setSuccess(
+            mutationFeedback(result, "Colheita do dia registrada com sucesso."),
+          );
         }
         closeHarvestForm();
+        if (isOfflineResult(result)) return;
         await refreshHarvestAndDiary();
         await onChanged();
       } catch (requestError) {
@@ -298,8 +318,14 @@ export function PlantingDetailsModal({
 
     setError("");
     try {
-      await api.deleteHarvestStep(planting.id, step.id);
-      setSuccess("Etapa de colheita excluída e totais recalculados.");
+      const result = await api.deleteHarvestStep(planting.id, step.id);
+      setSuccess(
+        mutationFeedback(
+          result,
+          "Etapa de colheita excluída e totais recalculados.",
+        ),
+      );
+      if (isOfflineResult(result)) return;
       await refreshHarvestAndDiary();
       await onChanged();
     } catch (requestError) {
@@ -311,7 +337,7 @@ export function PlantingDetailsModal({
     event.preventDefault();
     await runSaving(async () => {
       try {
-        await api.createExpense({
+        const result = await api.createExpense({
           ...expense,
           plantingId: planting.id,
           amount: Number(expense.amount),
@@ -319,6 +345,8 @@ export function PlantingDetailsModal({
         });
         setExpense({ ...emptyExpense, expenseDate: toInputDate() });
         setShowExpenseForm(false);
+        setSuccess(mutationFeedback(result, "Gasto registrado no plantio."));
+        if (isOfflineResult(result)) return;
         await load();
         await onChanged();
       } catch (requestError) {
@@ -332,7 +360,7 @@ export function PlantingDetailsModal({
     await runSaving(async () => {
       setError("");
       try {
-        await api.createDiaryEntry({
+        const result = await api.createDiaryEntry({
           plantingId: planting.id,
           entryDate: stockUse.entryDate,
           activityType: "PRODUCT_USE",
@@ -355,7 +383,13 @@ export function PlantingDetailsModal({
         });
         setStockUse({ ...emptyStockUse, entryDate: toInputDate() });
         setShowExpenseForm(false);
-        setSuccess("Produto usado e custo transferido para o plantio.");
+        setSuccess(
+          mutationFeedback(
+            result,
+            "Produto usado e custo transferido para o plantio.",
+          ),
+        );
+        if (isOfflineResult(result)) return;
         await load();
         await onChanged();
       } catch (requestError) {

@@ -17,6 +17,8 @@ import { MaintenanceHistory } from "../components/machines/MaintenanceHistory";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 
 const currentYear = new Date().getFullYear();
 const emptyMachine = {
@@ -146,14 +148,16 @@ export function MachinesPage() {
       };
 
       try {
+        let result;
         if (editingMachine) {
-          await api.updateMachine(editingMachine.id, payload);
-          setSuccess("Máquina atualizada.");
+          result = await api.updateMachine(editingMachine.id, payload);
+          setSuccess(mutationFeedback(result, "Máquina atualizada."));
         } else {
-          await api.createMachine(payload);
-          setSuccess("Máquina cadastrada.");
+          result = await api.createMachine(payload);
+          setSuccess(mutationFeedback(result, "Máquina cadastrada."));
         }
         setMachineModal(false);
+        if (isOfflineResult(result)) return;
         await loadMachines({ showLoading: false });
       } catch (requestError) {
         setError(requestError.message);
@@ -175,14 +179,16 @@ export function MachinesPage() {
       };
 
       try {
+        let result;
         if (editingMaintenance) {
-          await api.updateMaintenance(editingMaintenance.id, payload);
-          setSuccess("Manutenção atualizada.");
+          result = await api.updateMaintenance(editingMaintenance.id, payload);
+          setSuccess(mutationFeedback(result, "Manutenção atualizada."));
         } else {
-          await api.createMaintenance(selectedMachine.id, payload);
-          setSuccess("Manutenção registrada.");
+          result = await api.createMaintenance(selectedMachine.id, payload);
+          setSuccess(mutationFeedback(result, "Manutenção registrada."));
         }
         setMaintenanceModal(false);
+        if (isOfflineResult(result)) return;
         await loadMachines({ showLoading: false });
         await selectMachine(selectedMachine);
       } catch (requestError) {
@@ -201,9 +207,10 @@ export function MachinesPage() {
     if (!confirmed) return;
 
     try {
-      await api.deleteMachine(machine.id);
+      const result = await api.deleteMachine(machine.id);
       if (selectedMachine?.id === machine.id) setSelectedMachine(null);
-      setSuccess("Máquina excluída.");
+      setSuccess(mutationFeedback(result, "Máquina excluída."));
+      if (isOfflineResult(result)) return;
       await loadMachines({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);
@@ -219,8 +226,9 @@ export function MachinesPage() {
     if (!confirmed) return;
 
     try {
-      await api.deleteMaintenance(item.id);
-      setSuccess("Manutenção excluída.");
+      const result = await api.deleteMaintenance(item.id);
+      setSuccess(mutationFeedback(result, "Manutenção excluída."));
+      if (isOfflineResult(result)) return;
       await loadMachines({ showLoading: false });
       await selectMachine(selectedMachine);
     } catch (requestError) {

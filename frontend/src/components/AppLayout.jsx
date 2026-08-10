@@ -1,6 +1,7 @@
 import {
   BookOpenText,
   CloudRain,
+  CloudUpload,
   Ellipsis,
   ChevronDown,
   LoaderCircle,
@@ -24,9 +25,16 @@ import {
   subscribeConnectionStatus,
 } from "../api/connectionStatus";
 import { useAuth } from "../auth/AuthContext";
+import {
+  getOfflineSyncSnapshot,
+  refreshOfflineSyncState,
+  subscribeOfflineSync,
+  syncPendingRequests,
+} from "../offline/offlineSync";
 import { preloadPrivatePage } from "../routes/pageLoaders";
 import { BrandMark } from "./BrandMark";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
+import { OfflineSyncPanel } from "./OfflineSyncPanel";
 import { UserManagementModal } from "./UserManagementModal";
 
 const navigation = [
@@ -58,10 +66,15 @@ export function AppLayout() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
-  const { user, logout, updateProfile } = useAuth();
+  const [syncPanelOpen, setSyncPanelOpen] = useState(false);
+  const { user, logout, updateProfile, isOfflineSession } = useAuth();
   const connectionStatus = useSyncExternalStore(
     subscribeConnectionStatus,
     getConnectionStatus,
+  );
+  const syncState = useSyncExternalStore(
+    subscribeOfflineSync,
+    getOfflineSyncSnapshot,
   );
   const location = useLocation();
   const moreMenuActive = moreNavigation.some(({ to }) =>
@@ -93,11 +106,26 @@ export function AppLayout() {
     },
   }[connectionStatus];
   const ConnectionIcon = connectionPresentation.icon;
+  const syncLabel = syncState.syncing
+    ? `Sincronizando ${syncState.pendingCount}...`
+    : syncState.errorCount > 0
+      ? `${syncState.errorCount} lançamento(s) com erro`
+      : syncState.pendingCount > 0
+        ? `${syncState.pendingCount} aguardando envio`
+        : isOfflineSession
+          ? "Acesso offline"
+          : connectionPresentation.label;
 
   useEffect(() => {
     setMoreMenuOpen(false);
     setProfileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    refreshOfflineSyncState()
+      .then(() => syncPendingRequests())
+      .catch(() => {});
+  }, [user?.email]);
 
   function preloadNavigationTarget(path) {
     preloadPrivatePage(path)?.catch(() => {});
@@ -136,9 +164,20 @@ export function AppLayout() {
           </nav>
 
           <div className="app-header__actions">
-            <div
+            <button
+              type="button"
               className={`connection-status connection-status--${connectionStatus}`}
               aria-live="polite"
+              onClick={() =>
+                syncState.pendingCount > 0
+                  ? setSyncPanelOpen(true)
+                  : syncPendingRequests()
+              }
+              title={
+                syncState.pendingCount > 0
+                  ? "Tentar sincronizar agora"
+                  : connectionPresentation.label
+              }
             >
               <ConnectionIcon
                 className={
@@ -148,8 +187,8 @@ export function AppLayout() {
                 }
                 size={14}
               />
-              <span>{connectionPresentation.label}</span>
-            </div>
+              <span>{syncLabel}</span>
+            </button>
             <div className="profile-menu">
               <button
                 className="header-profile"
@@ -214,12 +253,27 @@ export function AppLayout() {
         <Outlet />
       </main>
 
+      {(syncState.pendingCount > 0 || isOfflineSession) && (
+        <button
+          type="button"
+          className="mobile-sync-status"
+          onClick={() => setSyncPanelOpen(true)}
+        >
+          <CloudUpload size={16} />
+          <span>{syncLabel}</span>
+        </button>
+      )}
+
       {profileSettingsOpen && (
         <ProfileSettingsModal
           user={user}
           onSave={updateProfile}
           onClose={() => setProfileSettingsOpen(false)}
         />
+      )}
+
+      {syncPanelOpen && (
+        <OfflineSyncPanel onClose={() => setSyncPanelOpen(false)} />
       )}
 
       {userManagementOpen && (

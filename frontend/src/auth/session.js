@@ -1,5 +1,6 @@
 export const AUTH_STORAGE_KEY = "agrogestor.auth";
 export const APP_CACHE_KEY_PREFIX = "agrogestor:cache:";
+export const OFFLINE_SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const LEGACY_CACHE_KEYS = ["agrogestor:dashboard-cache:v1"];
 
 function hasValidShape(session) {
@@ -19,12 +20,24 @@ export function readSession() {
     }
 
     const session = JSON.parse(storedSession);
-    if (!hasValidShape(session) || session.expiresAt <= Date.now()) {
+    if (!hasValidShape(session)) {
       localStorage.removeItem(AUTH_STORAGE_KEY);
       return null;
     }
 
-    return session;
+    if (session.expiresAt <= Date.now()) {
+      const offlineAccessValid =
+        typeof navigator !== "undefined" &&
+        navigator.onLine === false &&
+        session.offlineAccessUntil > Date.now();
+      if (offlineAccessValid) {
+        return { ...session, offlineAccess: true };
+      }
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
+
+    return { ...session, offlineAccess: false };
   } catch {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     return null;
@@ -41,7 +54,8 @@ export function clearSession() {
 }
 
 export function getAccessToken() {
-  return readSession()?.accessToken ?? null;
+  const session = readSession();
+  return session && session.expiresAt > Date.now() ? session.accessToken : null;
 }
 
 export function getCurrentUserCacheScope() {

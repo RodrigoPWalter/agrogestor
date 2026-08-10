@@ -10,11 +10,13 @@ import { api } from "../api/client";
 import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import {
   AUTH_STORAGE_KEY,
+  OFFLINE_SESSION_DURATION_MS,
   clearAppCache,
   clearSession,
   readSession,
   saveSession,
 } from "./session";
+import { SESSION_READY_EVENT } from "../offline/offlineSync";
 
 const AuthContext = createContext(null);
 
@@ -23,6 +25,8 @@ function createSession(response) {
     accessToken: response.accessToken,
     tokenType: response.tokenType,
     expiresAt: Date.now() + response.expiresIn * 1000,
+    offlineAccessUntil: Date.now() + OFFLINE_SESSION_DURATION_MS,
+    offlineAccess: false,
     user: response.user,
   };
 }
@@ -50,6 +54,7 @@ export function AuthProvider({ children }) {
     saveSession(nextSession);
     setSession(nextSession);
     setAuthNotice("");
+    window.dispatchEvent(new Event(SESSION_READY_EVENT));
     return response.user;
   }, []);
 
@@ -60,6 +65,7 @@ export function AuthProvider({ children }) {
     clearAppCache();
     saveSession(nextSession);
     setSession(nextSession);
+    window.dispatchEvent(new Event(SESSION_READY_EVENT));
     return response.user;
   }, []);
 
@@ -85,19 +91,47 @@ export function AuthProvider({ children }) {
 
     const remainingTime = session.expiresAt - Date.now();
     if (remainingTime <= 0) {
+      if (
+        navigator.onLine === false &&
+        session.offlineAccessUntil > Date.now()
+      ) {
+        const offlineSession = { ...session, offlineAccess: true };
+        saveSession(offlineSession);
+        setSession(offlineSession);
+        setAuthNotice(
+          "Acesso offline ativo. Entre novamente quando a internet voltar para sincronizar.",
+        );
+        return undefined;
+      }
       expireSession();
       return undefined;
     }
 
     const timeoutId = window.setTimeout(expireSession, remainingTime);
     return () => window.clearTimeout(timeoutId);
-  }, [expireSession, session?.expiresAt]);
+  }, [
+    expireSession,
+    session?.expiresAt,
+    session?.offlineAccess,
+    session?.offlineAccessUntil,
+  ]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (session?.offlineAccess || session?.expiresAt <= Date.now()) {
+        expireSession();
+      }
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [expireSession, session?.expiresAt, session?.offlineAccess]);
 
   const value = useMemo(
     () => ({
       user: session?.user ?? null,
       token: session?.accessToken ?? null,
       isAuthenticated: Boolean(session),
+      isOfflineSession: Boolean(session?.offlineAccess),
       login,
       logout,
       updateProfile,

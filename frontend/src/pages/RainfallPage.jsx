@@ -12,6 +12,8 @@ import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 
 const emptyForm = {
   measurementDate: toInputDate(),
@@ -78,11 +80,19 @@ export function RainfallPage() {
       };
       try {
         if (editing) {
-          await api.updateRainfall(editing.id, payload);
-          setSuccess("Medição atualizada.");
+          const result = await api.updateRainfall(editing.id, payload);
+          setSuccess(mutationFeedback(result, "Medição atualizada."));
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         } else {
-          await api.createRainfall(payload);
-          setSuccess("Chuva registrada.");
+          const result = await api.createRainfall(payload);
+          setSuccess(mutationFeedback(result, "Chuva registrada."));
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         }
         setModalOpen(false);
         await loadData({ showLoading: false });
@@ -100,8 +110,9 @@ export function RainfallPage() {
     });
     if (!confirmed) return;
     try {
-      await api.deleteRainfall(item.id);
-      setSuccess("Medição excluída.");
+      const result = await api.deleteRainfall(item.id);
+      setSuccess(mutationFeedback(result, "Medição excluída."));
+      if (isOfflineResult(result)) return;
       await loadData({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);

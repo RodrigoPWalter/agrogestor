@@ -15,6 +15,8 @@ import { DiaryFormModal } from "../components/diary/DiaryFormModal";
 import { DiaryTimeline } from "../components/diary/DiaryTimeline";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
 import {
   clearFormDraft,
@@ -208,15 +210,28 @@ export function FieldDiaryPage() {
 
       try {
         if (editing) {
-          await api.updateDiaryEntry(editing.id, payload);
-          setSuccess("Registro e estoque atualizados.");
+          const result = await api.updateDiaryEntry(editing.id, payload);
+          setSuccess(
+            mutationFeedback(result, "Registro e estoque atualizados."),
+          );
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         } else {
-          await api.createDiaryEntry(payload);
+          const result = await api.createDiaryEntry(payload);
           clearFormDraft("diario");
           setDraftRecovered(false);
           setSuccess(
-            "Acontecimento registrado e módulos relacionados atualizados.",
+            mutationFeedback(
+              result,
+              "Acontecimento registrado e módulos relacionados atualizados.",
+            ),
           );
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
         }
         setModalOpen(false);
         await loadEntries(selectedPlantingId, { showLoading: false });
@@ -237,8 +252,14 @@ export function FieldDiaryPage() {
     if (!confirmed) return;
 
     try {
-      await api.deleteDiaryEntry(entry.id);
-      setSuccess("Registro excluído e produtos devolvidos ao estoque.");
+      const result = await api.deleteDiaryEntry(entry.id);
+      setSuccess(
+        mutationFeedback(
+          result,
+          "Registro excluído e produtos devolvidos ao estoque.",
+        ),
+      );
+      if (isOfflineResult(result)) return;
       await loadEntries(selectedPlantingId, { showLoading: false });
     } catch (requestError) {
       setError(requestError.message);

@@ -35,7 +35,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro e manutenções preventivas/corretivas, com lançamento automático do custo nos gastos da propriedade.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
-- **PWA:** Manifesto e service worker para instalação pelo navegador no Android e iPhone.
+- **PWA com sincronização offline:** Instalação no Android e iPhone, leitura dos dados já carregados e fila local para enviar novos lançamentos quando a conexão voltar.
 - **Uso em conexão lenta:** Bloqueio de envios repetidos, mensagens específicas de conexão e recuperação de rascunhos de plantios, gastos e atividades do Diário.
 - **Acesso protegido:** Login com JWT e alteração de nome, e-mail e senha pelo menu do perfil.
 
@@ -202,6 +202,14 @@ npm.cmd run preview -- --host
 ```
 
 Em produção, o app pode ser instalado no celular pela opção do navegador “Adicionar à tela inicial” ou “Instalar app”.
+
+O primeiro login em cada aparelho exige conexão com a API. Depois de uma autenticação válida, o usuário pode abrir o aplicativo offline no mesmo aparelho por até 30 dias e consultar dados que já tenham sido carregados anteriormente. Novos registros, alterações e exclusões ficam em uma fila no IndexedDB e são enviados automaticamente quando a rede voltar.
+
+O indicador de conexão mostra quantos lançamentos aguardam envio. Ao tocá-lo, é possível consultar a fila, repetir um item que recebeu erro de validação ou descartá-lo. Cada envio usa uma chave de idempotência validada pelo backend para impedir que uma tentativa repetida crie registros duplicados.
+
+Se o token expirar enquanto o aparelho estiver offline, a interface continua acessível localmente, mas nenhuma credencial vencida é enviada ao servidor. Quando a conexão retornar, será necessário entrar novamente antes da sincronização. Registros pendentes permanecem guardados nesse intervalo.
+
+Dados que nunca foram abertos online ainda não estarão disponíveis offline. A fila também depende do armazenamento do navegador: limpar os dados do site ou desinstalar o PWA antes da sincronização remove os lançamentos que existirem somente no aparelho.
 
 Os rascunhos dos formulários de Plantios, Gastos e Diário ficam armazenados somente no aparelho e associados ao usuário autenticado. Eles são removidos depois do salvamento, ao cancelar o formulário ou após sete dias.
 

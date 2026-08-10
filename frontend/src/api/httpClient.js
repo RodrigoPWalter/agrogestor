@@ -29,6 +29,7 @@ httpClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    const loginRequest = error.config?.url?.includes("/api/v1/auth/login");
     if (error.response) {
       markApiReachable();
     } else {
@@ -36,27 +37,33 @@ httpClient.interceptors.response.use(
     }
 
     if (error.code === "ECONNABORTED") {
-      return Promise.reject(
-        new Error(
-          "O servidor demorou para responder. Antes de repetir um lançamento, confira se ele apareceu na lista.",
-        ),
+      const timeoutError = new Error(
+        loginRequest
+          ? "O servidor demorou para responder. Aguarde e tente entrar novamente."
+          : "O servidor demorou para responder. O lançamento será sincronizado automaticamente.",
       );
+      timeoutError.offlineEligible = !loginRequest;
+      return Promise.reject(timeoutError);
     }
 
     if (!error.response && navigator.onLine === false) {
-      return Promise.reject(
-        new Error(
-          "Sem internet. Os dados não foram enviados; conecte-se e tente novamente.",
-        ),
+      const offlineError = new Error(
+        loginRequest
+          ? "É preciso estar conectado para fazer o primeiro acesso neste aparelho."
+          : "Sem internet. O lançamento ficará salvo neste aparelho.",
       );
+      offlineError.offlineEligible = !loginRequest;
+      return Promise.reject(offlineError);
     }
 
     if (!error.response) {
-      return Promise.reject(
-        new Error(
-          "O servidor não respondeu e pode estar iniciando. Aguarde alguns instantes e tente novamente.",
-        ),
+      const unavailableError = new Error(
+        loginRequest
+          ? "O servidor não respondeu e pode estar iniciando. Aguarde e tente novamente."
+          : "O servidor não respondeu. O lançamento ficará aguardando sincronização.",
       );
+      unavailableError.offlineEligible = !loginRequest;
+      return Promise.reject(unavailableError);
     }
 
     const response = error.response;
@@ -72,12 +79,12 @@ httpClient.interceptors.response.use(
       window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
     }
 
-    return Promise.reject(
-      new Error(
-        fieldMessage ||
-          response?.data?.message ||
-          "Não foi possível concluir a operação.",
-      ),
+    const responseError = new Error(
+      fieldMessage ||
+        response?.data?.message ||
+        "Não foi possível concluir a operação.",
     );
+    responseError.status = response.status;
+    return Promise.reject(responseError);
   },
 );

@@ -15,6 +15,8 @@ import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { mutationFeedback } from "../offline/offlineFeedback";
+import { isOfflineResult } from "../offline/offlineSync";
 
 const emptyProduct = {
   name: "",
@@ -115,14 +117,20 @@ export function InventoryPage() {
         expirationDate: form.expirationDate || null,
       };
       try {
+        let result;
         if (editing) {
-          await api.updateInventoryProduct(editing.id, payload);
-          setSuccess("Produto atualizado com sucesso.");
+          result = await api.updateInventoryProduct(editing.id, payload);
+          setSuccess(
+            mutationFeedback(result, "Produto atualizado com sucesso."),
+          );
         } else {
-          await api.createInventoryProduct(payload);
-          setSuccess("Produto adicionado ao estoque.");
+          result = await api.createInventoryProduct(payload);
+          setSuccess(
+            mutationFeedback(result, "Produto adicionado ao estoque."),
+          );
         }
         setProductModal(false);
+        if (isOfflineResult(result)) return;
         await loadProducts({ showLoading: false });
       } catch (requestError) {
         setError(requestError.message);
@@ -134,15 +142,19 @@ export function InventoryPage() {
     event.preventDefault();
     await runSaving(async () => {
       try {
-        await api.moveInventory(selected.id, {
+        const result = await api.moveInventory(selected.id, {
           ...movement,
           quantity: Number(movement.quantity),
           notes: movement.notes || null,
         });
         setSuccess(
-          `${movement.movementType === "ENTRY" ? "Entrada" : "Saída"} registrada.`,
+          mutationFeedback(
+            result,
+            `${movement.movementType === "ENTRY" ? "Entrada" : "Saída"} registrada.`,
+          ),
         );
         setMovementModal(false);
+        if (isOfflineResult(result)) return;
         await loadProducts({ showLoading: false });
       } catch (requestError) {
         setError(requestError.message);
@@ -159,8 +171,9 @@ export function InventoryPage() {
     });
     if (!confirmed) return;
     try {
-      await api.deleteInventoryProduct(product.id);
-      setSuccess("Produto excluído.");
+      const result = await api.deleteInventoryProduct(product.id);
+      setSuccess(mutationFeedback(result, "Produto excluído."));
+      if (isOfflineResult(result)) return;
       await loadProducts({ showLoading: false });
     } catch (requestError) {
       setError(requestError.message);

@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { httpClient } from "./httpClient";
 import { api } from "./client";
+import { saveSession } from "../auth/session";
+import {
+  listQueuedRequests,
+  resetOfflineStorageForTests,
+} from "../offline/offlineStorage";
 
 vi.mock("./httpClient", () => ({
   httpClient: {
@@ -23,7 +28,11 @@ function pagedResponse(content, page, totalPages) {
 describe("cliente da API", () => {
   beforeEach(() => {
     httpClient.request.mockReset();
+    localStorage.clear();
+    resetOfflineStorageForTests();
   });
+
+  afterEach(() => vi.restoreAllMocks());
 
   it("busca o resumo enxuto da visão geral", async () => {
     httpClient.request.mockResolvedValueOnce({ status: 200, data: {} });
@@ -127,7 +136,10 @@ describe("cliente da API", () => {
     expect(httpClient.request).toHaveBeenCalledWith({
       url: "/api/v1/plantings/planting-1/steps",
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": expect.any(String),
+      },
       data,
     });
   });
@@ -160,8 +172,47 @@ describe("cliente da API", () => {
     expect(httpClient.request).toHaveBeenCalledWith({
       url: "/api/v1/plantings/planting-1/harvest-steps",
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": expect.any(String),
+      },
       data,
     });
+  });
+
+  it("guarda um lançamento no aparelho quando está sem internet", async () => {
+    saveSession({
+      accessToken: "jwt-assinado",
+      expiresAt: Date.now() + 60_000,
+      user: { email: "produtor@agrogestor.local" },
+    });
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+
+    const result = await api.createRainfall({
+      measurementDate: "2026-08-10",
+      millimeters: 12,
+    });
+    const requests = await listQueuedRequests("produtor@agrogestor.local");
+
+    expect(result.offlineQueued).toBe(true);
+    expect(httpClient.request).not.toHaveBeenCalled();
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      method: "POST",
+      url: "/api/v1/rainfall",
+      status: "pending",
+    });
+  });
+
+  it("usa a última resposta salva quando a API fica indisponível", async () => {
+    const dashboard = { activePlantings: 2 };
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: dashboard });
+    await api.getDashboardSummary();
+
+    const networkError = new Error("sem conexão");
+    networkError.offlineEligible = true;
+    httpClient.request.mockRejectedValueOnce(networkError);
+
+    await expect(api.getDashboardSummary()).resolves.toEqual(dashboard);
   });
 });

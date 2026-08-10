@@ -1,17 +1,79 @@
 import { httpClient } from "./httpClient";
+import { getCurrentUserCacheScope } from "../auth/session";
+import {
+  getCachedResponse,
+  putCachedResponse,
+} from "../offline/offlineStorage";
+import { queueMutation } from "../offline/offlineSync";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const DEFAULT_PAGE_SIZE = 100;
 
+function createRequestId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  const values = globalThis.crypto.getRandomValues(new Uint8Array(16));
+  values[6] = (values[6] & 0x0f) | 0x40;
+  values[8] = (values[8] & 0x3f) | 0x80;
+  const hex = [...values].map((value) => value.toString(16).padStart(2, "0"));
+  return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+}
+
 async function request(path, options = {}) {
-  const { body, data, ...config } = options;
-  const response = await httpClient.request({
+  const { body, data, offline = true, ...config } = options;
+  const method = (config.method || "GET").toUpperCase();
+  const requestData = data ?? (body ? JSON.parse(body) : undefined);
+  const isMutation = method !== "GET" && method !== "HEAD";
+  const requestId = isMutation && offline ? createRequestId() : null;
+  const requestConfig = {
     url: path,
     ...config,
-    data: data ?? (body ? JSON.parse(body) : undefined),
-  });
+    data: requestData,
+  };
+  if (requestId) {
+    requestConfig.headers = {
+      ...config.headers,
+      "X-Idempotency-Key": requestId,
+    };
+  }
 
-  return response.status === 204 ? null : response.data;
+  if (requestId && navigator.onLine === false) {
+    return queueMutation({
+      id: requestId,
+      url: path,
+      method,
+      data: requestData,
+      headers: config.headers,
+    });
+  }
+
+  let response;
+  try {
+    response = await httpClient.request(requestConfig);
+  } catch (error) {
+    if (method === "GET" && error.offlineEligible) {
+      const cached = await getCachedResponse(getCurrentUserCacheScope(), path);
+      if (cached !== null) return cached;
+    }
+    if (requestId && error.offlineEligible) {
+      return queueMutation({
+        id: requestId,
+        url: path,
+        method,
+        data: requestData,
+        headers: config.headers,
+      });
+    }
+    throw error;
+  }
+
+  const responseData = response.status === 204 ? null : response.data;
+  if (method === "GET") {
+    await putCachedResponse(getCurrentUserCacheScope(), path, responseData);
+  }
+  return responseData;
 }
 
 function withQueryParams(path, params = {}) {
@@ -73,17 +135,20 @@ export const api = {
     request("/api/v1/auth/login", {
       method: "POST",
       data: credentials,
+      offline: false,
     }),
   updateProfile: (data) =>
     request("/api/v1/auth/profile", {
       method: "PUT",
       data,
+      offline: false,
     }),
   getUsers: () => request("/api/v1/users"),
   createUser: (data) =>
     request("/api/v1/users", {
       method: "POST",
       data,
+      offline: false,
     }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
   getPlantings: () =>

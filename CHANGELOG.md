@@ -6,6 +6,11 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Fila de sincronização offline no IndexedDB para plantios, gastos, Diário, chuvas, estoque e manutenções.
+- Reutilização offline de respostas da API que já foram carregadas no aparelho.
+- Acesso local temporário após o primeiro login online, sem enviar tokens vencidos ao backend.
+- Chaves de idempotência no backend para impedir registros duplicados durante a sincronização.
+- Painel para acompanhar, repetir ou descartar lançamentos pendentes no aparelho.
 - Proteção interna contra envios duplicados durante salvamentos demorados.
 - Recuperação por usuário dos rascunhos de Plantios, Gastos e Diário por até sete dias.
 - Respostas antigas são ignoradas ao trocar rapidamente filtros e seleções.

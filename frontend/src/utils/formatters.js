@@ -19,6 +19,14 @@ export function formatDate(value) {
   );
 }
 
+export function formatDateTime(value) {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 export function toInputDate(value) {
   if (value) return value;
   const today = new Date();
