@@ -49,6 +49,11 @@ public class InitialAdminService implements ApplicationRunner {
         if (!enabled || repository.count() > 0) {
             return;
         }
+        if (password == null || password.isBlank() || password.length() < 8) {
+            throw new IllegalStateException(
+                    "APP_ADMIN_PASSWORD deve ter pelo menos 8 caracteres quando o administrador inicial estiver habilitado"
+            );
+        }
         var property = propertyRepository.findAll().stream().findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "A propriedade inicial não foi criada pela migração"

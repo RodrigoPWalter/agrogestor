@@ -37,7 +37,7 @@ agrogestor:
       max-attempts: ${LOGIN_MAX_ATTEMPTS:10}
       window-minutes: ${LOGIN_WINDOW_MINUTES:15}
     bootstrap-admin:
-      enabled: ${APP_ADMIN_ENABLED:true}
+      enabled: ${APP_ADMIN_ENABLED:false}
       name: ${APP_ADMIN_NAME:Administrador}
       email: ${APP_ADMIN_EMAIL:admin@agrogestor.local}
       password: ${APP_ADMIN_PASSWORD:AgroGestor@2026}

@@ -11,6 +11,8 @@ import org.springframework.test.context.ActiveProfiles;
         "spring.datasource.password=",
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
+        "agrogestor.security.jwt-secret=test-secret-with-at-least-32-characters",
+        "agrogestor.security.cors-allowed-origins=http://localhost:5173",
         "agrogestor.security.bootstrap-admin.enabled=false"
 })
 @ActiveProfiles("production")
