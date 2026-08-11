@@ -17,6 +17,7 @@ import {
   saveSession,
 } from "./session";
 import { SESSION_READY_EVENT } from "../offline/offlineSync";
+import { moveOfflineScope } from "../offline/offlineStorage";
 
 const AuthContext = createContext(null);
 
@@ -58,16 +59,26 @@ export function AuthProvider({ children }) {
     return response.user;
   }, []);
 
-  const updateProfile = useCallback(async (data) => {
-    const response = await api.updateProfile(data);
-    const nextSession = createSession(response);
+  const updateProfile = useCallback(
+    async (data) => {
+      const previousScope = session?.user?.email?.toLowerCase();
+      const response = await api.updateProfile(data);
+      const nextSession = createSession(response);
+      const nextScope = response.user.email.toLowerCase();
 
-    clearAppCache();
-    saveSession(nextSession);
-    setSession(nextSession);
-    window.dispatchEvent(new Event(SESSION_READY_EVENT));
-    return response.user;
-  }, []);
+      try {
+        await moveOfflineScope(previousScope, nextScope);
+      } catch {
+        // A atualização da conta já ocorreu no servidor; o cache local é complementar.
+      }
+      clearAppCache();
+      saveSession(nextSession);
+      setSession(nextSession);
+      window.dispatchEvent(new Event(SESSION_READY_EVENT));
+      return response.user;
+    },
+    [session?.user?.email],
+  );
 
   useEffect(() => {
     const handleExpiredSession = () => expireSession();

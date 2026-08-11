@@ -10,6 +10,11 @@ import { api } from "../api/client";
 import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { readSession } from "./session";
+import {
+  listQueuedRequests,
+  putQueuedRequest,
+  resetOfflineStorageForTests,
+} from "../offline/offlineStorage";
 
 vi.mock("../api/client", () => ({
   api: {
@@ -60,6 +65,7 @@ function AuthConsumer() {
 describe("AuthProvider", () => {
   beforeEach(() => {
     localStorage.clear();
+    resetOfflineStorageForTests();
     api.login.mockReset();
     api.updateProfile.mockReset();
   });
@@ -124,6 +130,11 @@ describe("AuthProvider", () => {
         role: "ADMIN",
       },
     });
+    await putQueuedRequest({
+      id: "lancamento-pendente",
+      scope: "antigo@agro.local",
+      createdAt: "2026-08-10T20:00:00.000Z",
+    });
 
     render(
       <AuthProvider>
@@ -138,6 +149,8 @@ describe("AuthProvider", () => {
     });
     expect(readSession()?.accessToken).toBe("jwt-novo");
     expect(readSession()?.user.email).toBe("rodrigo@agro.local");
+    expect(await listQueuedRequests("antigo@agro.local")).toEqual([]);
+    expect(await listQueuedRequests("rodrigo@agro.local")).toHaveLength(1);
   });
 
   it("encerra a sessão quando a API informa que o token expirou", () => {

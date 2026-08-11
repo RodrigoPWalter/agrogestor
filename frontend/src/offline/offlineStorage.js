@@ -149,6 +149,63 @@ export async function getCachedResponse(scope, path) {
   });
 }
 
+export async function moveOfflineScope(previousScope, nextScope) {
+  if (!previousScope || !nextScope || previousScope === nextScope) return;
+
+  if (!supportsIndexedDb()) {
+    memoryRequests.forEach((request, id) => {
+      if (request.scope === previousScope) {
+        memoryRequests.set(id, { ...request, scope: nextScope });
+      }
+    });
+    memoryCache.forEach((entry, id) => {
+      if (entry.scope === previousScope) {
+        memoryCache.delete(id);
+        const movedEntry = {
+          ...entry,
+          id: cacheId(nextScope, entry.path),
+          scope: nextScope,
+        };
+        memoryCache.set(movedEntry.id, movedEntry);
+      }
+    });
+    return;
+  }
+
+  const database = await openDatabase();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(
+      [REQUEST_STORE, CACHE_STORE],
+      "readwrite",
+    );
+    const requestStore = transaction.objectStore(REQUEST_STORE);
+    const cacheStore = transaction.objectStore(CACHE_STORE);
+    const queuedRequests = requestStore.index("scope").getAll(previousScope);
+    const cachedResponses = cacheStore.getAll();
+
+    queuedRequests.onsuccess = () => {
+      queuedRequests.result.forEach((request) => {
+        requestStore.put({ ...request, scope: nextScope });
+      });
+    };
+    cachedResponses.onsuccess = () => {
+      cachedResponses.result
+        .filter((entry) => entry.scope === previousScope)
+        .forEach((entry) => {
+          cacheStore.delete(entry.id);
+          cacheStore.put({
+            ...entry,
+            id: cacheId(nextScope, entry.path),
+            scope: nextScope,
+          });
+        });
+    };
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+}
+
 export async function resetOfflineStorageForTests() {
   memoryRequests.clear();
   memoryCache.clear();

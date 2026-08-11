@@ -9,6 +9,22 @@ import { queueMutation } from "../offline/offlineSync";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const DEFAULT_PAGE_SIZE = 100;
 
+async function readCachedResponse(path) {
+  try {
+    return await getCachedResponse(getCurrentUserCacheScope(), path);
+  } catch {
+    return null;
+  }
+}
+
+async function cacheResponse(path, data) {
+  try {
+    await putCachedResponse(getCurrentUserCacheScope(), path, data);
+  } catch {
+    // O cache melhora o uso no campo, mas nunca deve invalidar dados recebidos da API.
+  }
+}
+
 function createRequestId() {
   if (typeof globalThis.crypto?.randomUUID === "function") {
     return globalThis.crypto.randomUUID();
@@ -54,7 +70,7 @@ async function request(path, options = {}) {
     response = await httpClient.request(requestConfig);
   } catch (error) {
     if (method === "GET" && error.offlineEligible) {
-      const cached = await getCachedResponse(getCurrentUserCacheScope(), path);
+      const cached = await readCachedResponse(path);
       if (cached !== null) return cached;
       error.offlineCacheMiss = true;
       error.message =
@@ -74,7 +90,7 @@ async function request(path, options = {}) {
 
   const responseData = response.status === 204 ? null : response.data;
   if (method === "GET") {
-    await putCachedResponse(getCurrentUserCacheScope(), path, responseData);
+    await cacheResponse(path, responseData);
   }
   return responseData;
 }
