@@ -2,6 +2,7 @@ package br.com.agrogestor.shared.idempotency;
 
 import br.com.agrogestor.auth.security.JwtTokenService;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,10 +15,16 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -103,6 +110,73 @@ class IdempotencyFilterTest {
 
         assertThat(response.getStatus()).isEqualTo(204);
         verify(service, never()).find(anyString(), anyString());
+    }
+
+    @Test
+    void shouldSerializeConcurrentRequestsWithTheSameKey() throws Exception {
+        var storedRecord = new AtomicReference<IdempotencyRecord>();
+        var chainExecutions = new AtomicInteger();
+        var firstRequestEntered = new CountDownLatch(1);
+        var releaseFirstRequest = new CountDownLatch(1);
+        when(service.find("produtor@agro.local", "operacao-simultanea"))
+                .thenAnswer(ignored -> Optional.ofNullable(storedRecord.get()));
+        doAnswer(invocation -> {
+            storedRecord.set(invocation.getArgument(0));
+            return null;
+        }).when(service).remember(org.mockito.ArgumentMatchers.any());
+
+        FilterChain chain = (currentRequest, currentResponse) -> {
+            chainExecutions.incrementAndGet();
+            firstRequestEntered.countDown();
+            try {
+                if (!releaseFirstRequest.await(2, TimeUnit.SECONDS)) {
+                    throw new ServletException("Tempo excedido no teste concorrente");
+                }
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new ServletException(exception);
+            }
+            var httpResponse = (HttpServletResponse) currentResponse;
+            httpResponse.setStatus(201);
+            httpResponse.getWriter().write("{\"id\":\"gasto-1\"}");
+        };
+        var firstRequest = authenticatedRequest(
+                "operacao-simultanea",
+                "/api/v1/expenses"
+        );
+        var secondRequest = authenticatedRequest(
+                "operacao-simultanea",
+                "/api/v1/expenses"
+        );
+        var firstResponse = new MockHttpServletResponse();
+        var secondResponse = new MockHttpServletResponse();
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> {
+                filter.doFilter(firstRequest, firstResponse, chain);
+                return null;
+            });
+            assertThat(firstRequestEntered.await(2, TimeUnit.SECONDS)).isTrue();
+            var secondStarted = new CountDownLatch(1);
+            var second = executor.submit(() -> {
+                secondStarted.countDown();
+                filter.doFilter(
+                        secondRequest,
+                        secondResponse,
+                        chain
+                );
+                return null;
+            });
+            assertThat(secondStarted.await(2, TimeUnit.SECONDS)).isTrue();
+
+            releaseFirstRequest.countDown();
+            first.get(2, TimeUnit.SECONDS);
+            second.get(2, TimeUnit.SECONDS);
+        }
+
+        assertThat(chainExecutions).hasValue(1);
+        assertThat(secondResponse.getHeader("X-Idempotent-Replay")).isEqualTo("true");
+        assertThat(secondResponse.getContentAsString()).contains("gasto-1");
     }
 
     private MockHttpServletRequest authenticatedRequest(String key, String path) {

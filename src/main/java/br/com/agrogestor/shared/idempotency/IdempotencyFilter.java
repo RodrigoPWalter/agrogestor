@@ -16,6 +16,8 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Component
 public class IdempotencyFilter extends OncePerRequestFilter {
@@ -26,10 +28,12 @@ public class IdempotencyFilter extends OncePerRequestFilter {
     private static final Set<String> MUTATING_METHODS = Set.of(
             "POST", "PUT", "PATCH", "DELETE"
     );
+    private static final int LOCK_STRIPES = 64;
     private static final Logger LOGGER = LoggerFactory.getLogger(IdempotencyFilter.class);
 
     private final IdempotencyService service;
     private final JwtTokenService tokenService;
+    private final Lock[] requestLocks = new Lock[LOCK_STRIPES];
 
     public IdempotencyFilter(
             IdempotencyService service,
@@ -37,6 +41,9 @@ public class IdempotencyFilter extends OncePerRequestFilter {
     ) {
         this.service = service;
         this.tokenService = tokenService;
+        for (int index = 0; index < requestLocks.length; index++) {
+            requestLocks[index] = new ReentrantLock();
+        }
     }
 
     @Override
@@ -61,21 +68,32 @@ public class IdempotencyFilter extends OncePerRequestFilter {
             return;
         }
 
-        var previous = service.find(username, requestKey);
-        if (previous.isPresent()) {
-            replay(previous.get(), request, response);
-            return;
-        }
-
-        var cachedResponse = new ContentCachingResponseWrapper(response);
+        Lock requestLock = lockFor(username, requestKey);
+        requestLock.lock();
         try {
-            filterChain.doFilter(request, cachedResponse);
-            if (cachedResponse.getStatus() >= 200 && cachedResponse.getStatus() < 300) {
-                remember(username, requestKey, request, cachedResponse);
+            var previous = service.find(username, requestKey);
+            if (previous.isPresent()) {
+                replay(previous.get(), request, response);
+                return;
+            }
+
+            var cachedResponse = new ContentCachingResponseWrapper(response);
+            try {
+                filterChain.doFilter(request, cachedResponse);
+                if (cachedResponse.getStatus() >= 200 && cachedResponse.getStatus() < 300) {
+                    remember(username, requestKey, request, cachedResponse);
+                }
+            } finally {
+                cachedResponse.copyBodyToResponse();
             }
         } finally {
-            cachedResponse.copyBodyToResponse();
+            requestLock.unlock();
         }
+    }
+
+    private Lock lockFor(String username, String requestKey) {
+        int index = Math.floorMod((username + '\0' + requestKey).hashCode(), LOCK_STRIPES);
+        return requestLocks[index];
     }
 
     private String authenticatedUsername(HttpServletRequest request) {
