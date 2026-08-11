@@ -86,4 +86,50 @@ describe("sincronização offline", () => {
       lastError: "Quantidade insuficiente em estoque.",
     });
   });
+
+  it("interrompe a fila antiga quando a pessoa troca de conta", async () => {
+    await queueMutation({
+      id: "operacao-antiga-1",
+      url: "/api/v1/expenses",
+      method: "POST",
+      data: { description: "Diesel" },
+    });
+    await queueMutation({
+      id: "operacao-antiga-2",
+      url: "/api/v1/rainfall",
+      method: "POST",
+      data: { millimeters: 12 },
+    });
+
+    let finishFirstRequest;
+    httpClient.request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirstRequest = resolve;
+        }),
+    );
+    const synchronization = syncPendingRequests();
+    await vi.waitFor(() => expect(httpClient.request).toHaveBeenCalledOnce());
+
+    saveSession({
+      accessToken: "jwt-outra-conta",
+      expiresAt: Date.now() + 60_000,
+      user: { email: "outra@agrogestor.local" },
+    });
+    finishFirstRequest({ status: 201, data: {} });
+    await synchronization;
+
+    expect(httpClient.request).toHaveBeenCalledOnce();
+    expect(httpClient.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer jwt-assinado",
+        }),
+      }),
+    );
+    expect(await listQueuedRequests("produtor@agrogestor.local")).toHaveLength(
+      1,
+    );
+    expect(await listQueuedRequests("outra@agrogestor.local")).toEqual([]);
+  });
 });

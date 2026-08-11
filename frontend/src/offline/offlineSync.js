@@ -75,7 +75,9 @@ export async function syncPendingRequests() {
     await refreshOfflineSyncState();
     return { synchronized: 0, pending: snapshot.pendingCount };
   }
-  if (!getAccessToken()) {
+  const syncScope = getCurrentUserCacheScope();
+  const syncToken = getAccessToken();
+  if (!syncToken) {
     await refreshOfflineSyncState();
     return { synchronized: 0, pending: snapshot.pendingCount };
   }
@@ -83,9 +85,15 @@ export async function syncPendingRequests() {
   syncPromise = (async () => {
     publish({ syncing: true });
     let synchronized = 0;
-    const requests = await listQueuedRequests(getCurrentUserCacheScope());
+    const requests = await listQueuedRequests(syncScope);
 
     for (const request of requests.filter((item) => item.status !== "error")) {
+      if (
+        getCurrentUserCacheScope() !== syncScope ||
+        getAccessToken() !== syncToken
+      ) {
+        break;
+      }
       try {
         await httpClient.request({
           url: request.url,
@@ -93,6 +101,7 @@ export async function syncPendingRequests() {
           data: request.data,
           headers: {
             ...request.headers,
+            Authorization: `Bearer ${syncToken}`,
             "X-Idempotency-Key": request.id,
           },
         });

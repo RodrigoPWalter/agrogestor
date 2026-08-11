@@ -16,7 +16,7 @@ export const httpClient = axios.create({
 
 httpClient.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) {
+  if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 

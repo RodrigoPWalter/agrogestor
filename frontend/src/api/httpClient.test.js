@@ -41,6 +41,34 @@ describe("cliente HTTP", () => {
     expect(getConnectionStatus()).toBe(CONNECTION_STATUS.CONNECTED);
   });
 
+  it("preserva o token definido para uma sincronização em andamento", async () => {
+    saveSession({
+      accessToken: "jwt-sessao-atual",
+      expiresAt: Date.now() + 60_000,
+      user: { email: "atual@agrogestor.local" },
+    });
+
+    let requestConfig;
+    await httpClient.request({
+      url: "/api/v1/expenses",
+      headers: { Authorization: "Bearer jwt-sessao-original" },
+      adapter: async (config) => {
+        requestConfig = config;
+        return {
+          data: {},
+          status: 200,
+          statusText: "OK",
+          headers: {},
+          config,
+        };
+      },
+    });
+
+    expect(requestConfig.headers.Authorization).toBe(
+      "Bearer jwt-sessao-original",
+    );
+  });
+
   it("não envia Authorization quando não há sessão", async () => {
     let requestConfig;
     await httpClient.request({
