@@ -72,7 +72,7 @@ public class InventoryService {
 
     @Transactional
     public InventoryProductResponse update(UUID id, InventoryProductUpdateRequest request) {
-        InventoryProduct product = findProduct(id);
+        InventoryProduct product = findProductForUpdate(id);
         product.update(normalize(request.name()), request.productType(), request.unit(),
                 quantity(request.minimumStock()), request.expirationDate());
         return toResponse(product);
@@ -80,12 +80,12 @@ public class InventoryService {
 
     @Transactional
     public void delete(UUID id) {
-        productRepository.delete(findProduct(id));
+        productRepository.delete(findProductForUpdate(id));
     }
 
     @Transactional
     public InventoryProductResponse move(UUID id, InventoryMovementRequest request) {
-        InventoryProduct product = findProduct(id);
+        InventoryProduct product = findProductForUpdate(id);
         BigDecimal amount = quantity(request.quantity());
         InventoryMovementCost cost = request.movementType() == MovementType.ENTRY
                 ? product.applyEntry(amount, BigDecimal.ZERO)
@@ -108,6 +108,13 @@ public class InventoryService {
     private InventoryProduct findProduct(UUID id) {
         return productRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Produto não encontrado com o ID " + id));
+    }
+
+    private InventoryProduct findProductForUpdate(UUID id) {
+        return productRepository.findByIdAndPropertyIdForUpdate(id, currentProperty.id())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Produto não encontrado com o ID " + id
+                ));
     }
 
     private InventoryProductResponse toResponse(InventoryProduct product) {
