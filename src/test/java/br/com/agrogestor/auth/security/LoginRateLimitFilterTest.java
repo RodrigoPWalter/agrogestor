@@ -24,15 +24,32 @@ class LoginRateLimitFilterTest {
 
     @Test
     void shouldBlockRepeatedLoginAttemptsFromTheSameAddress() throws Exception {
-        assertThat(loginAttempt().getStatus()).isEqualTo(200);
-        assertThat(loginAttempt().getStatus()).isEqualTo(200);
+        assertThat(loginAttempt(401).getStatus()).isEqualTo(401);
+        assertThat(loginAttempt(401).getStatus()).isEqualTo(401);
 
-        MockHttpServletResponse blocked = loginAttempt();
+        MockHttpServletResponse blocked = loginAttempt(200);
 
         assertThat(blocked.getStatus()).isEqualTo(429);
         assertThat(blocked.getHeader("Retry-After")).isEqualTo("900");
         assertThat(blocked.getContentAsString())
                 .contains("Muitas tentativas de acesso");
+    }
+
+    @Test
+    void shouldNotCountSuccessfulLoginsAsFailedAttempts() throws Exception {
+        assertThat(loginAttempt(200).getStatus()).isEqualTo(200);
+        assertThat(loginAttempt(200).getStatus()).isEqualTo(200);
+        assertThat(loginAttempt(200).getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    void shouldClearPreviousFailuresAfterSuccessfulLogin() throws Exception {
+        assertThat(loginAttempt(401).getStatus()).isEqualTo(401);
+        assertThat(loginAttempt(200).getStatus()).isEqualTo(200);
+        assertThat(loginAttempt(401).getStatus()).isEqualTo(401);
+        assertThat(loginAttempt(401).getStatus()).isEqualTo(401);
+
+        assertThat(loginAttempt(200).getStatus()).isEqualTo(429);
     }
 
     @Test
@@ -46,11 +63,16 @@ class LoginRateLimitFilterTest {
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
-    private MockHttpServletResponse loginAttempt() throws Exception {
+    private MockHttpServletResponse loginAttempt(int status) throws Exception {
         var request = new MockHttpServletRequest("POST", "/api/v1/auth/login");
         request.setRemoteAddr("192.0.2.10");
         var response = new MockHttpServletResponse();
-        filter.doFilter(request, response, new MockFilterChain());
+        filter.doFilter(
+                request,
+                response,
+                (currentRequest, currentResponse) ->
+                        ((MockHttpServletResponse) currentResponse).setStatus(status)
+        );
         return response;
     }
 }

@@ -67,18 +67,45 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         Instant now = clock.instant();
-        AttemptWindow window = attemptsByAddress.compute(
-                request.getRemoteAddr(),
-                (address, current) -> current == null || current.expiredAt().isBefore(now)
-                        ? new AttemptWindow(1, now.plus(windowDuration))
-                        : current.incremented()
-        );
+        String remoteAddress = request.getRemoteAddr();
+        AttemptWindow window = activeWindow(remoteAddress, now);
 
-        if (window.attempts() <= maximumAttempts) {
-            filterChain.doFilter(request, response);
+        if (window != null && window.attempts() >= maximumAttempts) {
+            writeRateLimitResponse(response, now, window);
             return;
         }
 
+        filterChain.doFilter(request, response);
+        if (response.getStatus() == HttpStatus.UNAUTHORIZED.value()) {
+            registerFailure(remoteAddress, now);
+        } else if (response.getStatus() >= 200 && response.getStatus() < 300) {
+            attemptsByAddress.remove(remoteAddress);
+        }
+    }
+
+    private AttemptWindow activeWindow(String remoteAddress, Instant now) {
+        AttemptWindow current = attemptsByAddress.get(remoteAddress);
+        if (current != null && !current.expiredAt().isAfter(now)) {
+            attemptsByAddress.remove(remoteAddress, current);
+            return null;
+        }
+        return current;
+    }
+
+    private void registerFailure(String remoteAddress, Instant now) {
+        attemptsByAddress.compute(
+                remoteAddress,
+                (address, current) -> current == null || !current.expiredAt().isAfter(now)
+                        ? new AttemptWindow(1, now.plus(windowDuration))
+                        : current.incremented()
+        );
+    }
+
+    private void writeRateLimitResponse(
+            HttpServletResponse response,
+            Instant now,
+            AttemptWindow window
+    ) throws IOException {
         long retryAfter = Math.max(1, Duration.between(now, window.expiredAt()).toSeconds());
         response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
         response.setHeader(HttpHeaders.RETRY_AFTER, Long.toString(retryAfter));
