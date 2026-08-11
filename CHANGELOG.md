@@ -6,6 +6,10 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Correção do acumulado mensal de chuva em meses com 31 dias.
+- Chuvas e manutenções criadas pelo Diário agora indicam sua origem e são editadas somente no lançamento original.
+- Limpeza automática das chaves de idempotência antigas, sem afetar dados operacionais.
+- Verificação local de formatação alinhada ao pipeline de CI.
 - Fila de sincronização offline no IndexedDB para plantios, gastos, Diário, chuvas, estoque e manutenções.
 - Reutilização offline de respostas da API que já foram carregadas no aparelho.
 - Acesso local temporário após o primeiro login online, sem enviar tokens vencidos ao backend.

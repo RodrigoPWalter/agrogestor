@@ -27,10 +27,11 @@ São considerados dentro do escopo:
 
 ## Pontos conhecidos
 
-- O projeto ainda não implementa isolamento por propriedade/organização.
-- O token JWT é armazenado no navegador para manter a experiência simples do PWA.
+- Os dados operacionais são isolados por propriedade no banco e nos services, com cenários de integração cobrindo acesso entre contas. Uma oferta comercial ainda exige auditoria independente e testes de invasão.
+- O token JWT é armazenado no navegador para manter a experiência simples do PWA. Uma vulnerabilidade de XSS poderia expor essa credencial; o frontend não deve renderizar HTML externo sem sanitização.
 - O Swagger fica habilitado apenas no desenvolvimento local e é desativado pelo perfil de produção.
 - O login possui limite por endereço de origem. Como o controle é mantido em memória, ele deve migrar para um armazenamento compartilhado caso a API passe a executar em várias instâncias.
-- O `npm audit` sinaliza o modo RSC do React Router atual. O AgroGestor é uma SPA Vite e não utiliza RSC, Actions ou execução no servidor; a atualização deve ser aplicada assim que houver uma versão corrigida sem reintroduzir as vulnerabilidades das versões anteriores.
+- Dados consultados e lançamentos pendentes offline ficam armazenados no aparelho. O usuário deve proteger o celular e evitar limpar os dados do PWA antes da sincronização.
+- O fluxo atual cria uma propriedade separada para cada conta. Compartilhamento de uma propriedade por equipe, convites e permissões mais detalhadas ainda não foram implementados.
 
 Esses pontos estão documentados para orientar a evolução do projeto e não devem ser ignorados em um cenário comercial.

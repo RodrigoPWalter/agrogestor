@@ -45,6 +45,10 @@ br.com.agrogestor
 │   ├── entity
 │   ├── repository
 │   └── service
+├── property
+│   ├── entity
+│   ├── repository
+│   └── service
 ├── quotation
 │   ├── client
 │   ├── controller
@@ -58,7 +62,9 @@ br.com.agrogestor
 │   └── service
 └── shared
     ├── dto
-    └── exception
+    ├── exception
+    ├── health
+    └── idempotency
 ```
 
 ## Papel de cada camada
@@ -84,4 +90,6 @@ br.com.agrogestor
 - `diary` funciona como central de acontecimentos da propriedade e pode disparar efeitos em estoque, chuva ou manutenção.
 - `inventory` controla o saldo dos produtos e impede baixa maior do que a quantidade disponível.
 - `planting` concentra o ciclo da safra, incluindo finalização, reativação e fechamento.
+- `property` resolve o contexto da propriedade autenticada usado para isolar os dados de cada conta.
 - `quotation` lê cotações agrícolas e mantém fallback para evitar falha completa quando a fonte externa oscila.
+- `shared/idempotency` evita duplicidade quando o PWA repete uma operação da fila offline.

@@ -227,6 +227,7 @@ Frontend:
 cd frontend
 npm.cmd test
 npm.cmd run build
+npm.cmd run format:check
 ```
 
 ## Observações técnicas
@@ -235,7 +236,7 @@ npm.cmd run build
 - O módulo de cotações consulta a Cotricampo e mantém fallback/cache no backend; o frontend também evita recarregar as cotações mais de uma vez por dia.
 - O projeto evita expor entidades diretamente na API, usando DTOs para entrada e saída.
 - Serviços que alteram mais de uma tabela usam transações para preservar consistência.
-- O CI executa testes do backend, testes do frontend, build de produção e auditoria das dependências de produção do frontend.
+- O CI executa verificação de formato, testes do backend e frontend, build de produção e auditoria das dependências de produção do frontend.
 - O CI também sobe um PostgreSQL temporário para validar as migrations e o fluxo transacional entre Diário e Estoque.
 - A documentação OpenAPI fica disponível no ambiente local. No perfil de produção ela é desativada para reduzir superfície de exposição e custo de inicialização.
 - O repositório ainda não define uma licença de uso. Antes de aceitar contribuições ou liberar reutilização por terceiros, escolha uma licença adequada para o objetivo do projeto.

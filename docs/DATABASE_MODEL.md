@@ -6,6 +6,13 @@ Este arquivo resume o banco atual do AgroGestor. As migrations em `src/main/reso
 
 ```mermaid
 erDiagram
+    PROPERTIES ||--o{ USUARIOS : possui
+    PROPERTIES ||--o{ PLANTINGS : organiza
+    PROPERTIES ||--o{ EXPENSES : registra
+    PROPERTIES ||--o{ INVENTORY_PRODUCTS : armazena
+    PROPERTIES ||--o{ MACHINES : possui
+    PROPERTIES ||--o{ FIELD_DIARY_ENTRIES : registra
+    PROPERTIES ||--o{ RAINFALL_MEASUREMENTS : mede
     PLANTINGS ||--o{ EXPENSES : recebe
     PLANTINGS ||--o{ PLANTING_STEPS : executado_em
     PLANTINGS ||--o{ HARVEST_STEPS : colhido_em
@@ -24,7 +31,11 @@ erDiagram
 
 ### `usuarios`
 
-Armazena nome, e-mail normalizado, hash da senha e perfil de acesso. O e-mail possui unicidade sem diferenciar letras maiúsculas e minúsculas.
+Armazena nome, e-mail normalizado, hash da senha, perfil de acesso e a propriedade da conta. O e-mail possui unicidade sem diferenciar letras maiúsculas e minúsculas.
+
+### `properties`
+
+Representa o limite de isolamento dos dados. Cada conta criada atualmente recebe sua própria propriedade, e os módulos operacionais usam `property_id` nas consultas e relacionamentos.
 
 ### `plantings`
 
@@ -94,6 +105,10 @@ Registra manutenção preventiva ou corretiva, peças trocadas, custo e horímet
 
 Tabela mantida por compatibilidade com migrations antigas. O módulo de previsão do tempo está pausado e a aplicação não consulta essa tabela no fluxo atual.
 
+### `idempotency_records`
+
+Guarda temporariamente a chave, a rota e a resposta de operações mutáveis enviadas pelo PWA. Isso permite devolver a mesma resposta quando a fila repete um envio já concluído. Os registros expiram automaticamente depois de 90 dias; dados de negócio não são removidos por essa limpeza.
+
 ## Convenções
 
 - IDs usam UUID.
@@ -103,6 +118,7 @@ Tabela mantida por compatibilidade com migrations antigas. O módulo de previsã
 - Mudanças estruturais entram somente por novas migrations do Flyway.
 - Migrations já aplicadas não devem ser reescritas ou removidas.
 - Consultas de plantios ativos, gastos por safra e Diário por plantio usam índices compostos compatíveis com a ordenação apresentada no aplicativo.
+- Vínculos de chuva e manutenção gerados pelo Diário possuem índices parciais para validar sua origem sem varrer todo o histórico.
 
 ## Próximas evoluções de banco
 

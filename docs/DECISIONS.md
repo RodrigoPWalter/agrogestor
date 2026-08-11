@@ -52,15 +52,15 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 **Evolução prevista:** trocar por API oficial se a cooperativa disponibilizar uma, ou permitir lançamento manual das cotações.
 
-## 6. PWA online-first
+## 6. PWA com fila offline
 
-**Decisão:** o AgroGestor é instalável como PWA, mas ainda não é offline-first.
+**Decisão:** o AgroGestor guarda no IndexedDB as respostas já consultadas e as alterações feitas sem conexão. A fila volta a enviar os itens quando a API fica disponível.
 
-**Motivo:** o primeiro passo foi permitir instalação no celular e melhorar a experiência de abertura. Sincronização offline com fila local exige cuidado para não duplicar lançamentos ou corromper estoque.
+**Motivo:** o aplicativo precisa continuar útil no campo, onde a conexão pode cair durante um lançamento. Cada operação recebe uma chave de idempotência para que uma repetição não crie o mesmo registro duas vezes.
 
-**Trade-off:** o usuário consegue abrir o app e ver parte dos dados salvos, mas ainda depende da API para gravar informações.
+**Trade-off:** apenas dados abertos anteriormente ficam disponíveis para leitura offline. Limpar os dados do navegador antes da sincronização remove itens que ainda existam somente no aparelho. As chaves confirmadas ficam no servidor por 90 dias, prazo superior ao acesso local máximo de 30 dias.
 
-**Evolução prevista:** implementar IndexedDB, fila de operações pendentes, resolução de conflitos e indicador claro de sincronização.
+**Evolução prevista:** adicionar política explícita de resolução para edições concorrentes caso uma mesma propriedade passe a ter vários operadores simultâneos.
 
 ## 7. Migrations antigas preservadas
 
@@ -74,13 +74,13 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 ## 8. Segurança em conexões lentas
 
-**Decisão:** os formulários bloqueiam uma segunda execução enquanto o primeiro salvamento está pendente e mantêm rascunhos locais dos lançamentos mais importantes.
+**Decisão:** os formulários bloqueiam uma segunda execução enquanto o primeiro salvamento está pendente, mantêm rascunhos locais e encaminham operações sem conexão para uma fila persistente.
 
 **Motivo:** no celular, uma conexão instável pode fazer o usuário tocar novamente no botão ou fechar o aplicativo antes de concluir o preenchimento. A trava reduz duplicidades e o rascunho evita redigitação.
 
-**Trade-off:** os rascunhos ficam no `localStorage` do aparelho e não são sincronizados. Por isso não armazenam senhas, são separados pelo e-mail autenticado e expiram em sete dias.
+**Trade-off:** os rascunhos ainda ficam no `localStorage` e não são sincronizados; a fila de operações usa IndexedDB. Nenhum dos dois armazena senhas, ambos são separados pelo usuário autenticado e os rascunhos expiram em sete dias.
 
-**Evolução prevista:** quando houver sincronização offline, substituir os rascunhos por uma fila persistente com identificadores idempotentes e estado visível de envio.
+**Evolução prevista:** manter os rascunhos apenas como proteção do preenchimento em andamento e ampliar testes de sincronização conforme novos tipos de lançamento forem adicionados.
 
 ## 9. Compra como desembolso e uso como custo da safra
 
