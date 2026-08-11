@@ -192,8 +192,8 @@ export function DashboardPage() {
             <div>
               <strong>Dica do AgroGestor</strong>
               <p>
-                Registre os gastos e movimentações de estoque no mesmo dia.
-                Isso deixa os números da safra bem mais confiáveis.
+                Registre os gastos e movimentações de estoque no mesmo dia. Isso
+                deixa os números da safra bem mais confiáveis.
               </p>
             </div>
           </section>

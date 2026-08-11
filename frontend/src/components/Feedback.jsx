@@ -42,7 +42,11 @@ export function OfflineDataState({ onRetry }) {
         uma vez para preparar esta tela para uso offline.
       </p>
       {onRetry && (
-        <button className="button button--primary" type="button" onClick={onRetry}>
+        <button
+          className="button button--primary"
+          type="button"
+          onClick={onRetry}
+        >
           <RefreshCw size={17} /> Tentar novamente
         </button>
       )}
