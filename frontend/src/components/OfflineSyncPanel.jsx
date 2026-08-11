@@ -63,6 +63,7 @@ export function OfflineSyncPanel({ onClose }) {
       description="Lançamentos guardados neste aparelho e ainda não confirmados no servidor."
       onClose={onClose}
       size="medium"
+      className="offline-sync-modal"
     >
       <div className="offline-sync-panel">
         {requests.length === 0 ? (
@@ -107,7 +108,7 @@ export function OfflineSyncPanel({ onClose }) {
           </div>
         )}
 
-        <div className="modal-actions">
+        <div className="offline-sync-panel__footer">
           <button
             type="button"
             className="button button--ghost"

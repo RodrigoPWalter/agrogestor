@@ -157,6 +157,13 @@
 .offline-sync-panel {
   display: grid;
   gap: 1rem;
+  min-width: 0;
+  padding: 20px 24px 24px;
+}
+
+.offline-sync-modal {
+  width: min(620px, 100%);
+  overflow: hidden;
 }
 
 .offline-sync-panel__empty {
@@ -172,6 +179,10 @@
 .offline-sync-list {
   display: grid;
   gap: 0.5rem;
+  max-height: min(48vh, 420px);
+  padding-right: 3px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .offline-sync-item {
@@ -187,6 +198,7 @@
 
 .offline-sync-item > div:first-child {
   display: grid;
+  min-width: 0;
   gap: 0.2rem;
 }
 
@@ -221,14 +233,45 @@
   font-size: 0.72rem;
 }
 
+.offline-sync-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.15rem;
+}
+
 @media (max-width: 640px) {
+  .offline-sync-modal {
+    max-height: min(82dvh, 720px);
+  }
+
+  .offline-sync-panel {
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .offline-sync-list {
+    max-height: 38dvh;
+    padding-right: 0;
+  }
+
   .offline-sync-item {
     align-items: stretch;
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .offline-sync-item__actions {
-    justify-content: flex-end;
+    justify-content: space-between;
+  }
+
+  .offline-sync-panel__footer {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr);
+  }
+
+  .offline-sync-panel__footer .button {
+    width: 100%;
   }
 }
 

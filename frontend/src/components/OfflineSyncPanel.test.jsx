@@ -26,6 +26,10 @@ describe("OfflineSyncPanel", () => {
         "Tudo certo. Não há lançamentos aguardando envio.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toHaveClass("offline-sync-modal");
+    expect(
+      screen.getByText("Fechar").closest("button")?.parentElement,
+    ).toHaveClass("offline-sync-panel__footer");
   });
 
   it("mostra o erro do servidor e permite tentar novamente", async () => {
