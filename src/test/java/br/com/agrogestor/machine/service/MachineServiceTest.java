@@ -1,5 +1,6 @@
 package br.com.agrogestor.machine.service;
 
+import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
@@ -12,6 +13,7 @@ import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.inOrder;
@@ -47,6 +50,8 @@ class MachineServiceTest {
     @Mock
     private ExpenseRepository expenseRepository;
     @Mock
+    private FieldDiaryRepository diaryRepository;
+    @Mock
     private CurrentPropertyService currentProperty;
 
     private MachineService service;
@@ -60,6 +65,7 @@ class MachineServiceTest {
                 machineRepository,
                 maintenanceRepository,
                 expenseRepository,
+                diaryRepository,
                 currentProperty
         );
     }
@@ -171,6 +177,30 @@ class MachineServiceTest {
         deletion.verify(maintenanceRepository).delete(maintenance);
         deletion.verify(maintenanceRepository).flush();
         deletion.verify(expenseRepository).deleteById(expenseId);
+    }
+
+    @Test
+    void shouldNotUpdateMaintenanceCreatedByDiary() {
+        UUID maintenanceId = UUID.randomUUID();
+        Maintenance maintenance = new Maintenance(
+                machine(),
+                LocalDate.of(2026, 8, 9),
+                MaintenanceType.CORRECTIVE,
+                null,
+                new BigDecimal("200.00"),
+                null,
+                null
+        );
+        when(maintenanceRepository.findByIdAndMachinePropertyId(maintenanceId, PROPERTY_ID))
+                .thenReturn(Optional.of(maintenance));
+        when(diaryRepository.existsByPropertyIdAndMaintenanceId(PROPERTY_ID, maintenanceId))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.updateMaintenance(maintenanceId, request("350.00")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Diário");
+        assertThat(maintenance.getCost()).isEqualByComparingTo("200.00");
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     private Machine machine() {

@@ -13,5 +13,6 @@ public record RainfallResponse(
         BigDecimal millimeters,
         String notes,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        boolean diaryManaged
 ) {}

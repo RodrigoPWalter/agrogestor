@@ -10,5 +10,6 @@ public record MaintenanceResponse(
         UUID id, UUID machineId, String machineName, LocalDate maintenanceDate,
         MaintenanceType maintenanceType, String maintenanceTypeName,
         String replacedParts, BigDecimal cost, BigDecimal nextReviewHours,
-        String notes, OffsetDateTime createdAt, OffsetDateTime updatedAt
+        String notes, OffsetDateTime createdAt, OffsetDateTime updatedAt,
+        boolean diaryManaged
 ) {}

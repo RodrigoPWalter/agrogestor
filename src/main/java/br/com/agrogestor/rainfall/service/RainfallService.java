@@ -1,27 +1,55 @@
 package br.com.agrogestor.rainfall.service;
 
+import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.rainfall.dto.*;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.rainfall.repository.RainfallRepository;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class RainfallService {
     private final RainfallRepository repository;
+    private final FieldDiaryRepository diaryRepository;
     private final CurrentPropertyService currentProperty;
+    private final Clock clock;
 
-    public RainfallService(RainfallRepository repository, CurrentPropertyService currentProperty) {
+    @Autowired
+    public RainfallService(
+            RainfallRepository repository,
+            FieldDiaryRepository diaryRepository,
+            CurrentPropertyService currentProperty,
+            @Value("${agrogestor.business-time-zone:America/Sao_Paulo}") String businessTimeZone
+    ) {
+        this(repository, diaryRepository, currentProperty,
+                Clock.system(ZoneId.of(businessTimeZone)));
+    }
+
+    RainfallService(
+            RainfallRepository repository,
+            FieldDiaryRepository diaryRepository,
+            CurrentPropertyService currentProperty,
+            Clock clock
+    ) {
         this.repository = repository;
+        this.diaryRepository = diaryRepository;
         this.currentProperty = currentProperty;
+        this.clock = clock;
     }
 
     @Transactional
@@ -31,50 +59,63 @@ public class RainfallService {
                 request.measurementDate(),
                 amount(request.millimeters()),
                 normalizeNullable(request.notes())
-        )));
+        )), false);
     }
 
     @Transactional(readOnly = true)
     public List<RainfallResponse> findAll() {
-        return repository.findByPropertyIdOrderByMeasurementDateDesc(currentProperty.id()).stream()
-                .map(this::toResponse)
+        UUID propertyId = currentProperty.id();
+        Set<UUID> diaryManagedIds = new HashSet<>(
+                diaryRepository.findRainfallIdsByPropertyId(propertyId));
+        return repository.findByPropertyIdOrderByMeasurementDateDesc(propertyId).stream()
+                .map(item -> toResponse(item, diaryManagedIds.contains(item.getId())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<RainfallResponse> findByPlanting(UUID plantingId) {
+        UUID propertyId = currentProperty.id();
+        Set<UUID> diaryManagedIds = new HashSet<>(
+                diaryRepository.findRainfallIdsByPropertyId(propertyId));
         return repository.findByPropertyIdAndPlantingIdOrderByMeasurementDateDesc(
-                        currentProperty.id(), plantingId).stream()
-                .map(this::toResponse)
+                        propertyId, plantingId).stream()
+                .map(item -> toResponse(item, diaryManagedIds.contains(item.getId())))
                 .toList();
     }
 
     @Transactional
     public RainfallResponse update(UUID id, RainfallRequest request) {
         RainfallMeasurement measurement = find(id);
+        ensureDirectMeasurement(id);
         measurement.update(
                 request.measurementDate(),
                 amount(request.millimeters()),
                 normalizeNullable(request.notes())
         );
-        return toResponse(measurement);
+        return toResponse(measurement, false);
     }
 
     @Transactional
     public void delete(UUID id) {
-        repository.delete(find(id));
+        RainfallMeasurement measurement = find(id);
+        ensureDirectMeasurement(id);
+        repository.delete(measurement);
     }
 
     @Transactional(readOnly = true)
     public RainfallSummaryResponse summary() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
+        LocalDate thirtyDayStart = today.minusDays(29);
+        LocalDate monthStart = today.withDayOfMonth(1);
+        LocalDate queryStart = thirtyDayStart.isBefore(monthStart) ? thirtyDayStart : monthStart;
         List<RainfallMeasurement> recent =
                 repository.findByPropertyIdAndMeasurementDateGreaterThanEqual(
-                        currentProperty.id(), today.minusDays(29));
-        BigDecimal thirtyDays = total(recent);
+                        currentProperty.id(), queryStart);
+        BigDecimal thirtyDays = total(recent.stream()
+                .filter(item -> !item.getMeasurementDate().isBefore(thirtyDayStart))
+                .toList());
         BigDecimal currentMonth = total(recent.stream()
-                .filter(item -> item.getMeasurementDate().getMonth() == today.getMonth()
-                        && item.getMeasurementDate().getYear() == today.getYear())
+                .filter(item -> !item.getMeasurementDate().isBefore(monthStart))
                 .toList());
         var last = repository.findFirstByPropertyIdOrderByMeasurementDateDesc(
                 currentProperty.id()).orElse(null);
@@ -91,7 +132,15 @@ public class RainfallService {
                 new ResourceNotFoundException("Registro de chuva não encontrado com o ID " + id));
     }
 
-    private RainfallResponse toResponse(RainfallMeasurement measurement) {
+    private void ensureDirectMeasurement(UUID id) {
+        if (diaryRepository.existsByPropertyIdAndRainfallId(currentProperty.id(), id)) {
+            throw new BusinessRuleException(
+                    "Esta chuva foi registrada pelo Diário. Edite ou exclua o acontecimento no Diário"
+            );
+        }
+    }
+
+    private RainfallResponse toResponse(RainfallMeasurement measurement, boolean diaryManaged) {
         var planting = measurement.getPlanting();
         return new RainfallResponse(
                 measurement.getId(),
@@ -99,7 +148,7 @@ public class RainfallService {
                 planting == null ? null : planting.getCrop(),
                 measurement.getMeasurementDate(),
                 measurement.getMillimeters(), measurement.getNotes(),
-                measurement.getCreatedAt(), measurement.getUpdatedAt()
+                measurement.getCreatedAt(), measurement.getUpdatedAt(), diaryManaged
         );
     }
 

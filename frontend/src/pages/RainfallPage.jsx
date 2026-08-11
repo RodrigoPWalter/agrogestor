@@ -138,39 +138,41 @@ export function RainfallPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      {!offlineDataUnavailable && <section className="module-summary-grid">
-        <article>
-          <span>
-            <CloudRain />
-          </span>
-          <div>
-            <small>Acumulado no mês</small>
-            <strong>{formatNumber(summary?.currentMonthTotal)} mm</strong>
-          </div>
-        </article>
-        <article>
-          <span>
-            <Droplets />
-          </span>
-          <div>
-            <small>Últimos 30 dias</small>
-            <strong>{formatNumber(summary?.lastThirtyDaysTotal)} mm</strong>
-          </div>
-        </article>
-        <article>
-          <span>
-            <CloudRain />
-          </span>
-          <div>
-            <small>Última medição</small>
-            <strong>
-              {summary?.lastMeasurementDate
-                ? `${formatNumber(summary.lastMeasurementMillimeters)} mm`
-                : "—"}
-            </strong>
-          </div>
-        </article>
-      </section>}
+      {!offlineDataUnavailable && (
+        <section className="module-summary-grid">
+          <article>
+            <span>
+              <CloudRain />
+            </span>
+            <div>
+              <small>Acumulado no mês</small>
+              <strong>{formatNumber(summary?.currentMonthTotal)} mm</strong>
+            </div>
+          </article>
+          <article>
+            <span>
+              <Droplets />
+            </span>
+            <div>
+              <small>Últimos 30 dias</small>
+              <strong>{formatNumber(summary?.lastThirtyDaysTotal)} mm</strong>
+            </div>
+          </article>
+          <article>
+            <span>
+              <CloudRain />
+            </span>
+            <div>
+              <small>Última medição</small>
+              <strong>
+                {summary?.lastMeasurementDate
+                  ? `${formatNumber(summary.lastMeasurementMillimeters)} mm`
+                  : "—"}
+              </strong>
+            </div>
+          </article>
+        </section>
+      )}
 
       {offlineDataUnavailable ? (
         <OfflineDataState onRetry={() => loadData()} />
@@ -203,23 +205,30 @@ export function RainfallPage() {
                 <div>
                   <strong>{formatDate(item.measurementDate)}</strong>
                   <small>{item.notes || "Sem observações"}</small>
+                  {item.diaryManaged && (
+                    <small className="integrated-source">
+                      Registrada no Diário
+                    </small>
+                  )}
                 </div>
-                <div className="card-actions">
-                  <button
-                    className="icon-button"
-                    onClick={() => openEdit(item)}
-                    aria-label="Editar medição"
-                  >
-                    <Edit3 size={17} />
-                  </button>
-                  <button
-                    className="icon-button icon-button--danger"
-                    onClick={() => remove(item)}
-                    aria-label="Excluir medição"
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
+                {!item.diaryManaged && (
+                  <div className="card-actions">
+                    <button
+                      className="icon-button"
+                      onClick={() => openEdit(item)}
+                      aria-label="Editar medição"
+                    >
+                      <Edit3 size={17} />
+                    </button>
+                    <button
+                      className="icon-button icon-button--danger"
+                      onClick={() => remove(item)}
+                      aria-label="Excluir medição"
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </div>
+                )}
               </article>
             ))}
           </div>

@@ -52,23 +52,30 @@ export function MaintenanceHistory({
                     ? ` · Revisão em ${formatNumber(item.nextReviewHours, 1)} h`
                     : ""}
                 </small>
+                {item.diaryManaged && (
+                  <small className="integrated-source">
+                    Registrada no Diário
+                  </small>
+                )}
               </div>
-              <div className="card-actions">
-                <button
-                  className="icon-button"
-                  onClick={() => onEdit(item)}
-                  aria-label="Editar manutenção"
-                >
-                  <Edit3 size={16} />
-                </button>
-                <button
-                  className="icon-button icon-button--danger"
-                  onClick={() => onDelete(item)}
-                  aria-label="Excluir manutenção"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              {!item.diaryManaged && (
+                <div className="card-actions">
+                  <button
+                    className="icon-button"
+                    onClick={() => onEdit(item)}
+                    aria-label="Editar manutenção"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                  <button
+                    className="icon-button icon-button--danger"
+                    onClick={() => onDelete(item)}
+                    aria-label="Excluir manutenção"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
             </article>
           ))}
         </div>

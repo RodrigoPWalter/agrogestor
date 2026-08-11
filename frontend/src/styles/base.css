@@ -790,6 +790,17 @@ p {
   display: block;
 }
 
+.maintenance-list .integrated-source,
+.rainfall-list .integrated-source {
+  width: fit-content;
+  margin-top: 6px;
+  padding: 3px 7px;
+  color: var(--green-700);
+  border-radius: 999px;
+  background: var(--green-100);
+  font-weight: 700;
+}
+
 .maintenance-list strong {
   font-size: 0.77rem;
 }

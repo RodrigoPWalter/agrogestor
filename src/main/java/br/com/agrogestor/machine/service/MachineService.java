@@ -1,5 +1,6 @@
 package br.com.agrogestor.machine.service;
 
+import br.com.agrogestor.diary.repository.FieldDiaryRepository;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
@@ -12,6 +13,7 @@ import br.com.agrogestor.machine.entity.Machine;
 import br.com.agrogestor.machine.entity.Maintenance;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
@@ -19,8 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -28,17 +32,20 @@ public class MachineService {
     private final MachineRepository machineRepository;
     private final MaintenanceRepository maintenanceRepository;
     private final ExpenseRepository expenseRepository;
+    private final FieldDiaryRepository diaryRepository;
     private final CurrentPropertyService currentProperty;
 
     public MachineService(
             MachineRepository machineRepository,
             MaintenanceRepository maintenanceRepository,
             ExpenseRepository expenseRepository,
+            FieldDiaryRepository diaryRepository,
             CurrentPropertyService currentProperty
     ) {
         this.machineRepository = machineRepository;
         this.maintenanceRepository = maintenanceRepository;
         this.expenseRepository = expenseRepository;
+        this.diaryRepository = diaryRepository;
         this.currentProperty = currentProperty;
     }
 
@@ -75,9 +82,17 @@ public class MachineService {
     @Transactional
     public void delete(UUID id) {
         Machine machine = findMachine(id);
-        List<UUID> expenseIds = maintenanceRepository
-                .findByMachineIdOrderByMaintenanceDateDesc(machine.getId())
-                .stream()
+        List<Maintenance> maintenances = maintenanceRepository
+                .findByMachineIdOrderByMaintenanceDateDesc(machine.getId());
+        Set<UUID> diaryManagedIds = new HashSet<>(
+                diaryRepository.findMaintenanceIdsByPropertyId(currentProperty.id()));
+        if (maintenances.stream().map(Maintenance::getId).anyMatch(diaryManagedIds::contains)) {
+            throw new BusinessRuleException(
+                    "Esta máquina possui manutenção registrada pelo Diário. "
+                            + "Exclua o acontecimento no Diário antes de excluir a máquina"
+            );
+        }
+        List<UUID> expenseIds = maintenances.stream()
                 .map(Maintenance::getExpenseId)
                 .filter(expenseId -> expenseId != null)
                 .toList();
@@ -97,32 +112,36 @@ public class MachineService {
                 normalizeNullable(request.notes())
         ));
         syncExpense(maintenance);
-        return toResponse(maintenance);
+        return toResponse(maintenance, false);
     }
 
     @Transactional(readOnly = true)
     public List<MaintenanceResponse> maintenances(UUID machineId) {
         findMachine(machineId);
+        Set<UUID> diaryManagedIds = new HashSet<>(
+                diaryRepository.findMaintenanceIdsByPropertyId(currentProperty.id()));
         return maintenanceRepository.findByMachineIdOrderByMaintenanceDateDesc(machineId)
                 .stream()
-                .map(this::toResponse)
+                .map(item -> toResponse(item, diaryManagedIds.contains(item.getId())))
                 .toList();
     }
 
     @Transactional
     public MaintenanceResponse updateMaintenance(UUID id, MaintenanceRequest request) {
         Maintenance maintenance = findMaintenance(id);
+        ensureDirectMaintenance(id);
         maintenance.update(maintenance.getMachine(), request.maintenanceDate(), request.maintenanceType(),
                 normalizeNullable(request.replacedParts()), money(request.cost()),
                 request.nextReviewHours() == null ? null : hours(request.nextReviewHours()),
                 normalizeNullable(request.notes()));
         syncExpense(maintenance);
-        return toResponse(maintenance);
+        return toResponse(maintenance, false);
     }
 
     @Transactional
     public void deleteMaintenance(UUID id) {
         Maintenance maintenance = findMaintenance(id);
+        ensureDirectMaintenance(id);
         UUID expenseId = maintenance.getExpenseId();
         maintenanceRepository.delete(maintenance);
         maintenanceRepository.flush();
@@ -204,6 +223,15 @@ public class MachineService {
                 ));
     }
 
+    private void ensureDirectMaintenance(UUID id) {
+        if (diaryRepository.existsByPropertyIdAndMaintenanceId(currentProperty.id(), id)) {
+            throw new BusinessRuleException(
+                    "Esta manutenção foi registrada pelo Diário. "
+                            + "Edite ou exclua o acontecimento no Diário"
+            );
+        }
+    }
+
     private MachineResponse toResponse(Machine machine) {
         BigDecimal nextReview = maintenanceRepository
                 .findFirstByMachineIdAndNextReviewHoursIsNotNullOrderByMaintenanceDateDesc(machine.getId())
@@ -214,13 +242,14 @@ public class MachineService {
                 machine.getCreatedAt(), machine.getUpdatedAt());
     }
 
-    private MaintenanceResponse toResponse(Maintenance maintenance) {
+    private MaintenanceResponse toResponse(Maintenance maintenance, boolean diaryManaged) {
         Machine machine = maintenance.getMachine();
         return new MaintenanceResponse(maintenance.getId(), machine.getId(),
                 machine.getBrand() + " " + machine.getModel(), maintenance.getMaintenanceDate(),
                 maintenance.getMaintenanceType(), maintenance.getMaintenanceType().getDisplayName(),
                 maintenance.getReplacedParts(), maintenance.getCost(), maintenance.getNextReviewHours(),
-                maintenance.getNotes(), maintenance.getCreatedAt(), maintenance.getUpdatedAt());
+                maintenance.getNotes(), maintenance.getCreatedAt(), maintenance.getUpdatedAt(),
+                diaryManaged);
     }
 
     private BigDecimal hours(BigDecimal value) {

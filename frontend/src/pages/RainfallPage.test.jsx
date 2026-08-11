@@ -67,4 +67,18 @@ describe("RainfallPage", () => {
       await screen.findByText("Nenhuma chuva registrada"),
     ).toBeInTheDocument();
   });
+
+  it("indica chuvas do Diário sem oferecer edição duplicada", async () => {
+    api.getRainfall.mockResolvedValue([{ ...measurement, diaryManaged: true }]);
+
+    render(<RainfallPage />);
+
+    expect(await screen.findByText("Registrada no Diário")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Editar medição" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Excluir medição" }),
+    ).not.toBeInTheDocument();
+  });
 });
