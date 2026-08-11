@@ -138,7 +138,7 @@ public class PlantingService {
 
     @Transactional
     public PlantingResponse update(UUID id, PlantingRequest request) {
-        Planting planting = findEntity(id);
+        Planting planting = findEntityForUpdate(id);
         BigDecimal plantedArea = plantedArea(id);
         if (request.plannedAreaHectares().compareTo(plantedArea) < 0) {
             throw new BusinessRuleException(

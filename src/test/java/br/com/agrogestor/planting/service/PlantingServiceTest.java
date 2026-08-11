@@ -192,7 +192,8 @@ class PlantingServiceTest {
     void shouldUpdateExistingPlanting() {
         UUID id = UUID.randomUUID();
         Planting planting = planting();
-        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting));
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
 
         var response = service.update(id, request("Milho", null));
 
@@ -203,7 +204,8 @@ class PlantingServiceTest {
     @Test
     void shouldRejectPlannedAreaBelowAlreadyPlantedArea() {
         UUID id = UUID.randomUUID();
-        when(repository.findByIdAndPropertyId(id, PROPERTY_ID)).thenReturn(Optional.of(planting()));
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID))
+                .thenReturn(Optional.of(planting()));
         when(stepRepository.sumAreaByPlantingId(id))
                 .thenReturn(new BigDecimal("20.00"));
 
