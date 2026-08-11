@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
@@ -40,6 +41,7 @@ export function MachinesPage() {
   const requestConfirmation = useConfirmation();
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -58,6 +60,7 @@ export function MachinesPage() {
     try {
       const data = await api.getMachines();
       setMachines(data);
+      setOfflineDataUnavailable(false);
       setError("");
       if (selectedMachine) {
         setSelectedMachine(
@@ -65,7 +68,8 @@ export function MachinesPage() {
         );
       }
     } catch (requestError) {
-      setError(requestError.message);
+      setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+      setError(requestError.offlineCacheMiss ? "" : requestError.message);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -250,9 +254,11 @@ export function MachinesPage() {
       />
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
-      <MachineSummary summary={summary} />
+      {!offlineDataUnavailable && <MachineSummary summary={summary} />}
 
-      {loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => loadMachines()} />
+      ) : loading ? (
         <LoadingState label="Carregando a frota..." />
       ) : machines.length === 0 ? (
         <EmptyState

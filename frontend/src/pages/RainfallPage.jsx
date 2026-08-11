@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { Modal } from "../components/Modal";
@@ -26,6 +27,7 @@ export function RainfallPage() {
   const [measurements, setMeasurements] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -42,9 +44,11 @@ export function RainfallPage() {
       ]);
       setMeasurements(items);
       setSummary(totals);
+      setOfflineDataUnavailable(false);
       setError("");
     } catch (requestError) {
-      setError(requestError.message);
+      setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+      setError(requestError.offlineCacheMiss ? "" : requestError.message);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -134,7 +138,7 @@ export function RainfallPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      <section className="module-summary-grid">
+      {!offlineDataUnavailable && <section className="module-summary-grid">
         <article>
           <span>
             <CloudRain />
@@ -166,9 +170,11 @@ export function RainfallPage() {
             </strong>
           </div>
         </article>
-      </section>
+      </section>}
 
-      {loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => loadData()} />
+      ) : loading ? (
         <LoadingState label="Somando as chuvas..." />
       ) : measurements.length === 0 ? (
         <EmptyState

@@ -56,6 +56,9 @@ async function request(path, options = {}) {
     if (method === "GET" && error.offlineEligible) {
       const cached = await getCachedResponse(getCurrentUserCacheScope(), path);
       if (cached !== null) return cached;
+      error.offlineCacheMiss = true;
+      error.message =
+        "Os dados desta tela ainda não foram salvos neste aparelho. Conecte-se uma vez para carregá-los.";
     }
     if (requestId && error.offlineEligible) {
       return queueMutation({

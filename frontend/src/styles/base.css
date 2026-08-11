@@ -1703,6 +1703,21 @@ p {
   background: rgba(255, 255, 255, 0.55);
 }
 
+.state-box--offline {
+  min-height: 260px;
+  border: 1px solid #e5d38c;
+  background: #fffdf5;
+}
+
+.state-box--offline .state-box__icon {
+  color: var(--green-800);
+  background: #f8edbd;
+}
+
+.state-box--offline p {
+  max-width: 520px;
+}
+
 .state-box--error {
   width: min(520px, 100%);
   min-height: 300px;

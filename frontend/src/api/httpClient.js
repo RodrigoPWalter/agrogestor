@@ -30,6 +30,7 @@ httpClient.interceptors.response.use(
   },
   (error) => {
     const loginRequest = error.config?.url?.includes("/api/v1/auth/login");
+    const readRequest = (error.config?.method || "GET").toUpperCase() === "GET";
     if (error.response) {
       markApiReachable();
     } else {
@@ -40,7 +41,9 @@ httpClient.interceptors.response.use(
       const timeoutError = new Error(
         loginRequest
           ? "O servidor demorou para responder. Aguarde e tente entrar novamente."
-          : "O servidor demorou para responder. O lançamento será sincronizado automaticamente.",
+          : readRequest
+            ? "O servidor demorou para atualizar estes dados."
+            : "O servidor demorou para responder. O lançamento será sincronizado automaticamente.",
       );
       timeoutError.offlineEligible = !loginRequest;
       return Promise.reject(timeoutError);
@@ -50,7 +53,9 @@ httpClient.interceptors.response.use(
       const offlineError = new Error(
         loginRequest
           ? "É preciso estar conectado para fazer o primeiro acesso neste aparelho."
-          : "Sem internet. O lançamento ficará salvo neste aparelho.",
+          : readRequest
+            ? "Sem internet. Procurando a última cópia salva destes dados."
+            : "Sem internet. O lançamento ficará salvo neste aparelho.",
       );
       offlineError.offlineEligible = !loginRequest;
       return Promise.reject(offlineError);
@@ -60,7 +65,9 @@ httpClient.interceptors.response.use(
       const unavailableError = new Error(
         loginRequest
           ? "O servidor não respondeu e pode estar iniciando. Aguarde e tente novamente."
-          : "O servidor não respondeu. O lançamento ficará aguardando sincronização.",
+          : readRequest
+            ? "O servidor não respondeu. Procurando a última cópia salva destes dados."
+            : "O servidor não respondeu. O lançamento ficará aguardando sincronização.",
       );
       unavailableError.offlineEligible = !loginRequest;
       return Promise.reject(unavailableError);

@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { InventoryMovementModal } from "../components/inventory/InventoryMovementModal";
@@ -31,6 +32,7 @@ export function InventoryPage() {
   const requestConfirmation = useConfirmation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -51,9 +53,11 @@ export function InventoryPage() {
     if (showLoading) setLoading(true);
     try {
       setProducts(await api.getInventoryProducts());
+      setOfflineDataUnavailable(false);
       setError("");
     } catch (requestError) {
-      setError(requestError.message);
+      setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+      setError(requestError.offlineCacheMiss ? "" : requestError.message);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -195,9 +199,11 @@ export function InventoryPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      <InventorySummary summary={summary} />
+      {!offlineDataUnavailable && <InventorySummary summary={summary} />}
 
-      {loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => loadProducts()} />
+      ) : loading ? (
         <LoadingState label="Conferindo o estoque..." />
       ) : products.length === 0 ? (
         <EmptyState

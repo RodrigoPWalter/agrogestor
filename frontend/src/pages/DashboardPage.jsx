@@ -10,7 +10,7 @@ import {
   RecentExpensesPanel,
   RecentPlantingsPanel,
 } from "../components/dashboard/DashboardTables";
-import { ErrorBanner } from "../components/Feedback";
+import { ErrorBanner, OfflineDataState } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
 import {
   getDashboardCacheKey,
@@ -48,6 +48,7 @@ export function DashboardPage() {
     Boolean(cachedDashboard?.summary),
   );
   const [error, setError] = useState("");
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const [commodityQuotes, setCommodityQuotes] = useState(
     () => cachedDashboard?.commodityQuotes ?? null,
   );
@@ -62,13 +63,19 @@ export function DashboardPage() {
       .then((nextSummary) => {
         setSummary(nextSummary);
         setUsingCache(false);
+        setOfflineDataUnavailable(false);
         writeDashboardCache({ summary: nextSummary }, dashboardCacheKey);
       })
       .catch((requestError) => {
+        setOfflineDataUnavailable(
+          Boolean(requestError.offlineCacheMiss && !cachedDashboard?.summary),
+        );
         setError(
           cachedDashboard
             ? "Mostrando os últimos dados salvos. O servidor pode estar acordando."
-            : requestError.message,
+            : requestError.offlineCacheMiss
+              ? ""
+              : requestError.message,
         );
       })
       .finally(() => setLoading(false));
@@ -137,7 +144,7 @@ export function DashboardPage() {
 
       <ErrorBanner message={error} onDismiss={() => setError("")} />
 
-      {(loading || usingCache) && (
+      {!offlineDataUnavailable && (loading || usingCache) && (
         <section className="connection-note" aria-live="polite">
           <LoaderCircle className={loading ? "spin" : ""} size={18} />
           <div>
@@ -153,39 +160,45 @@ export function DashboardPage() {
         </section>
       )}
 
-      <DashboardMetrics metrics={summary.metrics} />
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => window.location.reload()} />
+      ) : (
+        <>
+          <DashboardMetrics metrics={summary.metrics} />
 
-      <div className="dashboard-grid dashboard-grid--balanced">
-        <DashboardQuickActions />
-        <InventoryAttentionPanel
-          inventoryProducts={summary.inventoryProducts}
-        />
-      </div>
+          <div className="dashboard-grid dashboard-grid--balanced">
+            <DashboardQuickActions />
+            <InventoryAttentionPanel
+              inventoryProducts={summary.inventoryProducts}
+            />
+          </div>
 
-      <CommodityQuotesPanel
-        commodityQuotes={commodityQuotes}
-        quotesError={quotesError}
-        quotesLoading={quotesLoading}
-        onRetry={() => loadCommodityQuotes({ force: true })}
-      />
+          <CommodityQuotesPanel
+            commodityQuotes={commodityQuotes}
+            quotesError={quotesError}
+            quotesLoading={quotesLoading}
+            onRetry={() => loadCommodityQuotes({ force: true })}
+          />
 
-      <div className="dashboard-grid">
-        <RecentPlantingsPanel plantings={summary.recentPlantings} />
-        <RecentExpensesPanel expenses={summary.recentExpenses} />
-      </div>
+          <div className="dashboard-grid">
+            <RecentPlantingsPanel plantings={summary.recentPlantings} />
+            <RecentExpensesPanel expenses={summary.recentExpenses} />
+          </div>
 
-      <section className="tip-banner">
-        <span>
-          <TrendingUp size={23} />
-        </span>
-        <div>
-          <strong>Dica do AgroGestor</strong>
-          <p>
-            Registre os gastos e movimentações de estoque no mesmo dia. Isso
-            deixa os números da safra bem mais confiáveis.
-          </p>
-        </div>
-      </section>
+          <section className="tip-banner">
+            <span>
+              <TrendingUp size={23} />
+            </span>
+            <div>
+              <strong>Dica do AgroGestor</strong>
+              <p>
+                Registre os gastos e movimentações de estoque no mesmo dia.
+                Isso deixa os números da safra bem mais confiáveis.
+              </p>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

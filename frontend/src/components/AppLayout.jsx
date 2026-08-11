@@ -26,11 +26,13 @@ import {
 } from "../api/connectionStatus";
 import { useAuth } from "../auth/AuthContext";
 import {
+  OFFLINE_SYNC_COMPLETE_EVENT,
   getOfflineSyncSnapshot,
   refreshOfflineSyncState,
   subscribeOfflineSync,
   syncPendingRequests,
 } from "../offline/offlineSync";
+import { prepareOfflineData } from "../offline/prepareOfflineData";
 import { preloadPrivatePage } from "../routes/pageLoaders";
 import { BrandMark } from "./BrandMark";
 import { ProfileSettingsModal } from "./ProfileSettingsModal";
@@ -106,6 +108,7 @@ export function AppLayout() {
     },
   }[connectionStatus];
   const ConnectionIcon = connectionPresentation.icon;
+  const StatusIcon = syncState.pendingCount > 0 ? CloudUpload : ConnectionIcon;
   const syncLabel = syncState.syncing
     ? `Sincronizando ${syncState.pendingCount}...`
     : syncState.errorCount > 0
@@ -122,9 +125,29 @@ export function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    let preparationTimer;
+    const prepare = () => {
+      if (navigator.onLine !== false) {
+        window.clearTimeout(preparationTimer);
+        preparationTimer = window.setTimeout(
+          () => prepareOfflineData().catch(() => {}),
+          800,
+        );
+      }
+    };
+
     refreshOfflineSyncState()
       .then(() => syncPendingRequests())
-      .catch(() => {});
+      .then(prepare)
+      .catch(() => prepare());
+    window.addEventListener("online", prepare);
+    window.addEventListener(OFFLINE_SYNC_COMPLETE_EVENT, prepare);
+
+    return () => {
+      window.clearTimeout(preparationTimer);
+      window.removeEventListener("online", prepare);
+      window.removeEventListener(OFFLINE_SYNC_COMPLETE_EVENT, prepare);
+    };
   }, [user?.email]);
 
   function preloadNavigationTarget(path) {
@@ -179,7 +202,7 @@ export function AppLayout() {
                   : connectionPresentation.label
               }
             >
-              <ConnectionIcon
+              <StatusIcon
                 className={
                   connectionStatus === CONNECTION_STATUS.CHECKING
                     ? "spin"
@@ -187,7 +210,12 @@ export function AppLayout() {
                 }
                 size={14}
               />
-              <span>{syncLabel}</span>
+              <span className="connection-status__label">{syncLabel}</span>
+              {syncState.pendingCount > 0 && (
+                <span className="connection-status__badge">
+                  {syncState.pendingCount > 9 ? "9+" : syncState.pendingCount}
+                </span>
+              )}
             </button>
             <div className="profile-menu">
               <button
@@ -252,17 +280,6 @@ export function AppLayout() {
       <main className="main-content main-content--horizontal">
         <Outlet />
       </main>
-
-      {(syncState.pendingCount > 0 || isOfflineSession) && (
-        <button
-          type="button"
-          className="mobile-sync-status"
-          onClick={() => setSyncPanelOpen(true)}
-        >
-          <CloudUpload size={16} />
-          <span>{syncLabel}</span>
-        </button>
-      )}
 
       {profileSettingsOpen && (
         <ProfileSettingsModal

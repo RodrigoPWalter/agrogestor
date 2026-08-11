@@ -7,6 +7,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
@@ -67,6 +68,7 @@ export function FieldDiaryPage() {
   const [machines, setMachines] = useState([]);
   const [selectedPlantingId, setSelectedPlantingId] = useState("");
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -85,10 +87,14 @@ export function FieldDiaryPage() {
         const page = await api.getDiaryEntries(plantingId);
         if (isCurrentRequest()) {
           setEntries(page.content);
+          setOfflineDataUnavailable(false);
           setError("");
         }
       } catch (requestError) {
-        if (isCurrentRequest()) setError(requestError.message);
+        if (isCurrentRequest()) {
+          setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+          setError(requestError.offlineCacheMiss ? "" : requestError.message);
+        }
       } finally {
         if (showLoading && isCurrentRequest()) setLoading(false);
       }
@@ -281,14 +287,18 @@ export function FieldDiaryPage() {
 
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
-      <DiaryFilter
-        plantings={plantings}
-        selectedPlantingId={selectedPlantingId}
-        entryCount={entries.length}
-        onChange={(event) => setSelectedPlantingId(event.target.value)}
-      />
+      {!offlineDataUnavailable && (
+        <DiaryFilter
+          plantings={plantings}
+          selectedPlantingId={selectedPlantingId}
+          entryCount={entries.length}
+          onChange={(event) => setSelectedPlantingId(event.target.value)}
+        />
+      )}
 
-      {loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => loadEntries(selectedPlantingId)} />
+      ) : loading ? (
         <LoadingState label="Abrindo o diário..." />
       ) : entries.length === 0 ? (
         <EmptyState

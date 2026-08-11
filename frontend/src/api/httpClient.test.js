@@ -88,7 +88,7 @@ describe("cliente HTTP", () => {
     window.removeEventListener(AUTH_EXPIRED_EVENT, expiredListener);
   });
 
-  it("explica quando o aparelho esta sem internet", async () => {
+  it("explica quando uma consulta está sem internet", async () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
 
     await expect(
@@ -100,12 +100,10 @@ describe("cliente HTTP", () => {
           throw error;
         },
       }),
-    ).rejects.toThrow(
-      "Sem internet. O lançamento ficará salvo neste aparelho.",
-    );
+    ).rejects.toThrow("Procurando a última cópia salva destes dados.");
   });
 
-  it("orienta a conferir a lista depois de um timeout", async () => {
+  it("explica quando uma consulta demora para atualizar", async () => {
     await expect(
       httpClient.request({
         url: "/api/v1/expenses",
@@ -116,6 +114,23 @@ describe("cliente HTTP", () => {
           throw error;
         },
       }),
-    ).rejects.toThrow("O lançamento será sincronizado automaticamente.");
+    ).rejects.toThrow("O servidor demorou para atualizar estes dados.");
+  });
+
+  it("informa que um lançamento será sincronizado quando está offline", async () => {
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+
+    await expect(
+      httpClient.request({
+        url: "/api/v1/expenses",
+        method: "POST",
+        data: { amount: 100 },
+        adapter: async (config) => {
+          const error = new Error("Network Error");
+          error.config = config;
+          throw error;
+        },
+      }),
+    ).rejects.toThrow("O lançamento ficará salvo neste aparelho.");
   });
 });

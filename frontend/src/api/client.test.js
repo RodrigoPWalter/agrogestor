@@ -215,4 +215,15 @@ describe("cliente da API", () => {
 
     await expect(api.getDashboardSummary()).resolves.toEqual(dashboard);
   });
+
+  it("diferencia lista vazia de dados ainda não preparados para uso offline", async () => {
+    const networkError = new Error("sem conexão");
+    networkError.offlineEligible = true;
+    httpClient.request.mockRejectedValueOnce(networkError);
+
+    await expect(api.getDashboardSummary()).rejects.toMatchObject({
+      offlineCacheMiss: true,
+      message: expect.stringContaining("ainda não foram salvos"),
+    });
+  });
 });

@@ -6,6 +6,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
@@ -42,6 +43,7 @@ export function PlantingsPage() {
   const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -69,10 +71,14 @@ export function PlantingsPage() {
           setSummaries(
             buildPlantingExpenseSummaries(page.content, expensePage.content),
           );
+          setOfflineDataUnavailable(false);
           setError("");
         }
       } catch (requestError) {
-        if (isCurrentRequest()) setError(requestError.message);
+        if (isCurrentRequest()) {
+          setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+          setError(requestError.offlineCacheMiss ? "" : requestError.message);
+        }
       } finally {
         if (showLoading && isCurrentRequest()) setLoading(false);
       }
@@ -253,15 +259,19 @@ export function PlantingsPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      <PlantingsToolbar
-        view={view}
-        search={search}
-        recordCount={filteredPlantings.length}
-        onViewChange={setView}
-        onSearchChange={(event) => setSearch(event.target.value)}
-      />
+      {!offlineDataUnavailable && (
+        <PlantingsToolbar
+          view={view}
+          search={search}
+          recordCount={filteredPlantings.length}
+          onViewChange={setView}
+          onSearchChange={(event) => setSearch(event.target.value)}
+        />
+      )}
 
-      {loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState onRetry={() => loadPlantings()} />
+      ) : loading ? (
         <LoadingState />
       ) : filteredPlantings.length === 0 ? (
         <EmptyState

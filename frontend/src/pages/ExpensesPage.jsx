@@ -11,6 +11,7 @@ import {
   EmptyState,
   ErrorBanner,
   LoadingState,
+  OfflineDataState,
   SuccessBanner,
 } from "../components/Feedback";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
@@ -47,6 +48,7 @@ export function ExpensesPage() {
   const [expenses, setExpenses] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -94,10 +96,14 @@ export function ExpensesPage() {
         if (isCurrentRequest()) {
           setExpenses(expensePage.content);
           setSummary(expenseSummary);
+          setOfflineDataUnavailable(false);
           setError("");
         }
       } catch (requestError) {
-        if (isCurrentRequest()) setError(requestError.message);
+        if (isCurrentRequest()) {
+          setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
+          setError(requestError.offlineCacheMiss ? "" : requestError.message);
+        }
       } finally {
         if (showLoading && isCurrentRequest()) setLoading(false);
       }
@@ -256,7 +262,11 @@ export function ExpensesPage() {
       <ErrorBanner message={error} onDismiss={() => setError("")} />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
 
-      {noPlantings && !loading ? (
+      {offlineDataUnavailable ? (
+        <OfflineDataState
+          onRetry={() => loadExpenseData(scope, selectedPlantingId)}
+        />
+      ) : noPlantings && !loading ? (
         <EmptyState
           title="Nenhum plantio cadastrado"
           description="Cadastre uma safra ou use a aba Da propriedade para registrar despesas gerais."

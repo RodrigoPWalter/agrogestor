@@ -1,4 +1,11 @@
-import { AlertCircle, Inbox, LoaderCircle, X } from "lucide-react";
+import {
+  AlertCircle,
+  CloudOff,
+  Inbox,
+  LoaderCircle,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { useEffect, useRef } from "react";
 
 export function LoadingState({ label = "Carregando informações..." }) {
@@ -19,6 +26,26 @@ export function EmptyState({ title, description, action }) {
       <h3>{title}</h3>
       <p>{description}</p>
       {action}
+    </div>
+  );
+}
+
+export function OfflineDataState({ onRetry }) {
+  return (
+    <div className="state-box state-box--offline" role="status">
+      <span className="state-box__icon">
+        <CloudOff size={28} />
+      </span>
+      <h3>Dados ainda não disponíveis neste aparelho</h3>
+      <p>
+        Seus registros continuam protegidos no sistema. Conecte-se à internet
+        uma vez para preparar esta tela para uso offline.
+      </p>
+      {onRetry && (
+        <button className="button button--primary" type="button" onClick={onRetry}>
+          <RefreshCw size={17} /> Tentar novamente
+        </button>
+      )}
     </div>
   );
 }
