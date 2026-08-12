@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import { DynamicDiaryFields } from "./DynamicDiaryFields";
@@ -35,13 +35,13 @@ const initialForm = {
   observations: "",
 };
 
-function DiaryFieldsHarness() {
-  const [form, setForm] = useState(initialForm);
+function DiaryFieldsHarness({ plantings = [], initialState = initialForm }) {
+  const [form, setForm] = useState(initialState);
   return (
     <DynamicDiaryFields
       form={form}
       setForm={setForm}
-      plantings={[]}
+      plantings={plantings}
       products={[]}
       machines={[]}
       activityTypes={activityTypes}
@@ -92,5 +92,53 @@ describe("DynamicDiaryFields", () => {
       screen.getByLabelText("Hectares colhidos nesta etapa"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Quantidade colhida")).toBeInTheDocument();
+  });
+
+  it("oculta plantios sem área restante para a operação escolhida", () => {
+    const plantings = [
+      {
+        id: "planting-in-progress",
+        crop: "Trigo",
+        harvest: "2026",
+        plannedAreaHectares: 12,
+        plantedAreaHectares: 5,
+        remainingAreaHectares: 7,
+        harvestedAreaHectares: 2,
+        harvestRemainingAreaHectares: 3,
+      },
+      {
+        id: "planting-complete",
+        crop: "Soja",
+        harvest: "2026",
+        plannedAreaHectares: 70,
+        plantedAreaHectares: 70,
+        remainingAreaHectares: 0,
+        harvestedAreaHectares: 70,
+        harvestRemainingAreaHectares: 0,
+      },
+    ];
+    render(<DiaryFieldsHarness plantings={plantings} />);
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "PLANTING" },
+    });
+    let plantingSelect = screen.getByLabelText("Plantio (obrigatório)");
+    expect(
+      within(plantingSelect).getByText("Trigo — 2026"),
+    ).toBeInTheDocument();
+    expect(
+      within(plantingSelect).queryByText("Soja — 2026"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "HARVEST" },
+    });
+    plantingSelect = screen.getByLabelText("Plantio (obrigatório)");
+    expect(
+      within(plantingSelect).getByText("Trigo — 2026"),
+    ).toBeInTheDocument();
+    expect(
+      within(plantingSelect).queryByText("Soja — 2026"),
+    ).not.toBeInTheDocument();
   });
 });
