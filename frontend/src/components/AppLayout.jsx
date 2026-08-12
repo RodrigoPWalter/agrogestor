@@ -47,10 +47,10 @@ const navigation = [
     icon: LayoutDashboard,
     end: true,
   },
+  { to: "/diario", label: "Diário", icon: BookOpenText },
   { to: "/plantios", label: "Plantios", icon: Sprout },
   { to: "/estoque", label: "Estoque", icon: Warehouse },
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
-  { to: "/diario", label: "Diário", icon: BookOpenText },
   { to: "/chuvas", label: "Chuvas", icon: CloudRain },
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
 ];
