@@ -79,9 +79,13 @@ Mantém o saldo atual de sementes, fertilizantes, defensivos e outros insumos. T
 
 Registra entradas e saídas do estoque, incluindo custo unitário e custo total no momento da movimentação. A atualização do saldo, do valor financeiro e a criação da movimentação acontecem dentro da mesma transação.
 
+### `inventory_valuation_adjustments`
+
+Mantém a auditoria das correções no custo médio do saldo atual, com valor anterior, valor novo, data e motivo. O ajuste recalcula somente o valor financeiro ainda em estoque; custos já registrados em movimentações, Diário e plantios não são alterados.
+
 ### `field_diary_entries`
 
-Centraliza acontecimentos da propriedade. O plantio é opcional para registros gerais, como compra de produto, chuva, manutenção ou observação. Para colheita, o frontend e o service exigem plantio selecionado.
+Centraliza acontecimentos da propriedade. O plantio é opcional para registros gerais, como compra de produto, chuva, manutenção ou observação. Etapas de semeadura e colheita exigem um plantio e são gravadas pelos serviços operacionais correspondentes, que atualizam o Diário e o progresso na mesma transação.
 
 Essa tabela também guarda data, tipo de atividade, condição do tempo, descrição e observações.
 

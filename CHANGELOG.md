@@ -6,6 +6,8 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- O Diário agora registra etapas de semeadura e colheita com hectares, atualizando o progresso do plantio pela mesma regra usada em seus detalhes.
+- O custo médio atual de produtos em estoque pode ser ajustado com data, motivo e histórico, sem reescrever gastos já atribuídos às safras.
 - Correção do acumulado mensal de chuva em meses com 31 dias.
 - Chuvas e manutenções criadas pelo Diário agora indicam sua origem e são editadas somente no lançamento original.
 - Limpeza automática das chaves de idempotência antigas, sem afetar dados operacionais.

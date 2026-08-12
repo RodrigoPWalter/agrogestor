@@ -30,8 +30,8 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
 - **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
 - **Gestão de Gastos:** Separação entre despesas por plantio e custos gerais da propriedade, com totais por categoria e transferência proporcional do custo dos insumos utilizados.
-- **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio, valor do saldo, validade e alerta de estoque baixo.
-- **Diário da Lavoura:** Registro de acontecimentos da propriedade com plantio opcional, múltiplos produtos e integração transacional com estoque e custos.
+- **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio ajustável com histórico, valor do saldo, validade e alerta de estoque baixo.
+- **Diário da Lavoura:** Central de lançamentos rápidos para acontecimentos, etapas de semeadura e colheita, múltiplos produtos e integrações transacionais com plantios, estoque e custos.
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro e manutenções preventivas/corretivas, com lançamento automático do custo nos gastos da propriedade.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
