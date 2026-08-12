@@ -12,6 +12,7 @@ import {
 import { InventoryMovementModal } from "../components/inventory/InventoryMovementModal";
 import { InventoryProductList } from "../components/inventory/InventoryProductList";
 import { InventorySummary } from "../components/inventory/InventorySummary";
+import { InventoryValuationModal } from "../components/inventory/InventoryValuationModal";
 import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
@@ -38,6 +39,7 @@ export function InventoryPage() {
   const [success, setSuccess] = useState("");
   const [productModal, setProductModal] = useState(false);
   const [movementModal, setMovementModal] = useState(false);
+  const [valuationModal, setValuationModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyProduct);
@@ -48,6 +50,12 @@ export function InventoryPage() {
     notes: "",
   });
   const [movements, setMovements] = useState([]);
+  const [valuationHistory, setValuationHistory] = useState([]);
+  const [valuation, setValuation] = useState({
+    adjustmentDate: toInputDate(),
+    newUnitCost: "",
+    reason: "",
+  });
 
   async function loadProducts({ showLoading = true } = {}) {
     if (showLoading) setLoading(true);
@@ -111,6 +119,23 @@ export function InventoryPage() {
     }
   }
 
+  async function openValuation(product) {
+    setSelected(product);
+    setValuation({
+      adjustmentDate: toInputDate(),
+      newUnitCost: product.averageUnitCost || "",
+      reason: "",
+    });
+    setValuationModal(true);
+    try {
+      setValuationHistory(
+        await api.getInventoryValuationAdjustments(product.id),
+      );
+    } catch {
+      setValuationHistory([]);
+    }
+  }
+
   async function submitProduct(event) {
     event.preventDefault();
     await runSaving(async () => {
@@ -158,6 +183,27 @@ export function InventoryPage() {
           ),
         );
         setMovementModal(false);
+        if (isOfflineResult(result)) return;
+        await loadProducts({ showLoading: false });
+      } catch (requestError) {
+        setError(requestError.message);
+      }
+    });
+  }
+
+  async function submitValuation(event) {
+    event.preventDefault();
+    await runSaving(async () => {
+      try {
+        const result = await api.adjustInventoryValuation(selected.id, {
+          adjustmentDate: valuation.adjustmentDate,
+          newUnitCost: Number(valuation.newUnitCost),
+          reason: valuation.reason,
+        });
+        setSuccess(
+          mutationFeedback(result, "Custo atual do estoque ajustado."),
+        );
+        setValuationModal(false);
         if (isOfflineResult(result)) return;
         await loadProducts({ showLoading: false });
       } catch (requestError) {
@@ -221,6 +267,7 @@ export function InventoryPage() {
           onEdit={openEdit}
           onDelete={removeProduct}
           onMovement={openMovement}
+          onValuation={openValuation}
         />
       )}
 
@@ -244,6 +291,19 @@ export function InventoryPage() {
           onChange={setMovement}
           onClose={() => setMovementModal(false)}
           onSubmit={submitMovement}
+        />
+      )}
+
+      {valuationModal && selected && (
+        <InventoryValuationModal
+          product={selected}
+          form={valuation}
+          history={valuationHistory}
+          saving={saving}
+          today={toInputDate()}
+          onChange={setValuation}
+          onClose={() => setValuationModal(false)}
+          onSubmit={submitValuation}
         />
       )}
     </div>

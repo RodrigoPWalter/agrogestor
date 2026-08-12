@@ -5,12 +5,16 @@ import br.com.agrogestor.inventory.dto.InventoryMovementResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductRequest;
 import br.com.agrogestor.inventory.dto.InventoryProductResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductUpdateRequest;
+import br.com.agrogestor.inventory.dto.InventoryValuationAdjustmentRequest;
+import br.com.agrogestor.inventory.dto.InventoryValuationAdjustmentResponse;
 import br.com.agrogestor.inventory.entity.InventoryMovement;
 import br.com.agrogestor.inventory.entity.InventoryMovementCost;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
 import br.com.agrogestor.inventory.entity.MovementType;
+import br.com.agrogestor.inventory.entity.InventoryValuationAdjustment;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
+import br.com.agrogestor.inventory.repository.InventoryValuationAdjustmentRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.springframework.stereotype.Service;
@@ -27,13 +31,16 @@ public class InventoryService {
 
     private final InventoryProductRepository productRepository;
     private final InventoryMovementRepository movementRepository;
+    private final InventoryValuationAdjustmentRepository valuationRepository;
     private final CurrentPropertyService currentProperty;
 
     public InventoryService(InventoryProductRepository productRepository,
                             InventoryMovementRepository movementRepository,
+                            InventoryValuationAdjustmentRepository valuationRepository,
                             CurrentPropertyService currentProperty) {
         this.productRepository = productRepository;
         this.movementRepository = movementRepository;
+        this.valuationRepository = valuationRepository;
         this.currentProperty = currentProperty;
     }
 
@@ -105,6 +112,41 @@ public class InventoryService {
                 .stream().map(this::toResponse).toList();
     }
 
+    @Transactional
+    public InventoryProductResponse adjustValuation(
+            UUID productId,
+            InventoryValuationAdjustmentRequest request
+    ) {
+        InventoryProduct product = findProductForUpdate(productId);
+        BigDecimal previousUnitCost = product.getAverageUnitCost();
+        BigDecimal previousInventoryValue = product.getInventoryValue();
+        BigDecimal newUnitCost = request.newUnitCost().setScale(6, RoundingMode.HALF_UP);
+
+        product.adjustAverageUnitCost(newUnitCost);
+        valuationRepository.save(new InventoryValuationAdjustment(
+                product,
+                request.adjustmentDate(),
+                previousUnitCost,
+                newUnitCost,
+                previousInventoryValue,
+                product.getInventoryValue(),
+                normalize(request.reason())
+        ));
+        return toResponse(product);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InventoryValuationAdjustmentResponse> valuationAdjustments(
+            UUID productId
+    ) {
+        findProduct(productId);
+        return valuationRepository
+                .findTop50ByProductIdOrderByAdjustmentDateDescCreatedAtDesc(productId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
     private InventoryProduct findProduct(UUID id) {
         return productRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Produto não encontrado com o ID " + id));
@@ -137,6 +179,23 @@ public class InventoryService {
                 movement.getQuantity(), movement.getMovementDate(), movement.getNotes(),
                 movement.getUnitCost(), movement.getTotalCost(),
                 movement.getCreatedAt()
+        );
+    }
+
+    private InventoryValuationAdjustmentResponse toResponse(
+            InventoryValuationAdjustment adjustment
+    ) {
+        return new InventoryValuationAdjustmentResponse(
+                adjustment.getId(),
+                adjustment.getProduct().getId(),
+                adjustment.getProduct().getName(),
+                adjustment.getAdjustmentDate(),
+                adjustment.getPreviousUnitCost(),
+                adjustment.getNewUnitCost(),
+                adjustment.getPreviousInventoryValue(),
+                adjustment.getNewInventoryValue(),
+                adjustment.getReason(),
+                adjustment.getCreatedAt()
         );
     }
 

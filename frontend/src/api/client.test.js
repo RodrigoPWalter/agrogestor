@@ -180,6 +180,27 @@ describe("cliente da API", () => {
     });
   });
 
+  it("envia o ajuste do custo atual para o produto informado", async () => {
+    const data = {
+      adjustmentDate: "2026-08-12",
+      newUnitCost: 62.5,
+      reason: "Correção conforme nota fiscal",
+    };
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: {} });
+
+    await api.adjustInventoryValuation("product-1", data);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/inventory/products/product-1/valuation-adjustments",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": expect.any(String),
+      },
+      data,
+    });
+  });
+
   it("guarda um lançamento no aparelho quando está sem internet", async () => {
     saveSession({
       accessToken: "jwt-assinado",

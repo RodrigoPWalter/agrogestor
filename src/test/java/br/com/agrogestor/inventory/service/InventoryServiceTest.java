@@ -3,15 +3,19 @@ package br.com.agrogestor.inventory.service;
 import br.com.agrogestor.inventory.dto.InventoryProductRequest;
 import br.com.agrogestor.inventory.dto.InventoryMovementRequest;
 import br.com.agrogestor.inventory.dto.InventoryProductUpdateRequest;
+import br.com.agrogestor.inventory.dto.InventoryValuationAdjustmentRequest;
 import br.com.agrogestor.inventory.entity.InventoryMovement;
 import br.com.agrogestor.inventory.entity.InventoryProduct;
+import br.com.agrogestor.inventory.entity.InventoryValuationAdjustment;
 import br.com.agrogestor.inventory.entity.MeasurementUnit;
 import br.com.agrogestor.inventory.entity.MovementType;
 import br.com.agrogestor.inventory.entity.ProductType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
+import br.com.agrogestor.inventory.repository.InventoryValuationAdjustmentRepository;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -22,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -35,6 +40,7 @@ class InventoryServiceTest {
 
     private InventoryProductRepository productRepository;
     private InventoryMovementRepository movementRepository;
+    private InventoryValuationAdjustmentRepository valuationRepository;
     private InventoryService service;
     private CurrentPropertyService currentProperty;
 
@@ -42,10 +48,16 @@ class InventoryServiceTest {
     void setUp() {
         productRepository = mock(InventoryProductRepository.class);
         movementRepository = mock(InventoryMovementRepository.class);
+        valuationRepository = mock(InventoryValuationAdjustmentRepository.class);
         currentProperty = mock(CurrentPropertyService.class);
         when(currentProperty.get()).thenReturn(new Property("Teste"));
         when(currentProperty.id()).thenReturn(PROPERTY_ID);
-        service = new InventoryService(productRepository, movementRepository, currentProperty);
+        service = new InventoryService(
+                productRepository,
+                movementRepository,
+                valuationRepository,
+                currentProperty
+        );
     }
 
     @Test
@@ -106,6 +118,59 @@ class InventoryServiceTest {
 
         verify(productRepository).findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID);
         assertThat(product.getName()).isEqualTo("Adubo atualizado");
+    }
+
+    @Test
+    void shouldAdjustOnlyCurrentInventoryValueAndKeepAuditTrail() {
+        UUID productId = UUID.randomUUID();
+        InventoryProduct product = product();
+        when(productRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
+                .thenReturn(Optional.of(product));
+
+        service.adjustValuation(productId, new InventoryValuationAdjustmentRequest(
+                LocalDate.of(2026, 8, 12),
+                new BigDecimal("125.50"),
+                "Correção conforme a nota fiscal"
+        ));
+
+        assertThat(product.getAverageUnitCost()).isEqualByComparingTo("125.500000");
+        assertThat(product.getInventoryValue()).isEqualByComparingTo("1255.00");
+        ArgumentCaptor<InventoryValuationAdjustment> adjustment =
+                ArgumentCaptor.forClass(InventoryValuationAdjustment.class);
+        verify(valuationRepository).save(adjustment.capture());
+        assertThat(adjustment.getValue().getPreviousInventoryValue())
+                .isEqualByComparingTo("0.00");
+        assertThat(adjustment.getValue().getNewInventoryValue())
+                .isEqualByComparingTo("1255.00");
+        assertThat(adjustment.getValue().getReason())
+                .isEqualTo("Correção conforme a nota fiscal");
+    }
+
+    @Test
+    void shouldRejectValuationAdjustmentWithoutStock() {
+        UUID productId = UUID.randomUUID();
+        InventoryProduct product = new InventoryProduct(
+                new Property("Teste"),
+                "Adubo NPK",
+                ProductType.FERTILIZER,
+                BigDecimal.ZERO,
+                MeasurementUnit.KILOGRAM,
+                BigDecimal.ZERO,
+                null
+        );
+        when(productRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
+                .thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> service.adjustValuation(
+                productId,
+                new InventoryValuationAdjustmentRequest(
+                        LocalDate.of(2026, 8, 12),
+                        BigDecimal.ONE,
+                        "Correção"
+                )
+        ))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("sem saldo");
     }
 
     private InventoryProduct product() {

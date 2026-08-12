@@ -5,6 +5,8 @@ import br.com.agrogestor.inventory.dto.InventoryMovementResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductRequest;
 import br.com.agrogestor.inventory.dto.InventoryProductResponse;
 import br.com.agrogestor.inventory.dto.InventoryProductUpdateRequest;
+import br.com.agrogestor.inventory.dto.InventoryValuationAdjustmentRequest;
+import br.com.agrogestor.inventory.dto.InventoryValuationAdjustmentResponse;
 import br.com.agrogestor.inventory.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -79,5 +81,21 @@ public class InventoryController {
     @GetMapping("/{id}/movements")
     public List<InventoryMovementResponse> movements(@PathVariable UUID id) {
         return service.movements(id);
+    }
+
+    @PostMapping("/{id}/valuation-adjustments")
+    @Operation(summary = "Ajustar o custo atual do saldo em estoque")
+    public InventoryProductResponse adjustValuation(
+            @PathVariable UUID id,
+            @Valid @RequestBody InventoryValuationAdjustmentRequest request
+    ) {
+        return service.adjustValuation(id, request);
+    }
+
+    @GetMapping("/{id}/valuation-adjustments")
+    public List<InventoryValuationAdjustmentResponse> valuationAdjustments(
+            @PathVariable UUID id
+    ) {
+        return service.valuationAdjustments(id);
     }
 }

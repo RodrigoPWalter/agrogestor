@@ -11,6 +11,8 @@ vi.mock("../api/client", () => ({
     updateInventoryProduct: vi.fn(),
     deleteInventoryProduct: vi.fn(),
     moveInventory: vi.fn(),
+    getInventoryValuationAdjustments: vi.fn(),
+    adjustInventoryValuation: vi.fn(),
   },
 }));
 
@@ -26,6 +28,8 @@ const product = {
   expirationDate: "2027-07-20",
   lowStock: false,
   expired: false,
+  averageUnitCost: 50,
+  inventoryValue: 500,
 };
 
 describe("InventoryPage", () => {
@@ -40,6 +44,36 @@ describe("InventoryPage", () => {
         quantity: 10,
       },
     ]);
+    api.getInventoryValuationAdjustments.mockResolvedValue([]);
+  });
+
+  it("ajusta o custo atual sem editar o cadastro do produto", async () => {
+    api.adjustInventoryValuation.mockResolvedValue({});
+    render(<InventoryPage />);
+
+    expect(await screen.findByText("Glifosato")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ajustar custo de Glifosato" }),
+    );
+
+    fireEvent.change(screen.getByLabelText("Novo custo por l"), {
+      target: { value: "62.5" },
+    });
+    fireEvent.change(screen.getByLabelText("Motivo do ajuste"), {
+      target: { value: "Correção conforme nota fiscal" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar novo custo" }));
+
+    await waitFor(() =>
+      expect(api.adjustInventoryValuation).toHaveBeenCalledWith(
+        product.id,
+        expect.objectContaining({
+          newUnitCost: 62.5,
+          reason: "Correção conforme nota fiscal",
+        }),
+      ),
+    );
+    expect(api.updateInventoryProduct).not.toHaveBeenCalled();
   });
 
   it("carrega os produtos e abre o histórico de movimentações", async () => {

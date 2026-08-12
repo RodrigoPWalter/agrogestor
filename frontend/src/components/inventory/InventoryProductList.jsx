@@ -1,4 +1,10 @@
-import { AlertTriangle, ArrowDownToLine, Edit3, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDownToLine,
+  CircleDollarSign,
+  Edit3,
+  Trash2,
+} from "lucide-react";
 import {
   formatCurrency,
   formatDate,
@@ -10,6 +16,7 @@ export function InventoryProductList({
   onEdit,
   onDelete,
   onMovement,
+  onValuation,
 }) {
   return (
     <section className="data-card-grid">
@@ -27,6 +34,19 @@ export function InventoryProductList({
               <span className="badge">{product.productTypeName}</span>
             </div>
             <div className="card-actions">
+              <button
+                className="icon-button"
+                onClick={() => onValuation(product)}
+                aria-label={`Ajustar custo de ${product.name}`}
+                disabled={Number(product.quantity) <= 0}
+                title={
+                  Number(product.quantity) <= 0
+                    ? "O produto precisa ter saldo para ajustar o custo"
+                    : "Ajustar custo atual"
+                }
+              >
+                <CircleDollarSign size={17} />
+              </button>
               <button
                 className="icon-button"
                 onClick={() => onEdit(product)}

@@ -130,6 +130,18 @@ public class InventoryProduct {
         inventoryValue = money(newValue);
     }
 
+    public void adjustAverageUnitCost(BigDecimal newUnitCost) {
+        if (quantity == null || quantity.signum() <= 0) {
+            throw new BusinessRuleException(
+                    "Não é possível ajustar o custo de um produto sem saldo em estoque"
+            );
+        }
+        if (newUnitCost == null || newUnitCost.signum() <= 0) {
+            throw new BusinessRuleException("O novo custo unitário deve ser maior que zero");
+        }
+        inventoryValue = money(newUnitCost.multiply(quantity));
+    }
+
     private InventoryMovementCost cost(BigDecimal amount, BigDecimal totalCost) {
         BigDecimal unitCost = amount.signum() == 0
                 ? BigDecimal.ZERO.setScale(UNIT_COST_SCALE)

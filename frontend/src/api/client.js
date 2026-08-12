@@ -282,6 +282,14 @@ export const api = {
     }),
   getInventoryMovements: (id) =>
     request(`/api/v1/inventory/products/${id}/movements`),
+  adjustInventoryValuation: (id, data) =>
+    request(`/api/v1/inventory/products/${id}/valuation-adjustments`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  getInventoryValuationAdjustments: (id) =>
+    request(`/api/v1/inventory/products/${id}/valuation-adjustments`),
 
   getMachines: () => request("/api/v1/machines"),
   createMachine: (data) =>
