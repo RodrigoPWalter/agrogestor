@@ -8,6 +8,8 @@ export function DiaryFormModal({
   products,
   machines,
   activityTypes,
+  operationManaged,
+  legacyHarvest,
   today,
   saving,
   draftRecovered,
@@ -34,6 +36,8 @@ export function DiaryFormModal({
           products={products}
           machines={machines}
           activityTypes={activityTypes}
+          operationManaged={operationManaged}
+          legacyHarvest={legacyHarvest}
           today={today}
         />
         <div className="form-actions">

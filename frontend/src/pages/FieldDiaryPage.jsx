@@ -26,13 +26,14 @@ import {
 } from "../utils/formDraft";
 
 const activityTypes = [
+  { value: "PLANTING", label: "Etapa de plantio" },
   { value: "INSPECTION", label: "Vistoria" },
   { value: "RAIN", label: "Chuva" },
   { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
   { value: "PRODUCT_USE", label: "Uso de produto" },
   { value: "MAINTENANCE", label: "Manutenção" },
   { value: "OBSERVATION", label: "Observação" },
-  { value: "HARVEST", label: "Colheita" },
+  { value: "HARVEST", label: "Etapa de colheita" },
   { value: "OTHER", label: "Outro" },
 ];
 
@@ -55,8 +56,12 @@ function emptyForm(plantingId = "") {
     supplier: "",
     amount: "",
     machineId: "",
+    operationAreaHectares: "",
+    operationSeedVariety: "",
+    operationStartTime: "",
+    operationEndTime: "",
     harvestQuantity: "",
-    harvestUnit: "Sacas",
+    harvestUnit: "BAGS_60_KG",
   };
 }
 
@@ -171,8 +176,13 @@ export function FieldDiaryPage() {
       supplier: entry.supplier || "",
       amount: entry.amount || "",
       machineId: entry.machineId || "",
+      operationAreaHectares: entry.operationAreaHectares || "",
+      operationSeedVariety: entry.operationSeedVariety || "",
+      operationStartTime: entry.operationStartTime || "",
+      operationEndTime: entry.operationEndTime || "",
       harvestQuantity: entry.harvestQuantity || "",
-      harvestUnit: entry.harvestUnit || "Sacas",
+      harvestUnit:
+        entry.operationHarvestUnit || entry.harvestUnit || "BAGS_60_KG",
     });
     setModalOpen(true);
     setError("");
@@ -188,6 +198,18 @@ export function FieldDiaryPage() {
     event.preventDefault();
     await runSaving(async () => {
       setError("");
+      const operationPayload = {
+        seedVariety: form.operationSeedVariety || null,
+        startTime: form.operationStartTime || null,
+        endTime: form.operationEndTime || null,
+        observations: form.observations || null,
+      };
+      const isPlantingOperation =
+        form.activityType === "PLANTING" &&
+        (!editing || Boolean(editing.operationStepId));
+      const isHarvestOperation =
+        form.activityType === "HARVEST" &&
+        (!editing || Boolean(editing.operationStepId));
       const payload = {
         ...form,
         plantingId: form.plantingId || null,
@@ -215,7 +237,63 @@ export function FieldDiaryPage() {
       };
 
       try {
-        if (editing) {
+        if (isPlantingOperation) {
+          const stepPayload = {
+            ...operationPayload,
+            stepDate: form.entryDate,
+            plantedAreaHectares: Number(form.operationAreaHectares),
+          };
+          const result = editing
+            ? await api.updatePlantingStep(
+                form.plantingId,
+                editing.operationStepId,
+                stepPayload,
+              )
+            : await api.createPlantingStep(form.plantingId, stepPayload);
+          if (!editing) {
+            clearFormDraft("diario");
+            setDraftRecovered(false);
+          }
+          setSuccess(
+            mutationFeedback(
+              result,
+              "Etapa de plantio e progresso atualizados.",
+            ),
+          );
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
+        } else if (isHarvestOperation) {
+          const stepPayload = {
+            ...operationPayload,
+            harvestDate: form.entryDate,
+            harvestedAreaHectares: Number(form.operationAreaHectares),
+            harvestQuantity: Number(form.harvestQuantity),
+            harvestUnit: form.harvestUnit,
+          };
+          const result = editing
+            ? await api.updateHarvestStep(
+                form.plantingId,
+                editing.operationStepId,
+                stepPayload,
+              )
+            : await api.createHarvestStep(form.plantingId, stepPayload);
+          if (!editing) {
+            clearFormDraft("diario");
+            setDraftRecovered(false);
+          }
+          setSuccess(
+            mutationFeedback(
+              result,
+              "Etapa de colheita e progresso atualizados.",
+            ),
+          );
+          if (isOfflineResult(result)) {
+            setModalOpen(false);
+            return;
+          }
+        } else if (editing) {
           const result = await api.updateDiaryEntry(editing.id, payload);
           setSuccess(
             mutationFeedback(result, "Registro e estoque atualizados."),
@@ -240,7 +318,11 @@ export function FieldDiaryPage() {
           }
         }
         setModalOpen(false);
-        await loadEntries(selectedPlantingId, { showLoading: false });
+        const [plantingPage] = await Promise.all([
+          api.getAllPlantings(),
+          loadEntries(selectedPlantingId, { showLoading: false }),
+        ]);
+        setPlantings(plantingPage.content);
       } catch (requestError) {
         setError(requestError.message);
       }
@@ -248,25 +330,46 @@ export function FieldDiaryPage() {
   }
 
   async function handleDelete(entry) {
+    const operation = Boolean(entry.operationStepId);
     const confirmed = await requestConfirmation({
-      title: "Excluir registro do diário?",
+      title: operation ? "Excluir esta etapa?" : "Excluir registro do diário?",
       description: `O registro “${entry.activity}” será excluído.`,
-      detail:
-        "Se houver produtos usados neste lançamento, as quantidades serão devolvidas ao estoque.",
-      confirmLabel: "Excluir registro",
+      detail: operation
+        ? "O progresso do plantio será recalculado automaticamente."
+        : "Se houver produtos usados neste lançamento, as quantidades serão devolvidas ao estoque.",
+      confirmLabel: operation ? "Excluir etapa" : "Excluir registro",
     });
     if (!confirmed) return;
 
     try {
-      const result = await api.deleteDiaryEntry(entry.id);
+      let result;
+      if (entry.operationStepId && entry.activityType === "PLANTING") {
+        result = await api.deletePlantingStep(
+          entry.plantingId,
+          entry.operationStepId,
+        );
+      } else if (entry.operationStepId && entry.activityType === "HARVEST") {
+        result = await api.deleteHarvestStep(
+          entry.plantingId,
+          entry.operationStepId,
+        );
+      } else {
+        result = await api.deleteDiaryEntry(entry.id);
+      }
       setSuccess(
         mutationFeedback(
           result,
-          "Registro excluído e produtos devolvidos ao estoque.",
+          operation
+            ? "Etapa excluída e progresso recalculado."
+            : "Registro excluído e produtos devolvidos ao estoque.",
         ),
       );
       if (isOfflineResult(result)) return;
-      await loadEntries(selectedPlantingId, { showLoading: false });
+      const [plantingPage] = await Promise.all([
+        api.getAllPlantings(),
+        loadEntries(selectedPlantingId, { showLoading: false }),
+      ]);
+      setPlantings(plantingPage.content);
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -303,7 +406,7 @@ export function FieldDiaryPage() {
       ) : entries.length === 0 ? (
         <EmptyState
           title="Nenhuma atividade registrada"
-          description="Anote uma vistoria, chuva, compra, manutenção ou observação."
+          description="Anote plantio, colheita, vistoria, chuva, compra, manutenção ou observação."
           action={
             <button className="button button--primary" onClick={openCreate}>
               <Plus size={18} /> Registrar atividade
@@ -326,6 +429,10 @@ export function FieldDiaryPage() {
           products={inventoryProducts}
           machines={machines}
           activityTypes={activityTypes}
+          operationManaged={Boolean(editing?.operationStepId)}
+          legacyHarvest={
+            editing?.activityType === "HARVEST" && !editing?.operationStepId
+          }
           today={toInputDate()}
           saving={saving}
           draftRecovered={draftRecovered}

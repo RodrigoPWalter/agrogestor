@@ -11,6 +11,14 @@ vi.mock("../api/client", () => ({
     getMachines: vi.fn(),
     getDiaryEntries: vi.fn(),
     deleteDiaryEntry: vi.fn(),
+    createDiaryEntry: vi.fn(),
+    updateDiaryEntry: vi.fn(),
+    createPlantingStep: vi.fn(),
+    updatePlantingStep: vi.fn(),
+    deletePlantingStep: vi.fn(),
+    createHarvestStep: vi.fn(),
+    updateHarvestStep: vi.fn(),
+    deleteHarvestStep: vi.fn(),
   },
 }));
 
@@ -76,5 +84,90 @@ describe("FieldDiaryPage", () => {
     await waitFor(() =>
       expect(screen.queryByText("Vistoria do trigo")).not.toBeInTheDocument(),
     );
+  });
+
+  it("registra hectares plantados pelo diário usando a operação do plantio", async () => {
+    const planting = {
+      id: "planting-1",
+      crop: "Milho",
+      harvest: "2026",
+    };
+    api.getAllPlantings.mockResolvedValue({ content: [planting] });
+    api.createPlantingStep.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Nova atividade" }),
+    );
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "PLANTING" },
+    });
+    fireEvent.change(screen.getByLabelText("Plantio (obrigatório)"), {
+      target: { value: planting.id },
+    });
+    fireEvent.change(screen.getByLabelText("Hectares plantados nesta etapa"), {
+      target: { value: "5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+
+    await waitFor(() =>
+      expect(api.createPlantingStep).toHaveBeenCalledWith(
+        planting.id,
+        expect.objectContaining({
+          plantedAreaHectares: 5,
+        }),
+      ),
+    );
+    expect(api.createDiaryEntry).not.toHaveBeenCalled();
+  });
+
+  it("registra área e produção colhidas pelo diário", async () => {
+    const planting = {
+      id: "planting-1",
+      crop: "Milho",
+      harvest: "2026",
+    };
+    api.getAllPlantings.mockResolvedValue({ content: [planting] });
+    api.createHarvestStep.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Nova atividade" }),
+    );
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "HARVEST" },
+    });
+    fireEvent.change(screen.getByLabelText("Plantio (obrigatório)"), {
+      target: { value: planting.id },
+    });
+    fireEvent.change(screen.getByLabelText("Hectares colhidos nesta etapa"), {
+      target: { value: "4" },
+    });
+    fireEvent.change(screen.getByLabelText("Quantidade colhida"), {
+      target: { value: "320" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+
+    await waitFor(() =>
+      expect(api.createHarvestStep).toHaveBeenCalledWith(
+        planting.id,
+        expect.objectContaining({
+          harvestedAreaHectares: 4,
+          harvestQuantity: 320,
+          harvestUnit: "BAGS_60_KG",
+        }),
+      ),
+    );
+    expect(api.createDiaryEntry).not.toHaveBeenCalled();
   });
 });

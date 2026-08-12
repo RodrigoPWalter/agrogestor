@@ -24,6 +24,11 @@ export function DiaryTimeline({ entries, onEdit, onDelete }) {
               <header>
                 <div>
                   <span className="badge">{entry.activityTypeName}</span>
+                  {entry.operationStepId && (
+                    <span className="integrated-source">
+                      Atualiza o progresso do plantio
+                    </span>
+                  )}
                   <h2>{entry.activity}</h2>
                   <small>
                     {entry.crop

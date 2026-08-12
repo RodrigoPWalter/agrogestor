@@ -18,6 +18,10 @@ public interface PlantingStepRepository extends JpaRepository<PlantingStep, UUID
 
     Optional<PlantingStep> findByIdAndPlantingId(UUID id, UUID plantingId);
 
+    Optional<PlantingStep> findByDiaryEntryId(UUID diaryEntryId);
+
+    List<PlantingStep> findByDiaryEntryIdIn(Collection<UUID> diaryEntryIds);
+
     Optional<PlantingStep> findFirstByPlantingIdOrderByStepDateAscCreatedAtAsc(
             UUID plantingId
     );

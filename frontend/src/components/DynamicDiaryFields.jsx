@@ -1,6 +1,7 @@
 import { DiaryBaseFields } from "./diary/fields/DiaryBaseFields";
 import { HarvestFields } from "./diary/fields/HarvestFields";
 import { MaintenanceFields } from "./diary/fields/MaintenanceFields";
+import { PlantingOperationFields } from "./diary/fields/PlantingOperationFields";
 import { ProductEventFields } from "./diary/fields/ProductEventFields";
 
 export function DynamicDiaryFields({
@@ -11,6 +12,8 @@ export function DynamicDiaryFields({
   machines,
   activityTypes,
   today,
+  operationManaged = false,
+  legacyHarvest = false,
 }) {
   const type = form.activityType;
   const needsDescription = ["INSPECTION", "OTHER"].includes(type);
@@ -28,8 +31,13 @@ export function DynamicDiaryFields({
         plantings={plantings}
         activityTypes={activityTypes}
         today={today}
+        operationManaged={operationManaged}
         onUpdate={update}
       />
+
+      {type === "PLANTING" && (
+        <PlantingOperationFields form={form} onUpdate={update} />
+      )}
 
       {type === "RAIN" && (
         <label className="form-grid__full">
@@ -63,7 +71,9 @@ export function DynamicDiaryFields({
         <MaintenanceFields form={form} machines={machines} onUpdate={update} />
       )}
 
-      {type === "HARVEST" && <HarvestFields form={form} onUpdate={update} />}
+      {type === "HARVEST" && (
+        <HarvestFields form={form} legacy={legacyHarvest} onUpdate={update} />
+      )}
 
       {needsDescription && (
         <label className="form-grid__full">

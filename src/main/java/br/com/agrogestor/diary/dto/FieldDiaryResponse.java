@@ -4,6 +4,7 @@ import br.com.agrogestor.diary.entity.ActivityType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,12 @@ public record FieldDiaryResponse(
         BigDecimal amount,
         UUID machineId,
         BigDecimal harvestQuantity,
-        String harvestUnit
+        String harvestUnit,
+        UUID operationStepId,
+        BigDecimal operationAreaHectares,
+        String operationSeedVariety,
+        LocalTime operationStartTime,
+        LocalTime operationEndTime,
+        String operationHarvestUnit
 ) {
 }

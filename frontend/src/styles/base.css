@@ -932,6 +932,17 @@ p {
   font-size: 1rem;
 }
 
+.diary-entry .integrated-source {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 3px 7px;
+  color: var(--green-700);
+  border-radius: 999px;
+  background: var(--green-100);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
 .diary-entry__content small {
   color: var(--muted);
   font-size: 0.68rem;

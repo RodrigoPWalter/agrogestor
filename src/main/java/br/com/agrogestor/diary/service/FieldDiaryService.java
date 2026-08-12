@@ -25,7 +25,11 @@ import br.com.agrogestor.machine.entity.MaintenanceType;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.HarvestStep;
+import br.com.agrogestor.planting.entity.PlantingStep;
+import br.com.agrogestor.planting.repository.HarvestStepRepository;
 import br.com.agrogestor.planting.repository.PlantingRepository;
+import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.rainfall.repository.RainfallRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
@@ -43,7 +47,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -51,6 +57,8 @@ public class FieldDiaryService {
 
     private final FieldDiaryRepository diaryRepository;
     private final PlantingRepository plantingRepository;
+    private final PlantingStepRepository plantingStepRepository;
+    private final HarvestStepRepository harvestStepRepository;
     private final FieldDiaryProductRepository diaryProductRepository;
     private final InventoryProductRepository inventoryRepository;
     private final InventoryMovementRepository movementRepository;
@@ -63,6 +71,8 @@ public class FieldDiaryService {
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
             PlantingRepository plantingRepository,
+            PlantingStepRepository plantingStepRepository,
+            HarvestStepRepository harvestStepRepository,
             FieldDiaryProductRepository diaryProductRepository,
             InventoryProductRepository inventoryRepository,
             InventoryMovementRepository movementRepository,
@@ -74,6 +84,8 @@ public class FieldDiaryService {
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
+        this.plantingStepRepository = plantingStepRepository;
+        this.harvestStepRepository = harvestStepRepository;
         this.diaryProductRepository = diaryProductRepository;
         this.inventoryRepository = inventoryRepository;
         this.movementRepository = movementRepository;
@@ -102,7 +114,7 @@ public class FieldDiaryService {
         FieldDiaryEntry saved = diaryRepository.save(entry);
         List<FieldDiaryProduct> products = replaceProducts(saved, request, List.of());
         createIntegratedRecords(saved, request, planting, products);
-        return toResponse(saved);
+        return toResponse(saved, null, null);
     }
 
     @Transactional(readOnly = true)
@@ -114,18 +126,52 @@ public class FieldDiaryService {
                 ? diaryRepository.findByPropertyId(currentProperty.id(), pageable)
                 : diaryRepository.findByPropertyIdAndPlantingId(
                         currentProperty.id(), plantingId, pageable);
-        return PageResponse.from(entries.map(this::toResponse));
+        List<UUID> entryIds = entries.getContent().stream()
+                .map(FieldDiaryEntry::getId)
+                .filter(id -> id != null)
+                .toList();
+        Map<UUID, PlantingStep> plantingSteps = entryIds.isEmpty()
+                ? Map.of()
+                : plantingStepRepository.findByDiaryEntryIdIn(entryIds).stream()
+                        .collect(Collectors.toMap(
+                                PlantingStep::getDiaryEntryId, Function.identity()));
+        Map<UUID, HarvestStep> harvestSteps = entryIds.isEmpty()
+                ? Map.of()
+                : harvestStepRepository.findByDiaryEntryIdIn(entryIds).stream()
+                        .collect(Collectors.toMap(
+                                HarvestStep::getDiaryEntryId, Function.identity()));
+        List<FieldDiaryResponse> content = entries.getContent().stream()
+                .map(entry -> toResponse(
+                        entry,
+                        plantingSteps.get(entry.getId()),
+                        harvestSteps.get(entry.getId())))
+                .toList();
+        return new PageResponse<>(
+                content,
+                entries.getNumber(),
+                entries.getSize(),
+                entries.getTotalElements(),
+                entries.getTotalPages(),
+                entries.isFirst(),
+                entries.isLast()
+        );
     }
 
     @Transactional(readOnly = true)
     public FieldDiaryResponse findById(UUID id) {
-        return toResponse(findEntry(id));
+        FieldDiaryEntry entry = findEntry(id);
+        return toResponse(
+                entry,
+                plantingStepRepository.findByDiaryEntryId(id).orElse(null),
+                harvestStepRepository.findByDiaryEntryId(id).orElse(null)
+        );
     }
 
     @Transactional
     public FieldDiaryResponse update(UUID id, FieldDiaryRequest request) {
         validate(request);
         FieldDiaryEntry entry = findEntry(id);
+        ensureDirectEntry(entry);
         deleteIntegratedRecords(entry);
         List<FieldDiaryProduct> previousProducts =
                 diaryProductRepository.findByEntryId(entry.getId());
@@ -141,12 +187,13 @@ public class FieldDiaryService {
         updateDetails(entry, request);
         List<FieldDiaryProduct> products = replaceProducts(entry, request, previousProducts);
         createIntegratedRecords(entry, request, entry.getPlanting(), products);
-        return toResponse(entry);
+        return toResponse(entry, null, null);
     }
 
     @Transactional
     public void delete(UUID id) {
         FieldDiaryEntry entry = findEntry(id);
+        ensureDirectEntry(entry);
         restoreStock(diaryProductRepository.findByEntryId(entry.getId()), entry,
                 "Estorno por exclusão no diário: ");
         diaryProductRepository.deleteByEntryId(entry.getId());
@@ -379,13 +426,28 @@ public class FieldDiaryService {
                 new ResourceNotFoundException("Registro do diário não encontrado com o ID " + id));
     }
 
+    private void ensureDirectEntry(FieldDiaryEntry entry) {
+        UUID entryId = entry.getId();
+        if (plantingStepRepository.findByDiaryEntryId(entryId).isPresent()
+                || harvestStepRepository.findByDiaryEntryId(entryId).isPresent()) {
+            throw new BusinessRuleException(
+                    "Esta etapa pertence ao progresso do plantio. "
+                            + "Use a operação de semeadura ou colheita para alterá-la"
+            );
+        }
+    }
+
     private Planting findOptionalPlanting(UUID id) {
         if (id == null) return null;
         return plantingRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
     }
 
-    private FieldDiaryResponse toResponse(FieldDiaryEntry entry) {
+    private FieldDiaryResponse toResponse(
+            FieldDiaryEntry entry,
+            PlantingStep plantingStep,
+            HarvestStep harvestStep
+    ) {
         Planting planting = entry.getPlanting();
         List<FieldDiaryProductResponse> products = entry.getId() == null
                 ? List.of()
@@ -405,7 +467,44 @@ public class FieldDiaryService {
                 entry.getWeatherCondition(), entry.getAppliedProducts(), products,
                 entry.getObservations(), entry.getCreatedAt(), entry.getUpdatedAt(),
                 entry.getRainfallMillimeters(), entry.getSupplier(), entry.getAmount(),
-                entry.getMachineId(), entry.getHarvestQuantity(), entry.getHarvestUnit());
+                entry.getMachineId(), entry.getHarvestQuantity(), entry.getHarvestUnit(),
+                operationId(plantingStep, harvestStep),
+                operationArea(plantingStep, harvestStep),
+                operationSeedVariety(plantingStep, harvestStep),
+                operationStartTime(plantingStep, harvestStep),
+                operationEndTime(plantingStep, harvestStep),
+                harvestStep == null ? null : harvestStep.getHarvestUnit().name());
+    }
+
+    private UUID operationId(PlantingStep plantingStep, HarvestStep harvestStep) {
+        if (plantingStep != null) return plantingStep.getId();
+        return harvestStep == null ? null : harvestStep.getId();
+    }
+
+    private BigDecimal operationArea(PlantingStep plantingStep, HarvestStep harvestStep) {
+        if (plantingStep != null) return plantingStep.getPlantedAreaHectares();
+        return harvestStep == null ? null : harvestStep.getHarvestedAreaHectares();
+    }
+
+    private String operationSeedVariety(PlantingStep plantingStep, HarvestStep harvestStep) {
+        if (plantingStep != null) return plantingStep.getSeedVariety();
+        return harvestStep == null ? null : harvestStep.getSeedVariety();
+    }
+
+    private java.time.LocalTime operationStartTime(
+            PlantingStep plantingStep,
+            HarvestStep harvestStep
+    ) {
+        if (plantingStep != null) return plantingStep.getStartTime();
+        return harvestStep == null ? null : harvestStep.getStartTime();
+    }
+
+    private java.time.LocalTime operationEndTime(
+            PlantingStep plantingStep,
+            HarvestStep harvestStep
+    ) {
+        if (plantingStep != null) return plantingStep.getEndTime();
+        return harvestStep == null ? null : harvestStep.getEndTime();
     }
 
     private String activityDescription(FieldDiaryRequest request) {

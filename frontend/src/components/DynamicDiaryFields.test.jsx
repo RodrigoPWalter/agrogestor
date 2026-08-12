@@ -7,6 +7,8 @@ const activityTypes = [
   { value: "INSPECTION", label: "Vistoria" },
   { value: "RAIN", label: "Chuva" },
   { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
+  { value: "PLANTING", label: "Etapa de plantio" },
+  { value: "HARVEST", label: "Etapa de colheita" },
 ];
 
 const initialForm = {
@@ -22,8 +24,12 @@ const initialForm = {
   supplier: "",
   amount: "",
   machineId: "",
+  operationAreaHectares: "",
+  operationSeedVariety: "",
+  operationStartTime: "",
+  operationEndTime: "",
   harvestQuantity: "",
-  harvestUnit: "Sacas",
+  harvestUnit: "BAGS_60_KG",
   activity: "",
   weatherCondition: "",
   observations: "",
@@ -67,5 +73,24 @@ describe("DynamicDiaryFields", () => {
     expect(screen.getByText("Nome do novo produto")).toBeInTheDocument();
     expect(screen.getByText("Quantidade comprada")).toBeInTheDocument();
     expect(screen.getByText("Valor pago (opcional)")).toBeInTheDocument();
+  });
+
+  it("pede hectares nas etapas de plantio e colheita", () => {
+    render(<DiaryFieldsHarness />);
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "PLANTING" },
+    });
+    expect(
+      screen.getByLabelText("Hectares plantados nesta etapa"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "HARVEST" },
+    });
+    expect(
+      screen.getByLabelText("Hectares colhidos nesta etapa"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Quantidade colhida")).toBeInTheDocument();
   });
 });

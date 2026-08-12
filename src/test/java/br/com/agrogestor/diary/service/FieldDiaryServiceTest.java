@@ -15,8 +15,11 @@ import br.com.agrogestor.inventory.entity.ProductType;
 import br.com.agrogestor.inventory.repository.InventoryMovementRepository;
 import br.com.agrogestor.inventory.repository.InventoryProductRepository;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingStep;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
+import br.com.agrogestor.planting.repository.PlantingStepRepository;
+import br.com.agrogestor.planting.repository.HarvestStepRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.rainfall.repository.RainfallRepository;
@@ -45,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,6 +59,8 @@ class FieldDiaryServiceTest {
 
     private FieldDiaryRepository diaryRepository;
     private PlantingRepository plantingRepository;
+    private PlantingStepRepository plantingStepRepository;
+    private HarvestStepRepository harvestStepRepository;
     private FieldDiaryProductRepository diaryProductRepository;
     private InventoryProductRepository inventoryRepository;
     private InventoryMovementRepository movementRepository;
@@ -69,6 +75,8 @@ class FieldDiaryServiceTest {
     void setUp() {
         diaryRepository = mock(FieldDiaryRepository.class);
         plantingRepository = mock(PlantingRepository.class);
+        plantingStepRepository = mock(PlantingStepRepository.class);
+        harvestStepRepository = mock(HarvestStepRepository.class);
         diaryProductRepository = mock(FieldDiaryProductRepository.class);
         inventoryRepository = mock(InventoryProductRepository.class);
         movementRepository = mock(InventoryMovementRepository.class);
@@ -82,6 +90,8 @@ class FieldDiaryServiceTest {
         service = new FieldDiaryService(
                 diaryRepository,
                 plantingRepository,
+                plantingStepRepository,
+                harvestStepRepository,
                 diaryProductRepository,
                 inventoryRepository,
                 movementRepository,
@@ -353,6 +363,81 @@ class FieldDiaryServiceTest {
         assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.MAINTENANCE);
         assertThat(expense.getValue().getPlanting()).isNull();
         assertThat(expense.getValue().getAmount()).isEqualByComparingTo("200.00");
+    }
+
+    @Test
+    void shouldExposePlantingStepDetailsInDiaryResponse() {
+        UUID entryId = UUID.randomUUID();
+        UUID stepId = UUID.randomUUID();
+        Planting planting = planting();
+        FieldDiaryEntry entry = new FieldDiaryEntry(
+                property,
+                planting,
+                LocalDate.of(2026, 8, 12),
+                ActivityType.PLANTING,
+                "Plantio realizado: 5 hectares plantados",
+                null,
+                null,
+                "Primeira etapa"
+        );
+        ReflectionTestUtils.setField(entry, "id", entryId);
+        PlantingStep step = new PlantingStep(
+                planting,
+                LocalDate.of(2026, 8, 12),
+                new BigDecimal("5.00"),
+                "AG 8700",
+                null,
+                null,
+                "Primeira etapa"
+        );
+        ReflectionTestUtils.setField(step, "id", stepId);
+        step.linkDiaryEntry(entryId);
+        when(diaryRepository.findByIdAndPropertyId(entryId, PROPERTY_ID))
+                .thenReturn(Optional.of(entry));
+        when(plantingStepRepository.findByDiaryEntryId(entryId))
+                .thenReturn(Optional.of(step));
+
+        var response = service.findById(entryId);
+
+        assertThat(response.operationStepId()).isEqualTo(stepId);
+        assertThat(response.operationAreaHectares()).isEqualByComparingTo("5.00");
+        assertThat(response.operationSeedVariety()).isEqualTo("AG 8700");
+    }
+
+    @Test
+    void shouldRequireStepEndpointForManagedDiaryEntry() {
+        UUID entryId = UUID.randomUUID();
+        Planting planting = planting();
+        FieldDiaryEntry entry = new FieldDiaryEntry(
+                property,
+                planting,
+                LocalDate.of(2026, 8, 12),
+                ActivityType.PLANTING,
+                "Plantio realizado",
+                null,
+                null,
+                null
+        );
+        ReflectionTestUtils.setField(entry, "id", entryId);
+        PlantingStep step = new PlantingStep(
+                planting,
+                LocalDate.of(2026, 8, 12),
+                BigDecimal.ONE,
+                "AG 8700",
+                null,
+                null,
+                null
+        );
+        step.linkDiaryEntry(entryId);
+        when(diaryRepository.findByIdAndPropertyId(entryId, PROPERTY_ID))
+                .thenReturn(Optional.of(entry));
+        when(plantingStepRepository.findByDiaryEntryId(entryId))
+                .thenReturn(Optional.of(step));
+
+        assertThatThrownBy(() -> service.delete(entryId))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("operação de semeadura ou colheita");
+        verify(diaryRepository, never()).delete(any(FieldDiaryEntry.class));
     }
 
     private FieldDiaryRequest request(UUID plantingId, String activity) {
