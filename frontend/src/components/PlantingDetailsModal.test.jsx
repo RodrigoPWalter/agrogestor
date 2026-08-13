@@ -11,6 +11,7 @@ vi.mock("../api/client", () => ({
     getDiaryEntries: vi.fn(),
     getRainfallByPlanting: vi.fn(),
     getSeasonClosing: vi.fn(),
+    saveSeasonClosingPrice: vi.fn(),
     getPlantingSteps: vi.fn(),
     getHarvestSteps: vi.fn(),
     getInventoryProducts: vi.fn(),
@@ -66,6 +67,7 @@ describe("PlantingDetailsModal", () => {
       expensePerHectare: 50,
       mainHarvestQuantity: 0,
       mainHarvestUnit: null,
+      salePricePerUnit: null,
       estimatedResult: null,
       revenueEstimated: null,
       harvestTotals: [],
@@ -73,6 +75,56 @@ describe("PlantingDetailsModal", () => {
     api.getPlantingSteps.mockResolvedValue([]);
     api.getHarvestSteps.mockResolvedValue([]);
     api.getInventoryProducts.mockResolvedValue([]);
+  });
+
+  it("carrega e atualiza o preço recebido salvo na safra", async () => {
+    const closing = {
+      totalExpenses: 1000,
+      expensePerHectare: 50,
+      mainHarvestQuantity: 100,
+      mainHarvestUnit: "sacas de 60 kg",
+      salePricePerUnit: 72.5,
+      estimatedResult: 6250,
+      revenueEstimated: true,
+      harvestTotals: [{ quantity: 100, unit: "sacas de 60 kg" }],
+    };
+    api.getSeasonClosing.mockResolvedValue(closing);
+    api.saveSeasonClosingPrice.mockResolvedValue({
+      ...closing,
+      salePricePerUnit: 75.25,
+      estimatedResult: 6525,
+    });
+
+    render(
+      <MemoryRouter>
+        <PlantingDetailsModal
+          planting={planting}
+          onClose={vi.fn()}
+          onFinish={vi.fn()}
+          onReactivate={vi.fn()}
+          onChanged={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    const priceInput = await screen.findByLabelText(
+      "Preço recebido por saca de 60 kg",
+    );
+    expect(priceInput).toHaveValue(72.5);
+
+    fireEvent.change(priceInput, { target: { value: "75.25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar preço" }));
+
+    await waitFor(() => {
+      expect(api.saveSeasonClosingPrice).toHaveBeenCalledWith(
+        planting.id,
+        75.25,
+      );
+    });
+    expect(
+      await screen.findByText("Preço recebido salvo no histórico da safra."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/R\$ 75,25/)).toBeInTheDocument();
   });
 
   it("reúne o resumo, gastos, diário e chuvas do plantio", async () => {

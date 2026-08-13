@@ -3,6 +3,7 @@ package br.com.agrogestor.planting.controller;
 import br.com.agrogestor.planting.dto.PlantingRequest;
 import br.com.agrogestor.planting.dto.PlantingResponse;
 import br.com.agrogestor.planting.dto.SeasonClosingResponse;
+import br.com.agrogestor.planting.dto.SeasonClosingPriceRequest;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.service.PlantingService;
 import br.com.agrogestor.shared.dto.PageResponse;
@@ -107,6 +108,15 @@ public class PlantingController {
             @RequestParam(required = false) BigDecimal salePricePerUnit
     ) {
         return service.seasonClosing(id, salePricePerUnit);
+    }
+
+    @PutMapping("/{id}/season-closing/price")
+    @Operation(summary = "Salvar o preço recebido por saca de 60 kg")
+    public SeasonClosingResponse updateSeasonClosingPrice(
+            @PathVariable UUID id,
+            @Valid @RequestBody SeasonClosingPriceRequest request
+    ) {
+        return service.updateSeasonClosingPrice(id, request.salePricePer60KgBag());
     }
 
     @GetMapping("/harvests")

@@ -114,6 +114,7 @@ export function PlantingDetailsModal({
         harvestSteps,
         inventoryProducts,
       });
+      setSalePrice(closing.salePricePerUnit ?? "");
       setError("");
     } catch (requestError) {
       setError(requestError.message);
@@ -148,6 +149,7 @@ export function PlantingDetailsModal({
       diary: diary.content,
       closing,
     }));
+    setSalePrice(closing.salePricePerUnit ?? "");
   }
 
   function openStepCreate() {
@@ -402,8 +404,19 @@ export function PlantingDetailsModal({
     event.preventDefault();
     await runClosing(async () => {
       try {
-        const closing = await api.getSeasonClosing(planting.id, salePrice);
+        const closing = await api.saveSeasonClosingPrice(
+          planting.id,
+          Number(salePrice),
+        );
+        setSuccess(
+          mutationFeedback(
+            closing,
+            "Preço recebido salvo no histórico da safra.",
+          ),
+        );
+        if (isOfflineResult(closing)) return;
         setData((current) => ({ ...current, closing }));
+        setSalePrice(closing.salePricePerUnit ?? "");
         setError("");
       } catch (requestError) {
         setError(requestError.message);

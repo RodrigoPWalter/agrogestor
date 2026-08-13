@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- O fechamento da safra agora salva o preço efetivamente recebido por saca de 60 kg para consultas futuras no histórico.
 - O Diário agora registra etapas de semeadura e colheita com hectares, atualizando o progresso do plantio pela mesma regra usada em seus detalhes.
 - O custo médio atual de produtos em estoque pode ser ajustado com data, motivo e histórico, sem reescrever gastos já atribuídos às safras.
 - Correção do acumulado mensal de chuva em meses com 31 dias.

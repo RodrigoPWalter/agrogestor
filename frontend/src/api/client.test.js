@@ -180,6 +180,22 @@ describe("cliente da API", () => {
     });
   });
 
+  it("salva o preço recebido por saca no fechamento da safra", async () => {
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: {} });
+
+    await api.saveSeasonClosingPrice("planting-1", 72.5);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/plantings/planting-1/season-closing/price",
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": expect.any(String),
+      },
+      data: { salePricePer60KgBag: 72.5 },
+    });
+  });
+
   it("envia o ajuste do custo atual para o produto informado", async () => {
     const data = {
       adjustmentDate: "2026-08-12",

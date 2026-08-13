@@ -28,7 +28,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Progresso da Semeadura:** Registro dos hectares e da variedade utilizada em cada etapa, com área restante, percentual, histórico editável e lançamento automático no Diário.
 - **Colheita por Etapas:** Registro da área e produção colhidas em cada dia, cálculo de produtividade e atualização automática do fechamento da safra.
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
-- **Fechamento de Safra:** Resumo por plantio com custo total, custo por hectare, produção registrada e resultado estimado.
+- **Fechamento de Safra:** Resumo por plantio com custo total, produção, preço recebido por saca de 60 kg persistido no histórico e resultado calculado.
 - **Gestão de Gastos:** Separação entre despesas por plantio e custos gerais da propriedade, com totais por categoria e transferência proporcional do custo dos insumos utilizados.
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio ajustável com histórico, valor do saldo, validade e alerta de estoque baixo.
 - **Diário da Lavoura:** Central de lançamentos rápidos para acontecimentos, etapas de semeadura e colheita, múltiplos produtos e integrações transacionais com plantios, estoque e custos.

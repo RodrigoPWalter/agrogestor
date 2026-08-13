@@ -15,7 +15,9 @@ export function SeasonClosingPanel({
           <h3>
             <BarChart3 size={17} /> Fechamento de safra
           </h3>
-          <p>Custo total vs. produção registrada nas etapas de colheita.</p>
+          <p>
+            Custo, produção e preço recebido preservados no histórico da safra.
+          </p>
         </div>
       </div>
 
@@ -42,32 +44,40 @@ export function SeasonClosingPanel({
               : "season-closing-result"
           }
         >
-          <span>Resultado estimado</span>
+          <span>Resultado da safra</span>
           <strong>
             {closing.revenueEstimated
               ? formatCurrency(closing.estimatedResult)
-              : "Informe o preço"}
+              : "Salve o preço recebido"}
           </strong>
         </div>
       </div>
 
       <form className="season-price-form" onSubmit={onSubmit}>
         <label>
-          <span>Preço recebido por {closing.mainHarvestUnit || "un."}</span>
+          <span>Preço recebido por saca de 60 kg</span>
           <input
+            required
             type="number"
-            min="0"
+            min="0.01"
             step="0.01"
+            inputMode="decimal"
             placeholder="Ex.: 70,00"
             value={salePrice}
             onChange={onSalePriceChange}
           />
         </label>
         <button className="button button--primary" disabled={loading}>
-          <TrendingUp size={17} />{" "}
-          {loading ? "Calculando..." : "Atualizar resultado"}
+          <TrendingUp size={17} /> {loading ? "Salvando..." : "Salvar preço"}
         </button>
       </form>
+
+      {closing.salePricePerUnit && (
+        <p className="muted-copy" role="status">
+          Preço salvo no histórico: {formatCurrency(closing.salePricePerUnit)}
+          por saca de 60 kg. Você pode corrigir esse valor e salvar novamente.
+        </p>
+      )}
 
       {closing.harvestTotals.length === 0 ? (
         <p className="muted-copy">

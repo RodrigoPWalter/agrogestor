@@ -226,6 +226,33 @@ public class PlantingService {
     @Transactional(readOnly = true)
     public SeasonClosingResponse seasonClosing(UUID id, BigDecimal salePricePerUnit) {
         Planting planting = findEntity(id);
+        BigDecimal effectiveSalePrice = salePricePerUnit == null
+                ? planting.getSalePricePer60KgBag()
+                : salePricePerUnit;
+        return buildSeasonClosing(id, planting, effectiveSalePrice);
+    }
+
+    @Transactional
+    public SeasonClosingResponse updateSeasonClosingPrice(
+            UUID id,
+            BigDecimal salePricePer60KgBag
+    ) {
+        Planting planting = findEntityForUpdate(id);
+        if (salePricePer60KgBag == null || salePricePer60KgBag.signum() <= 0) {
+            throw new BusinessRuleException(
+                    "O preço recebido por saca deve ser maior que zero"
+            );
+        }
+        BigDecimal normalizedSalePrice = money(salePricePer60KgBag);
+        planting.updateSalePricePer60KgBag(normalizedSalePrice);
+        return buildSeasonClosing(id, planting, normalizedSalePrice);
+    }
+
+    private SeasonClosingResponse buildSeasonClosing(
+            UUID id,
+            Planting planting,
+            BigDecimal salePricePer60KgBag
+    ) {
         List<ExpenseCategoryTotalProjection> totals =
                 expenseRepository.summarizeByCategory(id);
 
@@ -245,12 +272,18 @@ public class PlantingService {
 
         List<HarvestTotalResponse> harvestTotals = harvestTotals(id);
 
-        HarvestTotalResponse mainHarvest = harvestTotals.isEmpty()
-                ? new HarvestTotalResponse(null, BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP))
-                : harvestTotals.getFirst();
-        BigDecimal normalizedSalePrice = salePricePerUnit == null
+        HarvestTotalResponse mainHarvest = harvestTotals.stream()
+                .filter(item -> "sacas de 60 kg".equals(item.unit()))
+                .findFirst()
+                .orElseGet(() -> harvestTotals.isEmpty()
+                        ? new HarvestTotalResponse(
+                                null,
+                                BigDecimal.ZERO.setScale(3, RoundingMode.HALF_UP)
+                        )
+                        : harvestTotals.getFirst());
+        BigDecimal normalizedSalePrice = salePricePer60KgBag == null
                 ? null
-                : money(salePricePerUnit);
+                : money(salePricePer60KgBag);
         BigDecimal estimatedRevenue = normalizedSalePrice == null
                 ? null
                 : money(mainHarvest.quantity().multiply(normalizedSalePrice));

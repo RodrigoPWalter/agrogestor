@@ -304,7 +304,10 @@ class PlantingServiceTest {
         ));
         when(expenseRepository.countByPlantingId(id)).thenReturn(2L);
         when(diaryRepository.findByPlantingIdAndActivityType(id, ActivityType.HARVEST))
-                .thenReturn(List.of(harvestEntry("Sacas", "120.000")));
+                .thenReturn(List.of(
+                        harvestEntry("Caixas", "999.000"),
+                        harvestEntry("Sacas", "120.000")
+                ));
 
         var closing = service.seasonClosing(id, new BigDecimal("70.00"));
 
@@ -315,6 +318,42 @@ class PlantingServiceTest {
         assertThat(closing.estimatedRevenue()).isEqualByComparingTo("8400.00");
         assertThat(closing.estimatedResult()).isEqualByComparingTo("3400.00");
         assertThat(closing.expensesByCategory()).hasSize(2);
+    }
+
+    @Test
+    void shouldPersistSalePriceAndReuseItWhenReopeningSeasonClosing() {
+        UUID id = UUID.randomUUID();
+        Planting planting = planting();
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
+        when(repository.findByIdAndPropertyId(id, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
+        when(expenseRepository.summarizeByCategory(id)).thenReturn(List.of());
+
+        var saved = service.updateSeasonClosingPrice(
+                id,
+                new BigDecimal("72.50")
+        );
+        var reopened = service.seasonClosing(id, null);
+
+        assertThat(planting.getSalePricePer60KgBag())
+                .isEqualByComparingTo("72.50");
+        assertThat(saved.salePricePerUnit()).isEqualByComparingTo("72.50");
+        assertThat(reopened.salePricePerUnit()).isEqualByComparingTo("72.50");
+    }
+
+    @Test
+    void shouldRejectNonPositiveSalePrice() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID))
+                .thenReturn(Optional.of(planting()));
+
+        assertThatThrownBy(() -> service.updateSeasonClosingPrice(
+                id,
+                BigDecimal.ZERO
+        ))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("maior que zero");
     }
 
     private PlantingRequest request(String crop, String observations) {

@@ -71,6 +71,9 @@ public class Planting {
     @Column(name = "completed_at")
     private OffsetDateTime completedAt;
 
+    @Column(name = "sale_price_per_60kg_bag", precision = 12, scale = 2)
+    private BigDecimal salePricePer60KgBag;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -208,6 +211,10 @@ public class Planting {
         completedAt = null;
     }
 
+    public void updateSalePricePer60KgBag(BigDecimal salePricePer60KgBag) {
+        this.salePricePer60KgBag = salePricePer60KgBag;
+    }
+
     @PreUpdate
     void preUpdate() {
         updatedAt = OffsetDateTime.now(ZoneOffset.UTC);
@@ -267,6 +274,10 @@ public class Planting {
 
     public OffsetDateTime getCompletedAt() {
         return completedAt;
+    }
+
+    public BigDecimal getSalePricePer60KgBag() {
+        return salePricePer60KgBag;
     }
 
     public OffsetDateTime getCreatedAt() {

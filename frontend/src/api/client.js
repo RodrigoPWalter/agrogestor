@@ -236,6 +236,12 @@ export const api = {
         : "";
     return request(`/api/v1/plantings/${id}/season-closing${query}`);
   },
+  saveSeasonClosingPrice: (id, salePricePer60KgBag) =>
+    request(`/api/v1/plantings/${id}/season-closing/price`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ salePricePer60KgBag }),
+    }),
 
   getExpenses: (plantingId) =>
     requestAllPages("/api/v1/expenses", { plantingId }),
