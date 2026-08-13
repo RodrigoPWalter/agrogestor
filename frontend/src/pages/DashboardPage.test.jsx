@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
@@ -49,6 +49,12 @@ describe("DashboardPage", () => {
 
     await waitFor(() => expect(api.getCommodityQuotes).toHaveBeenCalledOnce());
     expect(api.getDashboardSummary).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("heading", { name: "Plantios ativos" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Nenhum plantio ativo no momento."),
+    ).toBeInTheDocument();
   });
 });
 

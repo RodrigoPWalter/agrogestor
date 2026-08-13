@@ -65,8 +65,8 @@ export function RecentPlantingsPanel({ plantings }) {
     <section className="panel">
       <div className="panel__header">
         <div>
-          <span className="eyebrow">Mais recentes</span>
-          <h2>Últimos plantios</h2>
+          <span className="eyebrow">Em andamento</span>
+          <h2>Plantios ativos</h2>
         </div>
         <Link to="/plantios" className="text-link">
           Ver todos
@@ -76,7 +76,7 @@ export function RecentPlantingsPanel({ plantings }) {
       {plantings.length === 0 ? (
         <div className="compact-empty">
           <Sprout size={28} />
-          <p>Nenhum plantio cadastrado ainda.</p>
+          <p>Nenhum plantio ativo no momento.</p>
         </div>
       ) : (
         <div className="data-table-wrapper">
