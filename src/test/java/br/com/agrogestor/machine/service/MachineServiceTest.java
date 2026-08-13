@@ -6,6 +6,7 @@ import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.machine.dto.MaintenanceRequest;
+import br.com.agrogestor.machine.dto.MachineMaintenanceTotals;
 import br.com.agrogestor.machine.entity.Machine;
 import br.com.agrogestor.machine.entity.Maintenance;
 import br.com.agrogestor.machine.entity.MaintenanceType;
@@ -26,6 +27,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -201,6 +203,35 @@ class MachineServiceTest {
                 .hasMessageContaining("Diário");
         assertThat(maintenance.getCost()).isEqualByComparingTo("200.00");
         verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void shouldReturnMaintenanceCostsSeparatedByTypeForEachMachine() {
+        Machine machine = machine();
+        when(machineRepository.findByPropertyIdOrderByBrandAscModelAsc(PROPERTY_ID))
+                .thenReturn(List.of(machine));
+        when(maintenanceRepository.summarizeByMachineIds(
+                List.of(MACHINE_ID),
+                MaintenanceType.PREVENTIVE,
+                MaintenanceType.CORRECTIVE
+        )).thenReturn(List.of(new MachineMaintenanceTotals(
+                MACHINE_ID,
+                new BigDecimal("1700.00"),
+                new BigDecimal("500.00"),
+                new BigDecimal("1200.00"),
+                3L,
+                2L,
+                1L
+        )));
+
+        var response = service.findAll().getFirst();
+
+        assertThat(response.totalMaintenanceCost()).isEqualByComparingTo("1700.00");
+        assertThat(response.preventiveMaintenanceCost()).isEqualByComparingTo("500.00");
+        assertThat(response.correctiveMaintenanceCost()).isEqualByComparingTo("1200.00");
+        assertThat(response.maintenanceCount()).isEqualTo(3);
+        assertThat(response.preventiveMaintenanceCount()).isEqualTo(2);
+        assertThat(response.correctiveMaintenanceCount()).isEqualTo(1);
     }
 
     private Machine machine() {

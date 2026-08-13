@@ -7,10 +7,12 @@ import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.machine.dto.MachineRequest;
 import br.com.agrogestor.machine.dto.MachineResponse;
+import br.com.agrogestor.machine.dto.MachineMaintenanceTotals;
 import br.com.agrogestor.machine.dto.MaintenanceRequest;
 import br.com.agrogestor.machine.dto.MaintenanceResponse;
 import br.com.agrogestor.machine.entity.Machine;
 import br.com.agrogestor.machine.entity.Maintenance;
+import br.com.agrogestor.machine.entity.MaintenanceType;
 import br.com.agrogestor.machine.repository.MachineRepository;
 import br.com.agrogestor.machine.repository.MaintenanceRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
@@ -24,8 +26,10 @@ import java.math.RoundingMode;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class MachineService {
@@ -51,24 +55,33 @@ public class MachineService {
 
     @Transactional
     public MachineResponse create(MachineRequest request) {
-        return toResponse(machineRepository.save(new Machine(
+        Machine machine = machineRepository.save(new Machine(
                 currentProperty.get(),
                 normalize(request.model()), normalize(request.brand()), request.manufactureYear(),
                 hours(request.usageHours())
-        )));
+        ));
+        return toResponse(machine, zeroTotals(machine.getId()));
     }
 
     @Transactional(readOnly = true)
     public List<MachineResponse> findAll() {
-        return machineRepository.findByPropertyIdOrderByBrandAscModelAsc(currentProperty.id())
+        List<Machine> machines = machineRepository
+                .findByPropertyIdOrderByBrandAscModelAsc(currentProperty.id());
+        Map<UUID, MachineMaintenanceTotals> totals = maintenanceTotals(machines);
+        return machines
                 .stream()
-                .map(this::toResponse)
+                .map(machine -> toResponse(
+                        machine,
+                        totals.getOrDefault(machine.getId(), zeroTotals(machine.getId()))
+                ))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public MachineResponse findById(UUID id) {
-        return toResponse(findMachine(id));
+        Machine machine = findMachine(id);
+        return toResponse(machine, maintenanceTotals(List.of(machine))
+                .getOrDefault(id, zeroTotals(id)));
     }
 
     @Transactional
@@ -76,7 +89,8 @@ public class MachineService {
         Machine machine = findMachine(id);
         machine.update(normalize(request.model()), normalize(request.brand()),
                 request.manufactureYear(), hours(request.usageHours()));
-        return toResponse(machine);
+        return toResponse(machine, maintenanceTotals(List.of(machine))
+                .getOrDefault(id, zeroTotals(id)));
     }
 
     @Transactional
@@ -232,14 +246,50 @@ public class MachineService {
         }
     }
 
-    private MachineResponse toResponse(Machine machine) {
+    private MachineResponse toResponse(
+            Machine machine,
+            MachineMaintenanceTotals totals
+    ) {
         BigDecimal nextReview = maintenanceRepository
                 .findFirstByMachineIdAndNextReviewHoursIsNotNullOrderByMaintenanceDateDesc(machine.getId())
                 .map(Maintenance::getNextReviewHours).orElse(null);
         return new MachineResponse(machine.getId(), machine.getModel(), machine.getBrand(),
                 machine.getManufactureYear(), machine.getUsageHours(), nextReview,
                 nextReview != null && machine.getUsageHours().compareTo(nextReview) >= 0,
+                money(totals.totalCost()),
+                money(totals.preventiveCost()),
+                money(totals.correctiveCost()),
+                totals.maintenanceCount(),
+                totals.preventiveCount(),
+                totals.correctiveCount(),
                 machine.getCreatedAt(), machine.getUpdatedAt());
+    }
+
+    private Map<UUID, MachineMaintenanceTotals> maintenanceTotals(
+            List<Machine> machines
+    ) {
+        if (machines.isEmpty()) return Map.of();
+        return maintenanceRepository.summarizeByMachineIds(
+                        machines.stream().map(Machine::getId).toList(),
+                        MaintenanceType.PREVENTIVE,
+                        MaintenanceType.CORRECTIVE
+                ).stream()
+                .collect(Collectors.toMap(
+                        MachineMaintenanceTotals::machineId,
+                        totals -> totals
+                ));
+    }
+
+    private MachineMaintenanceTotals zeroTotals(UUID machineId) {
+        return new MachineMaintenanceTotals(
+                machineId,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0L,
+                0L,
+                0L
+        );
     }
 
     private MaintenanceResponse toResponse(Maintenance maintenance, boolean diaryManaged) {

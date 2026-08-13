@@ -677,6 +677,51 @@ p {
   font-weight: 700;
 }
 
+.machine-cost-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+
+.machine-cost-summary > div {
+  min-width: 0;
+  padding: 10px;
+  border-left: 1px solid var(--line);
+}
+
+.machine-cost-summary > div:first-child {
+  border-left: 0;
+}
+
+.machine-cost-summary span,
+.machine-cost-summary strong,
+.machine-cost-summary small {
+  display: block;
+}
+
+.machine-cost-summary span,
+.machine-cost-summary small {
+  color: var(--muted);
+  font-size: 0.61rem;
+}
+
+.machine-cost-summary strong {
+  margin: 3px 0;
+  color: var(--green-950);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.machine-cost-summary__total {
+  background: var(--green-50);
+}
+
 .inventory-card .button--wide {
   margin-top: auto;
   transform: translateY(12px);
@@ -766,6 +811,47 @@ p {
 
 .maintenance-panel {
   margin-top: 2px;
+}
+
+.maintenance-filters {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 10px;
+  overflow-x: auto;
+}
+
+.maintenance-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.68rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.maintenance-filters button.is-active {
+  color: #fff;
+  border-color: var(--green-700);
+  background: var(--green-700);
+}
+
+.maintenance-filters button span {
+  min-width: 20px;
+  padding: 2px 5px;
+  color: inherit;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+
+.compact-empty--filter {
+  min-height: 90px;
 }
 
 .maintenance-list {
@@ -2200,6 +2286,19 @@ p {
   .module-summary-grid,
   .machine-grid {
     grid-template-columns: 1fr;
+  }
+
+  .machine-cost-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .machine-cost-summary__total {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .machine-cost-summary > div:nth-child(2) {
+    border-left: 0;
   }
 
   .diary-filter {

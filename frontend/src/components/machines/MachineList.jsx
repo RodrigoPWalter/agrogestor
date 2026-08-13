@@ -7,7 +7,7 @@ import {
   Tractor,
   Wrench,
 } from "lucide-react";
-import { formatNumber } from "../../utils/formatters";
+import { formatCurrency, formatNumber } from "../../utils/formatters";
 
 export function MachineList({
   machines,
@@ -64,6 +64,27 @@ export function MachineList({
               {formatNumber(machine.nextReviewHours, 1)} h
             </p>
           )}
+          <div className="machine-cost-summary">
+            <div className="machine-cost-summary__total">
+              <span>Total gasto</span>
+              <strong>{formatCurrency(machine.totalMaintenanceCost)}</strong>
+              <small>{machine.maintenanceCount || 0} manutenções</small>
+            </div>
+            <div>
+              <span>Preventivas</span>
+              <strong>
+                {formatCurrency(machine.preventiveMaintenanceCost)}
+              </strong>
+              <small>{machine.preventiveMaintenanceCount || 0} registros</small>
+            </div>
+            <div>
+              <span>Corretivas</span>
+              <strong>
+                {formatCurrency(machine.correctiveMaintenanceCost)}
+              </strong>
+              <small>{machine.correctiveMaintenanceCount || 0} registros</small>
+            </div>
+          </div>
           <div className="machine-actions">
             <button
               className="button button--ghost"

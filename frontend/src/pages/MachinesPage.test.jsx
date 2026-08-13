@@ -24,6 +24,12 @@ const machine = {
   usageHours: 450,
   reviewDue: false,
   nextReviewHours: 500,
+  totalMaintenanceCost: 1700,
+  preventiveMaintenanceCost: 500,
+  correctiveMaintenanceCost: 1200,
+  maintenanceCount: 3,
+  preventiveMaintenanceCount: 2,
+  correctiveMaintenanceCount: 1,
 };
 
 describe("MachinesPage", () => {
@@ -31,6 +37,15 @@ describe("MachinesPage", () => {
     vi.clearAllMocks();
     api.getMachines.mockResolvedValue([machine]);
     api.getMaintenances.mockResolvedValue([]);
+  });
+
+  it("mostra os custos de manutenção separados em cada máquina", async () => {
+    render(<MachinesPage />);
+
+    expect(await screen.findByText("R$ 1.700,00")).toBeInTheDocument();
+    expect(screen.getByText("R$ 500,00")).toBeInTheDocument();
+    expect(screen.getByText("R$ 1.200,00")).toBeInTheDocument();
+    expect(screen.getByText("3 manutenções")).toBeInTheDocument();
   });
 
   it("mantém a frota visível enquanto atualiza após excluir", async () => {

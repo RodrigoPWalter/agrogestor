@@ -7,5 +7,12 @@ import java.util.UUID;
 public record MachineResponse(
         UUID id, String model, String brand, Integer manufactureYear,
         BigDecimal usageHours, BigDecimal nextReviewHours,
-        boolean reviewDue, OffsetDateTime createdAt, OffsetDateTime updatedAt
+        boolean reviewDue,
+        BigDecimal totalMaintenanceCost,
+        BigDecimal preventiveMaintenanceCost,
+        BigDecimal correctiveMaintenanceCost,
+        long maintenanceCount,
+        long preventiveMaintenanceCount,
+        long correctiveMaintenanceCount,
+        OffsetDateTime createdAt, OffsetDateTime updatedAt
 ) {}

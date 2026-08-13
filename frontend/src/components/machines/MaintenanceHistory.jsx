@@ -1,4 +1,5 @@
 import { Edit3, Plus, Trash2, Wrench } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   formatCurrency,
   formatDate,
@@ -12,6 +13,28 @@ export function MaintenanceHistory({
   onEdit,
   onDelete,
 }) {
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const counts = useMemo(
+    () => ({
+      ALL: maintenances.length,
+      PREVENTIVE: maintenances.filter(
+        (item) => item.maintenanceType === "PREVENTIVE",
+      ).length,
+      CORRECTIVE: maintenances.filter(
+        (item) => item.maintenanceType === "CORRECTIVE",
+      ).length,
+    }),
+    [maintenances],
+  );
+  const filteredMaintenances =
+    typeFilter === "ALL"
+      ? maintenances
+      : maintenances.filter((item) => item.maintenanceType === typeFilter);
+
+  useEffect(() => {
+    setTypeFilter("ALL");
+  }, [machine?.id]);
+
   if (!machine) return null;
 
   return (
@@ -27,6 +50,25 @@ export function MaintenanceHistory({
           <Plus size={16} /> Registrar
         </button>
       </div>
+      {maintenances.length > 0 && (
+        <div className="maintenance-filters" aria-label="Filtrar manutenções">
+          {[
+            ["ALL", "Todas"],
+            ["PREVENTIVE", "Preventivas"],
+            ["CORRECTIVE", "Corretivas"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={typeFilter === value ? "is-active" : ""}
+              aria-pressed={typeFilter === value}
+              onClick={() => setTypeFilter(value)}
+            >
+              {label} <span>{counts[value]}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {maintenances.length === 0 ? (
         <div className="compact-empty">
           <Wrench size={28} />
@@ -34,7 +76,7 @@ export function MaintenanceHistory({
         </div>
       ) : (
         <div className="maintenance-list">
-          {maintenances.map((item) => (
+          {filteredMaintenances.map((item) => (
             <article key={item.id}>
               <span
                 className={`maintenance-type maintenance-type--${item.maintenanceType.toLowerCase()}`}
@@ -78,6 +120,11 @@ export function MaintenanceHistory({
               )}
             </article>
           ))}
+          {filteredMaintenances.length === 0 && (
+            <div className="compact-empty compact-empty--filter">
+              <p>Nenhuma manutenção deste tipo.</p>
+            </div>
+          )}
         </div>
       )}
     </section>
