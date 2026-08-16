@@ -1,6 +1,7 @@
 package br.com.agrogestor.shared.exception;
 
 import br.com.agrogestor.auth.exception.InvalidCredentialsException;
+import br.com.agrogestor.shared.observability.RequestCorrelationFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -158,6 +159,8 @@ public class GlobalExceptionHandler {
                 status.getReasonPhrase(),
                 message,
                 request.getRequestURI(),
+                request.getAttribute(RequestCorrelationFilter.REQUEST_ID_ATTRIBUTE) instanceof String id
+                        ? id : null,
                 fieldErrors
         );
         return ResponseEntity.status(status).body(error);

@@ -1,6 +1,7 @@
 package br.com.agrogestor.auth.security;
 
 import br.com.agrogestor.shared.exception.ApiError;
+import br.com.agrogestor.shared.observability.RequestCorrelationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +38,8 @@ public class SecurityErrorWriter {
                 status.getReasonPhrase(),
                 message,
                 request.getRequestURI(),
+                request.getAttribute(RequestCorrelationFilter.REQUEST_ID_ATTRIBUTE)
+                        instanceof String id ? id : null,
                 Map.of()
         ));
     }

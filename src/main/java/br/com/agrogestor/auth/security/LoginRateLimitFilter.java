@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -28,6 +29,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     private final Map<String, AttemptWindow> attemptsByAddress = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final int maximumAttempts;
+    private final int maximumTrackedAddresses;
     private final Duration windowDuration;
     private final Clock clock;
 
@@ -37,20 +39,25 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             @Value("${agrogestor.security.login-rate-limit.max-attempts:10}")
             int maximumAttempts,
             @Value("${agrogestor.security.login-rate-limit.window-minutes:15}")
-            long windowMinutes
+            long windowMinutes,
+            @Value("${agrogestor.security.login-rate-limit.max-tracked-addresses:10000}")
+            int maximumTrackedAddresses
     ) {
-        this(objectMapper, maximumAttempts, Duration.ofMinutes(windowMinutes), Clock.systemUTC());
+        this(objectMapper, maximumAttempts, Duration.ofMinutes(windowMinutes),
+                maximumTrackedAddresses, Clock.systemUTC());
     }
 
     LoginRateLimitFilter(
             ObjectMapper objectMapper,
             int maximumAttempts,
             Duration windowDuration,
+            int maximumTrackedAddresses,
             Clock clock
     ) {
         this.objectMapper = objectMapper;
         this.maximumAttempts = maximumAttempts;
         this.windowDuration = windowDuration;
+        this.maximumTrackedAddresses = maximumTrackedAddresses;
         this.clock = clock;
     }
 
@@ -93,12 +100,39 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
     }
 
     private void registerFailure(String remoteAddress, Instant now) {
+        makeRoomFor(remoteAddress, now);
         attemptsByAddress.compute(
                 remoteAddress,
                 (address, current) -> current == null || !current.expiredAt().isAfter(now)
                         ? new AttemptWindow(1, now.plus(windowDuration))
                         : current.incremented()
         );
+    }
+
+    private void makeRoomFor(String remoteAddress, Instant now) {
+        if (attemptsByAddress.containsKey(remoteAddress)
+                || attemptsByAddress.size() < maximumTrackedAddresses) {
+            return;
+        }
+        removeExpiredAttempts(now);
+        if (attemptsByAddress.size() < maximumTrackedAddresses) return;
+
+        attemptsByAddress.entrySet().stream()
+                .min(Map.Entry.<String, AttemptWindow>comparingByValue(
+                                java.util.Comparator.comparing(AttemptWindow::expiredAt))
+                        .thenComparing(Map.Entry::getKey))
+                .ifPresent(entry -> attemptsByAddress.remove(entry.getKey(), entry.getValue()));
+    }
+
+    @Scheduled(fixedDelayString =
+            "${agrogestor.security.login-rate-limit.cleanup-interval-ms:900000}")
+    void removeExpiredAttempts() {
+        removeExpiredAttempts(clock.instant());
+    }
+
+    private void removeExpiredAttempts(Instant now) {
+        attemptsByAddress.entrySet().removeIf(entry ->
+                !entry.getValue().expiredAt().isAfter(now));
     }
 
     private void writeRateLimitResponse(

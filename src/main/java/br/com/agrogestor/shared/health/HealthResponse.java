@@ -1,4 +1,4 @@
 package br.com.agrogestor.shared.health;
 
-public record HealthResponse(String status) {
+public record HealthResponse(String status, String database) {
 }

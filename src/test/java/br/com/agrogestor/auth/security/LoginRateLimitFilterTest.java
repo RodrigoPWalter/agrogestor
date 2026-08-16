@@ -19,6 +19,7 @@ class LoginRateLimitFilterTest {
             new ObjectMapper(),
             2,
             Duration.ofMinutes(15),
+            100,
             Clock.fixed(Instant.parse("2026-08-01T12:00:00Z"), ZoneOffset.UTC)
     );
 

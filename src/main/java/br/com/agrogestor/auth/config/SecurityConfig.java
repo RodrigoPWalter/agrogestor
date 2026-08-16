@@ -6,6 +6,7 @@ import br.com.agrogestor.auth.security.RestAccessDeniedHandler;
 import br.com.agrogestor.auth.security.RestAuthenticationEntryPoint;
 import br.com.agrogestor.auth.security.UsuarioDetailsService;
 import br.com.agrogestor.shared.idempotency.IdempotencyFilter;
+import br.com.agrogestor.shared.observability.RequestCorrelationFilter;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -88,9 +90,12 @@ public class SecurityConfig {
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
         configuration.setAllowedHeaders(List.of(
-                "Authorization", "Content-Type", IdempotencyFilter.IDEMPOTENCY_HEADER
+                "Authorization", "Content-Type", IdempotencyFilter.IDEMPOTENCY_HEADER,
+                RequestCorrelationFilter.REQUEST_ID_HEADER
         ));
-        configuration.setExposedHeaders(List.of("Location", "X-Idempotent-Replay"));
+        configuration.setExposedHeaders(List.of(
+                "Location", "X-Idempotent-Replay", RequestCorrelationFilter.REQUEST_ID_HEADER
+        ));
         configuration.setMaxAge(3600L);
 
         var source = new UrlBasedCorsConfigurationSource();
@@ -139,9 +144,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtDecoder jwtDecoder(SecretKey secretKey) {
-        return NimbusJwtDecoder.withSecretKey(secretKey)
+    JwtDecoder jwtDecoder(
+            SecretKey secretKey,
+            @Value("${agrogestor.security.jwt-issuer}") String jwtIssuer
+    ) {
+        var decoder = NimbusJwtDecoder.withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(jwtIssuer));
+        return decoder;
     }
 }
