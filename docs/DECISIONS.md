@@ -28,9 +28,9 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 **Motivo:** no uso real, o produtor tende a registrar acontecimentos como uma anotação rápida. Se a compra de produto ou o uso de insumo exigirem telas separadas, a chance de abandono aumenta.
 
-**Trade-off:** o `FieldDiaryService` ficou grande e conhece vários módulos. Para o MVP isso reduziu atrito de implementação, mas o serviço precisa ser dividido antes de crescer mais.
+**Trade-off:** o `FieldDiaryService` ainda orquestra vários módulos. O mapeamento de respostas e as movimentações de estoque já foram extraídos para serviços próprios, reduzindo seu tamanho sem espalhar a transação principal.
 
-**Evolução prevista:** extrair orquestradores menores, como `DiaryStockHandler`, `DiaryRainfallHandler`, `DiaryMaintenanceHandler` e `DiaryExpenseHandler`.
+**Evolução prevista:** extrair os demais efeitos somente quando eles ganharem regras próprias, evitando criar camadas sem responsabilidade real.
 
 ## 4. Estoque com baixa transacional
 

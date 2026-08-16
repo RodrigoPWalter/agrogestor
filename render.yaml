@@ -40,6 +40,22 @@ services:
         value: https://agrogestor-api-rodrigowalter.onrender.com
       - key: VITE_API_TIMEOUT_MS
         value: "90000"
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
     routes:
       - type: rewrite
         source: /*

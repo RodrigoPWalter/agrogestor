@@ -7,8 +7,6 @@
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 [![CI](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml/badge.svg)](https://github.com/RodrigoPWalter/agrogestor/actions/workflows/ci.yml)
 
-
-
 AgroGestor é um sistema de gestão rural familiar desenvolvido para centralizar informações de plantio, custos, estoque, diário da lavoura, chuvas e manutenção de máquinas em uma única aplicação. O projeto nasceu de uma necessidade prática: reduzir registros soltos em caderno, planilhas e mensagens, transformando a rotina da propriedade em dados mais confiáveis para tomada de decisão.
 
 O foco do sistema é ser simples o suficiente para uso no campo e estruturado o bastante para evoluir como uma aplicação real, com API REST, autenticação, banco versionado, frontend responsivo e suporte a instalação como PWA.
@@ -47,7 +45,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - React Router
 - Vite 8
 - Vite Plugin PWA
-- Vitest e Testing Library
+- Vitest, Testing Library e Playwright
 - CSS responsivo com foco em uso mobile
 
 ### Backend
@@ -94,22 +92,22 @@ O frontend segue uma organização por páginas, componentes reutilizáveis, con
 
 Todos os endpoints são versionados com o prefixo `/api/v1`.
 
-| Domínio           | Rota base                    |
-| ----------------- | ---------------------------- |
-| Autenticação      | `/api/v1/auth`               |
-| Contas (administrador) | `/api/v1/users`          |
-| Visão geral       | `/api/v1/dashboard`          |
-| Plantios          | `/api/v1/plantings`          |
-| Etapas de plantio | `/api/v1/plantings/{id}/steps` |
-| Etapas de colheita | `/api/v1/plantings/{id}/harvest-steps` |
-| Gastos            | `/api/v1/expenses`           |
-| Estoque           | `/api/v1/inventory/products` |
-| Máquinas          | `/api/v1/machines`           |
-| Manutenções       | `/api/v1/maintenances`       |
-| Diário da lavoura | `/api/v1/field-diary`        |
-| Chuvas            | `/api/v1/rainfall`           |
-| Cotações          | `/api/v1/commodity-quotes`   |
-| Saúde do serviço  | `/api/v1/health`             |
+| Domínio                | Rota base                              |
+| ---------------------- | -------------------------------------- |
+| Autenticação           | `/api/v1/auth`                         |
+| Contas (administrador) | `/api/v1/users`                        |
+| Visão geral            | `/api/v1/dashboard`                    |
+| Plantios               | `/api/v1/plantings`                    |
+| Etapas de plantio      | `/api/v1/plantings/{id}/steps`         |
+| Etapas de colheita     | `/api/v1/plantings/{id}/harvest-steps` |
+| Gastos                 | `/api/v1/expenses`                     |
+| Estoque                | `/api/v1/inventory/products`           |
+| Máquinas               | `/api/v1/machines`                     |
+| Manutenções            | `/api/v1/maintenances`                 |
+| Diário da lavoura      | `/api/v1/field-diary`                  |
+| Chuvas                 | `/api/v1/rainfall`                     |
+| Cotações               | `/api/v1/commodity-quotes`             |
+| Saúde do serviço       | `/api/v1/health`                       |
 
 ## Executando localmente
 
@@ -236,8 +234,9 @@ npm.cmd run format:check
 - O módulo de cotações consulta a Cotricampo e mantém fallback/cache no backend; o frontend também evita recarregar as cotações mais de uma vez por dia.
 - O projeto evita expor entidades diretamente na API, usando DTOs para entrada e saída.
 - Serviços que alteram mais de uma tabela usam transações para preservar consistência.
-- O CI executa verificação de formato, testes do backend e frontend, build de produção e auditoria das dependências de produção do frontend.
+- O CI executa verificação de formato, testes unitários e de integração, cenários reais no navegador, build de produção e auditoria das dependências do frontend.
 - O CI também sobe um PostgreSQL temporário para validar as migrations e o fluxo transacional entre Diário e Estoque.
+- A verificação de saúde consulta o banco antes de declarar a API disponível, e cada resposta da API inclui um identificador de requisição para facilitar o diagnóstico de falhas.
 - A documentação OpenAPI fica disponível no ambiente local. No perfil de produção ela é desativada para reduzir superfície de exposição e custo de inicialização.
 - O repositório ainda não define uma licença de uso. Antes de aceitar contribuições ou liberar reutilização por terceiros, escolha uma licença adequada para o objetivo do projeto.
 
