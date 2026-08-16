@@ -12,8 +12,9 @@
     "preview": "vite preview",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
-    "format": "prettier --write \"src/**/*.{js,jsx,css}\" index.html vite.config.js eslint.config.js",
-    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\" index.html vite.config.js eslint.config.js"
+    "test:e2e": "playwright test",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\" \"e2e/**/*.js\" index.html vite.config.js eslint.config.js playwright.config.js",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\" \"e2e/**/*.js\" index.html vite.config.js eslint.config.js playwright.config.js"
   },
   "dependencies": {
     "axios": "1.18.1",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@vitejs/plugin-react": "6.0.4",

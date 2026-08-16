@@ -78,11 +78,20 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      - name: Run lint
+        run: npm run lint
+
       - name: Run frontend tests
         run: npm test
 
       - name: Build frontend
         run: npm run build
+
+      - name: Install browser for end-to-end tests
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: npm run test:e2e
 
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=critical
