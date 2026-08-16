@@ -14,6 +14,12 @@ body {
   line-height: 1.5;
 }
 
+/* O layout atual é horizontal; neutraliza a margem da antiga barra lateral. */
+.main-content.main-content--horizontal {
+  width: 100%;
+  margin-left: 0;
+}
+
 .app-header__inner,
 .main-content--horizontal .page {
   width: min(1720px, 100%);
@@ -59,6 +65,32 @@ body {
 .header-profile small,
 .profile-dropdown small {
   font-size: 0.72rem;
+}
+
+@media (min-width: 1280px) {
+  .app-header__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .app-brand {
+    justify-self: start;
+  }
+
+  .desktop-navigation {
+    align-self: stretch;
+    justify-self: center;
+  }
+
+  .desktop-navigation__item {
+    min-height: 72px;
+    padding-top: 0;
+  }
+
+  .app-header__actions {
+    justify-self: end;
+  }
 }
 
 .page-header,
