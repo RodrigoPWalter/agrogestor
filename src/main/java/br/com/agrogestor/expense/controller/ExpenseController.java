@@ -3,8 +3,10 @@ package br.com.agrogestor.expense.controller;
 import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.dto.ExpenseResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
+import br.com.agrogestor.expense.dto.PlantingExpenseOverviewResponse;
 import br.com.agrogestor.expense.dto.PropertyExpenseSummaryResponse;
 import br.com.agrogestor.expense.service.ExpenseService;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.shared.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @Validated
@@ -65,6 +68,14 @@ public class ExpenseController {
     ) {
         return ResponseEntity.ok(service.findAll(
                 plantingId, unassignedOnly, page, size));
+    }
+
+    @GetMapping("/plantings/summaries")
+    @Operation(summary = "Resumir gastos dos plantios por status")
+    public ResponseEntity<List<PlantingExpenseOverviewResponse>> summarizePlantings(
+            @RequestParam(defaultValue = "ACTIVE") PlantingStatus status
+    ) {
+        return ResponseEntity.ok(service.summarizePlantings(status));
     }
 
     @GetMapping("/{id}")

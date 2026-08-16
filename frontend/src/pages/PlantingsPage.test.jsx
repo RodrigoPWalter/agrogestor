@@ -7,7 +7,7 @@ vi.mock("../api/client", () => ({
   api: {
     getPlantings: vi.fn(),
     getPlantingHistory: vi.fn(),
-    getExpenses: vi.fn(),
+    getPlantingExpenseSummaries: vi.fn(),
     createPlanting: vi.fn(),
     updatePlanting: vi.fn(),
     deletePlanting: vi.fn(),
@@ -58,15 +58,14 @@ describe("PlantingsPage", () => {
     api.getPlantingHistory.mockResolvedValue({
       content: [harvestedPlanting],
     });
-    api.getExpenses.mockResolvedValue({
-      content: [
-        {
-          id: "expense-1",
-          plantingId: activePlanting.id,
-          amount: 1000,
-        },
-      ],
-    });
+    api.getPlantingExpenseSummaries.mockResolvedValue([
+      {
+        plantingId: activePlanting.id,
+        totalExpenses: 1000,
+        expensePerHectare: 50,
+        expenseCount: 1,
+      },
+    ]);
   });
 
   it("alterna entre os plantios ativos e o histórico de safras", async () => {
@@ -74,7 +73,7 @@ describe("PlantingsPage", () => {
 
     expect(await screen.findByText("Trigo")).toBeInTheDocument();
     expect(screen.getByText("50 kg/ha")).toBeInTheDocument();
-    expect(api.getExpenses).toHaveBeenCalledTimes(1);
+    expect(api.getPlantingExpenseSummaries).toHaveBeenCalledWith("ACTIVE");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Histórico de safras" }),
@@ -83,7 +82,7 @@ describe("PlantingsPage", () => {
     expect(await screen.findByText("Soja")).toBeInTheDocument();
     await waitFor(() => {
       expect(api.getPlantingHistory).toHaveBeenCalledTimes(1);
-      expect(api.getExpenses).toHaveBeenCalledTimes(2);
+      expect(api.getPlantingExpenseSummaries).toHaveBeenCalledWith("HARVESTED");
     });
     expect(
       screen.getByRole("button", { name: "Reativar plantio" }),
@@ -105,7 +104,7 @@ describe("PlantingsPage", () => {
           finishRefresh = () => resolve({ content: [] });
         }),
     );
-    api.getExpenses.mockResolvedValueOnce({ content: [] });
+    api.getPlantingExpenseSummaries.mockResolvedValueOnce([]);
 
     fireEvent.click(screen.getByRole("button", { name: "Finalizar safra" }));
 
@@ -118,6 +117,20 @@ describe("PlantingsPage", () => {
     expect(
       await screen.findByText("Comece pelo primeiro plantio"),
     ).toBeInTheDocument();
+  });
+
+  it("mantém os plantios visíveis quando o resumo financeiro falha", async () => {
+    api.getPlantingExpenseSummaries.mockRejectedValue(
+      new Error("Resumo indisponível"),
+    );
+
+    render(<PlantingsPage />);
+
+    expect(await screen.findByText("Trigo")).toBeInTheDocument();
+    expect(
+      await screen.findByText(/resumos financeiros estão temporariamente/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("—")).toHaveLength(3);
   });
 
   it("cadastra um plantio com área prevista e sem hectares executados", async () => {

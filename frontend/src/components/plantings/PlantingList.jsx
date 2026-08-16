@@ -14,6 +14,7 @@ import { PlantingProgressBar } from "./PlantingProgressBar";
 export function PlantingList({
   plantings,
   summaries,
+  summaryStatus,
   view,
   onOpen,
   onEdit,
@@ -37,6 +38,7 @@ export function PlantingList({
               {view === "active" &&
                 planting.harvestProgressStatus === "COMPLETED" && (
                   <button
+                    type="button"
                     className="icon-button icon-button--success"
                     onClick={() => onFinish(planting)}
                     aria-label="Finalizar safra"
@@ -46,6 +48,7 @@ export function PlantingList({
                 )}
               {view === "history" && (
                 <button
+                  type="button"
                   className="icon-button icon-button--success"
                   onClick={() => onReactivate(planting)}
                   aria-label="Reativar plantio"
@@ -54,6 +57,7 @@ export function PlantingList({
                 </button>
               )}
               <button
+                type="button"
                 className="icon-button"
                 onClick={() => onEdit(planting)}
                 aria-label="Editar plantio"
@@ -61,6 +65,7 @@ export function PlantingList({
                 <Edit3 size={18} />
               </button>
               <button
+                type="button"
                 className="icon-button icon-button--danger"
                 onClick={() => onDelete(planting)}
                 aria-label="Excluir plantio"
@@ -96,7 +101,10 @@ export function PlantingList({
               />
             </>
           )}
-          <PlantingSummaryCard summary={summaries[planting.id]} />
+          <PlantingSummaryCard
+            summary={summaries[planting.id]}
+            status={summaryStatus}
+          />
           <dl className="details-list">
             {planting.completedAt && (
               <div>

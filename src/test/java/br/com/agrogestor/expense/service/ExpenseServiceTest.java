@@ -6,7 +6,9 @@ import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
+import br.com.agrogestor.expense.repository.PlantingExpenseOverviewProjection;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
@@ -116,6 +118,26 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void shouldSummarizePlantingCardsWithOneAggregateQuery() {
+        UUID plantingId = UUID.randomUUID();
+        when(expenseRepository.summarizePlantingsByStatus(
+                PROPERTY_ID, PlantingStatus.ACTIVE
+        )).thenReturn(List.of(overviewProjection(
+                plantingId, "20.00", "1500.00", 3L
+        )));
+
+        var summaries = service.summarizePlantings(PlantingStatus.ACTIVE);
+
+        assertThat(summaries).hasSize(1);
+        assertThat(summaries.get(0).plantingId()).isEqualTo(plantingId);
+        assertThat(summaries.get(0).totalExpenses())
+                .isEqualByComparingTo("1500.00");
+        assertThat(summaries.get(0).expensePerHectare())
+                .isEqualByComparingTo("75.00");
+        assertThat(summaries.get(0).expenseCount()).isEqualTo(3L);
+    }
+
+    @Test
     void shouldSummarizeOnlyUnassignedPropertyExpenses() {
         when(expenseRepository.summarizeUnassignedByCategory(
                 PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(List.of(
@@ -173,6 +195,35 @@ class ExpenseServiceTest {
             @Override
             public BigDecimal getTotal() {
                 return new BigDecimal(total);
+            }
+        };
+    }
+
+    private PlantingExpenseOverviewProjection overviewProjection(
+            UUID plantingId,
+            String plannedArea,
+            String total,
+            long count
+    ) {
+        return new PlantingExpenseOverviewProjection() {
+            @Override
+            public UUID getPlantingId() {
+                return plantingId;
+            }
+
+            @Override
+            public BigDecimal getPlannedAreaHectares() {
+                return new BigDecimal(plannedArea);
+            }
+
+            @Override
+            public BigDecimal getTotalExpenses() {
+                return new BigDecimal(total);
+            }
+
+            @Override
+            public long getExpenseCount() {
+                return count;
             }
         };
     }

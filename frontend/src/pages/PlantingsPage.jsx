@@ -15,7 +15,6 @@ import { PlantingFormModal } from "../components/plantings/PlantingFormModal";
 import { PlantingList } from "../components/plantings/PlantingList";
 import { PlantingsToolbar } from "../components/plantings/PlantingsToolbar";
 import { toInputDate } from "../utils/formatters";
-import { buildPlantingExpenseSummaries } from "../utils/plantingSummaries";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
 import {
@@ -53,6 +52,7 @@ export function PlantingsPage() {
   const [form, setForm] = useState(emptyForm);
   const [view, setView] = useState("active");
   const [summaries, setSummaries] = useState({});
+  const [summaryStatus, setSummaryStatus] = useState("loading");
   const [selectedPlanting, setSelectedPlanting] = useState(null);
   const [draftRecovered, setDraftRecovered] = useState(false);
   const beginPlantingsRequest = useLatestRequestGuard();
@@ -62,17 +62,41 @@ export function PlantingsPage() {
       const isCurrentRequest = beginPlantingsRequest();
       if (showLoading) setLoading(true);
       try {
-        const [page, expensePage] = await Promise.all([
-          view === "active" ? api.getPlantings() : api.getPlantingHistory(),
-          api.getExpenses(),
-        ]);
+        const page =
+          view === "active"
+            ? await api.getPlantings()
+            : await api.getPlantingHistory();
         if (isCurrentRequest()) {
           setPlantings(page.content);
-          setSummaries(
-            buildPlantingExpenseSummaries(page.content, expensePage.content),
-          );
+          setSummaries({});
+          setSummaryStatus("loading");
           setOfflineDataUnavailable(false);
           setError("");
+          if (showLoading) setLoading(false);
+        }
+
+        try {
+          const financialSummaries = await api.getPlantingExpenseSummaries(
+            view === "active" ? "ACTIVE" : "HARVESTED",
+          );
+          if (isCurrentRequest()) {
+            setSummaries(
+              Object.fromEntries(
+                financialSummaries.map((summary) => [
+                  summary.plantingId,
+                  summary,
+                ]),
+              ),
+            );
+            setSummaryStatus("ready");
+          }
+        } catch {
+          if (isCurrentRequest()) {
+            setSummaryStatus("error");
+            setError(
+              "Os plantios foram carregados, mas os resumos financeiros estão temporariamente indisponíveis.",
+            );
+          }
         }
       } catch (requestError) {
         if (isCurrentRequest()) {
@@ -297,6 +321,7 @@ export function PlantingsPage() {
         <PlantingList
           plantings={filteredPlantings}
           summaries={summaries}
+          summaryStatus={summaryStatus}
           view={view}
           onOpen={setSelectedPlanting}
           onEdit={openEdit}

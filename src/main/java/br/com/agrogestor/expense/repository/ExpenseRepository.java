@@ -2,6 +2,7 @@ package br.com.agrogestor.expense.repository;
 
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -86,6 +87,22 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             """)
     List<ExpenseCategoryTotalProjection> summarizeByCategory(
             @Param("plantingId") UUID plantingId
+    );
+
+    @Query("""
+            select e.planting.id as plantingId,
+                   e.planting.plannedAreaHectares as plannedAreaHectares,
+                   sum(e.amount) as totalExpenses,
+                   count(e) as expenseCount
+            from Expense e
+            where e.property.id = :propertyId
+              and e.planting is not null
+              and e.planting.status = :status
+            group by e.planting.id, e.planting.plannedAreaHectares
+            """)
+    List<PlantingExpenseOverviewProjection> summarizePlantingsByStatus(
+            @Param("propertyId") UUID propertyId,
+            @Param("status") PlantingStatus status
     );
 
     @Query("""

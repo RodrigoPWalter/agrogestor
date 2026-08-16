@@ -263,6 +263,10 @@ export const api = {
     request(`/api/v1/expenses/${id}`, { method: "DELETE" }),
   getExpenseSummary: (plantingId) =>
     request(`/api/v1/expenses/plantings/${plantingId}/summary`),
+  getPlantingExpenseSummaries: (status = "ACTIVE") =>
+    request(
+      withQueryParams("/api/v1/expenses/plantings/summaries", { status }),
+    ),
   getPropertyExpenseSummary: () => request("/api/v1/expenses/property/summary"),
 
   getInventoryProducts: () => request("/api/v1/inventory/products"),

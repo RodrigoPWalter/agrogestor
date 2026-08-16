@@ -4,12 +4,15 @@ import br.com.agrogestor.expense.dto.ExpenseCategorySummaryResponse;
 import br.com.agrogestor.expense.dto.ExpenseRequest;
 import br.com.agrogestor.expense.dto.ExpenseResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
+import br.com.agrogestor.expense.dto.PlantingExpenseOverviewResponse;
 import br.com.agrogestor.expense.dto.PropertyExpenseSummaryResponse;
 import br.com.agrogestor.expense.entity.Expense;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
+import br.com.agrogestor.expense.repository.PlantingExpenseOverviewProjection;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
@@ -161,6 +164,17 @@ public class ExpenseService {
     }
 
     @Transactional(readOnly = true)
+    public List<PlantingExpenseOverviewResponse> summarizePlantings(
+            PlantingStatus status
+    ) {
+        return expenseRepository
+                .summarizePlantingsByStatus(currentProperty.id(), status)
+                .stream()
+                .map(this::toPlantingOverview)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public PropertyExpenseSummaryResponse summarizeUnassigned() {
         UUID propertyId = currentProperty.id();
         List<ExpenseCategoryTotalProjection> totals =
@@ -204,6 +218,24 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Gasto não encontrado com o ID " + id
                 ));
+    }
+
+    private PlantingExpenseOverviewResponse toPlantingOverview(
+            PlantingExpenseOverviewProjection item
+    ) {
+        BigDecimal totalExpenses = money(item.getTotalExpenses());
+        BigDecimal plannedArea = item.getPlannedAreaHectares();
+        BigDecimal expensePerHectare = plannedArea == null
+                || plannedArea.signum() == 0
+                ? money(BigDecimal.ZERO)
+                : totalExpenses.divide(plannedArea, MONEY_SCALE, ROUNDING_MODE);
+
+        return new PlantingExpenseOverviewResponse(
+                item.getPlantingId(),
+                totalExpenses,
+                expensePerHectare,
+                item.getExpenseCount()
+        );
     }
 
     private Planting findPlanting(UUID id) {

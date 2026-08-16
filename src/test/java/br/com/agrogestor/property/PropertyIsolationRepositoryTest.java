@@ -1,6 +1,10 @@
 package br.com.agrogestor.property;
 
+import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
+import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.planting.entity.Planting;
+import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.property.entity.Property;
@@ -27,6 +31,9 @@ class PropertyIsolationRepositoryTest {
     @Autowired
     private PlantingRepository plantingRepository;
 
+    @Autowired
+    private ExpenseRepository expenseRepository;
+
     @Test
     void onlyReturnsPlantingsFromTheRequestedProperty() {
         Property first = propertyRepository.save(new Property("Propriedade principal"));
@@ -44,6 +51,49 @@ class PropertyIsolationRepositoryTest {
                 testPlanting.getId(), first.getId())).isEmpty();
         assertThat(plantingRepository.findByIdAndPropertyId(
                 principalPlanting.getId(), first.getId())).isPresent();
+    }
+
+    @Test
+    void summarizesOnlyActivePlantingsFromTheRequestedProperty() {
+        Property first = propertyRepository.save(new Property("Propriedade principal"));
+        Property second = propertyRepository.save(new Property("Propriedade de testes"));
+        Planting active = plantingRepository.save(planting(first, "Soja"));
+        Planting harvested = planting(first, "Trigo");
+        harvested.finish();
+        plantingRepository.save(harvested);
+        Planting otherProperty = plantingRepository.save(planting(second, "Milho"));
+
+        expenseRepository.save(expense(first, active, "Sementes", "1200.00"));
+        expenseRepository.save(expense(first, active, "Adubo", "800.00"));
+        expenseRepository.save(expense(first, harvested, "Colheita", "500.00"));
+        expenseRepository.save(expense(second, otherProperty, "Sementes", "900.00"));
+
+        var summaries = expenseRepository.summarizePlantingsByStatus(
+                first.getId(), PlantingStatus.ACTIVE);
+
+        assertThat(summaries).singleElement().satisfies(summary -> {
+            assertThat(summary.getPlantingId()).isEqualTo(active.getId());
+            assertThat(summary.getPlannedAreaHectares()).isEqualByComparingTo("10.00");
+            assertThat(summary.getTotalExpenses()).isEqualByComparingTo("2000.00");
+            assertThat(summary.getExpenseCount()).isEqualTo(2);
+        });
+    }
+
+    private Expense expense(
+            Property property,
+            Planting planting,
+            String description,
+            String amount
+    ) {
+        return new Expense(
+                property,
+                planting,
+                description,
+                ExpenseCategory.OTHER,
+                new BigDecimal(amount),
+                LocalDate.of(2026, 8, 1),
+                null
+        );
     }
 
     private Planting planting(Property property, String crop) {

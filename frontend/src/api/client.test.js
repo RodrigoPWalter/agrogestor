@@ -87,6 +87,16 @@ describe("cliente da API", () => {
     );
   });
 
+  it("busca os resumos financeiros agregados pelo status do plantio", async () => {
+    httpClient.request.mockResolvedValueOnce({ status: 200, data: [] });
+
+    await api.getPlantingExpenseSummaries("HARVESTED");
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/expenses/plantings/summaries?status=HARVESTED",
+    });
+  });
+
   it("carrega somente os gastos sem plantio na visão da propriedade", async () => {
     httpClient.request.mockResolvedValueOnce({
       status: 200,
