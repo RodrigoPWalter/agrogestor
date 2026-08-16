@@ -1,5 +1,43 @@
 # Backup e restauração
 
+O AgroGestor possui duas formas complementares de proteção: cópia local feita
+no computador e exportação automática criptografada pelo GitHub Actions. O
+backup do provedor do banco continua útil, mas não substitui uma cópia que possa
+ser baixada e guardada separadamente.
+
+## Ativar o backup automático
+
+O workflow `Backup do banco` executa todos os dias e também pode ser iniciado
+manualmente na aba **Actions** do GitHub. Ele exporta o PostgreSQL, criptografa o
+arquivo antes do envio e conserva o artefato por 30 dias.
+
+No repositório do GitHub, abra **Settings > Secrets and variables > Actions** e
+cadastre dois repository secrets:
+
+- `NEON_DATABASE_URL`: string completa de conexão do Neon, iniciando com
+  `postgresql://` e usando `sslmode=require`;
+- `BACKUP_ENCRYPTION_PASSWORD`: uma senha longa e exclusiva, usada somente para
+  criptografar os backups.
+
+Guarde a senha de criptografia em um gerenciador de senhas. Sem ela, o arquivo
+automático não poderá ser restaurado. O workflow não imprime os segredos no log
+e não cria um backup sem criptografia quando a configuração estiver incompleta.
+
+Para baixar uma cópia, abra **Actions > Backup do banco**, selecione a execução
+e baixe o artefato `agrogestor-dados-*`. Confira o arquivo antes de apagar uma
+cópia anterior.
+
+Para descriptografar em um computador com OpenSSL:
+
+```powershell
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 `
+  -in .\agrogestor.dump.enc `
+  -out .\agrogestor-banco.dump
+```
+
+O OpenSSL solicitará `BACKUP_ENCRYPTION_PASSWORD`. Depois disso, use o comando
+`pg_restore` descrito na seção de restauração do PostgreSQL.
+
 O backup local do AgroGestor guarda três partes independentes:
 
 - o código-fonte do commit atual;

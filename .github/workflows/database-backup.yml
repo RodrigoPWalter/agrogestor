@@ -1,0 +1,62 @@
+name: Backup do banco
+
+on:
+  schedule:
+    - cron: "30 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Exportar e proteger dados
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      BACKUP_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+
+    steps:
+      - name: Verificar configuração
+        id: config
+        shell: bash
+        run: |
+          if [ -n "$DATABASE_URL" ] && [ -n "$BACKUP_PASSWORD" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::Defina NEON_DATABASE_URL e BACKUP_ENCRYPTION_PASSWORD para ativar o backup automático."
+
+      - name: Exportar PostgreSQL
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          mkdir -p backup
+          docker run --rm \
+            -e DATABASE_URL \
+            postgres:17-alpine \
+            sh -c 'pg_dump "$DATABASE_URL" --format=custom --no-owner --no-acl' \
+            > backup/agrogestor.dump
+
+      - name: Criptografar e verificar backup
+        if: steps.config.outputs.ready == 'true'
+        shell: bash
+        run: |
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
+            -in backup/agrogestor.dump \
+            -out backup/agrogestor.dump.enc \
+            -pass env:BACKUP_PASSWORD
+          rm backup/agrogestor.dump
+          sha256sum backup/agrogestor.dump.enc > backup/checksums.sha256
+          test -s backup/agrogestor.dump.enc
+
+      - name: Guardar backup por 30 dias
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: agrogestor-dados-${{ github.run_id }}
+          path: backup/
+          retention-days: 30
+          if-no-files-found: error
