@@ -19,6 +19,7 @@ import { useSingleFlight } from "../hooks/useSingleFlight";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import {
   clearFormDraft,
   readFormDraft,
@@ -163,6 +164,10 @@ export function FieldDiaryPage() {
   useEffect(() => {
     loadEntries(selectedPlantingId);
   }, [selectedPlantingId, loadEntries]);
+
+  useOfflineRefresh(() =>
+    loadEntries(selectedPlantingId, { showLoading: false }),
+  );
 
   useEffect(() => {
     if (modalOpen && !editing) {

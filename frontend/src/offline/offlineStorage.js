@@ -1,7 +1,8 @@
 const DATABASE_NAME = "agrogestor-offline";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const REQUEST_STORE = "requests";
 const CACHE_STORE = "responses";
+const DEFAULT_CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const memoryRequests = new Map();
 const memoryCache = new Map();
@@ -26,7 +27,15 @@ function openDatabase() {
         store.createIndex("scope", "scope", { unique: false });
       }
       if (!database.objectStoreNames.contains(CACHE_STORE)) {
-        database.createObjectStore(CACHE_STORE, { keyPath: "id" });
+        const store = database.createObjectStore(CACHE_STORE, {
+          keyPath: "id",
+        });
+        store.createIndex("scope", "scope", { unique: false });
+      } else {
+        const store = request.transaction.objectStore(CACHE_STORE);
+        if (!store.indexNames.contains("scope")) {
+          store.createIndex("scope", "scope", { unique: false });
+        }
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -146,6 +155,39 @@ export async function getCachedResponse(scope, path) {
     const request = transaction.objectStore(CACHE_STORE).get(id);
     request.onsuccess = () => resolve(request.result?.data ?? null);
     request.onerror = () => reject(request.error);
+  });
+}
+
+export async function cleanupOfflineCache({
+  maxAgeMs = DEFAULT_CACHE_MAX_AGE_MS,
+  now = Date.now(),
+} = {}) {
+  const expiredBefore = now - maxAgeMs;
+  if (!supportsIndexedDb()) {
+    memoryCache.forEach((entry, id) => {
+      if (new Date(entry.cachedAt).getTime() < expiredBefore) {
+        memoryCache.delete(id);
+      }
+    });
+    return;
+  }
+
+  const database = await openDatabase();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction(CACHE_STORE, "readwrite");
+    const store = transaction.objectStore(CACHE_STORE);
+    const cursorRequest = store.openCursor();
+    cursorRequest.onsuccess = () => {
+      const cursor = cursorRequest.result;
+      if (!cursor) return;
+      if (new Date(cursor.value.cachedAt).getTime() < expiredBefore) {
+        cursor.delete();
+      }
+      cursor.continue();
+    };
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
   });
 }
 

@@ -17,6 +17,7 @@ import { PlantingsToolbar } from "../components/plantings/PlantingsToolbar";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import {
   clearFormDraft,
   readFormDraft,
@@ -113,6 +114,8 @@ export function PlantingsPage() {
   useEffect(() => {
     loadPlantings();
   }, [loadPlantings]);
+
+  useOfflineRefresh(() => loadPlantings({ showLoading: false }));
 
   useEffect(() => {
     if (modalOpen && !editing) {

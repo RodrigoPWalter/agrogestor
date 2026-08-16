@@ -15,6 +15,7 @@ import {
   SuccessBanner,
 } from "../components/Feedback";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
@@ -114,6 +115,10 @@ export function ExpensesPage() {
   useEffect(() => {
     loadExpenseData(scope, selectedPlantingId);
   }, [scope, selectedPlantingId, loadExpenseData]);
+
+  useOfflineRefresh(() =>
+    loadExpenseData(scope, selectedPlantingId, { showLoading: false }),
+  );
 
   useEffect(() => {
     if (modalOpen && !editing) {

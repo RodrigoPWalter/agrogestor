@@ -13,6 +13,7 @@ import { Modal } from "../components/Modal";
 import { PageHeader } from "../components/PageHeader";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 
@@ -57,6 +58,8 @@ export function RainfallPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useOfflineRefresh(() => loadData({ showLoading: false }));
 
   function openCreate() {
     setEditing(null);

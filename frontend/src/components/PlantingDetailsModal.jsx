@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { useConfirmation } from "./ConfirmationProvider";
 import {
   ErrorBanner,
@@ -163,6 +164,8 @@ export function PlantingDetailsModal({
   useEffect(() => {
     load();
   }, [load]);
+
+  useOfflineRefresh(load);
 
   async function refreshStepsAndDiary() {
     const [steps, diary] = await Promise.all([

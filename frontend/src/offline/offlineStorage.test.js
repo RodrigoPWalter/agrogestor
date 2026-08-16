@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  cleanupOfflineCache,
   getCachedResponse,
   listQueuedRequests,
   moveOfflineScope,
@@ -10,6 +11,7 @@ import {
 
 describe("armazenamento offline", () => {
   beforeEach(() => resetOfflineStorageForTests());
+  afterEach(() => vi.useRealTimers());
 
   it("move lançamentos e respostas salvas quando o e-mail muda", async () => {
     await putQueuedRequest({
@@ -31,5 +33,23 @@ describe("armazenamento offline", () => {
     expect(
       await getCachedResponse("novo@agro.local", "/api/v1/dashboard"),
     ).toEqual({ activePlantings: 2 });
+  });
+
+  it("remove apenas respostas antigas do cache", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-01T12:00:00Z"));
+    await putCachedResponse("usuario", "/antiga", { valor: 1 });
+    vi.setSystemTime(new Date("2026-08-10T12:00:00Z"));
+    await putCachedResponse("usuario", "/recente", { valor: 2 });
+
+    await cleanupOfflineCache({
+      maxAgeMs: 30 * 24 * 60 * 60 * 1000,
+      now: Date.now(),
+    });
+
+    expect(await getCachedResponse("usuario", "/antiga")).toBeNull();
+    expect(await getCachedResponse("usuario", "/recente")).toEqual({
+      valor: 2,
+    });
   });
 });

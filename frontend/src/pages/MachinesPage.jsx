@@ -18,6 +18,7 @@ import { MaintenanceHistory } from "../components/machines/MaintenanceHistory";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 
@@ -78,6 +79,8 @@ export function MachinesPage() {
   useEffect(() => {
     loadMachines();
   }, [loadMachines]);
+
+  useOfflineRefresh(() => loadMachines({ showLoading: false }));
 
   const summary = useMemo(
     () => ({

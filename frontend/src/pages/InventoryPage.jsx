@@ -18,6 +18,7 @@ import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 
@@ -81,6 +82,8 @@ export function InventoryPage() {
   useEffect(() => {
     loadProducts();
   }, []);
+
+  useOfflineRefresh(() => loadProducts({ showLoading: false }));
 
   const summary = useMemo(
     () => ({

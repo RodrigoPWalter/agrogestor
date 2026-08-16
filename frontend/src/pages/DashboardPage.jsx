@@ -12,6 +12,7 @@ import {
 } from "../components/dashboard/DashboardTables";
 import { ErrorBanner, OfflineDataState } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
+import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import {
   getDashboardCacheKey,
   isSameLocalDay,
@@ -57,7 +58,7 @@ export function DashboardPage() {
   );
   const [quotesError, setQuotesError] = useState("");
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     api
       .getDashboardSummary()
       .then((nextSummary) => {
@@ -80,6 +81,12 @@ export function DashboardPage() {
       })
       .finally(() => setLoading(false));
   }, [cachedDashboard, dashboardCacheKey]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useOfflineRefresh(loadDashboard);
 
   const loadCommodityQuotes = useCallback(
     ({ force = false } = {}) => {

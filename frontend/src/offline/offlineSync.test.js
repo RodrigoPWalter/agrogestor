@@ -84,6 +84,29 @@ describe("sincronização offline", () => {
       id: "operacao-invalida",
       status: "error",
       lastError: "Quantidade insuficiente em estoque.",
+      httpStatus: 422,
+    });
+  });
+
+  it("mantém falhas temporárias do servidor na fila para tentar novamente", async () => {
+    await queueMutation({
+      id: "operacao-temporaria",
+      url: "/api/v1/expenses",
+      method: "POST",
+      data: { description: "Diesel" },
+    });
+    const serverError = new Error("Servidor indisponível.");
+    serverError.status = 503;
+    httpClient.request.mockRejectedValueOnce(serverError);
+
+    await syncPendingRequests();
+    const requests = await listQueuedRequests("produtor@agrogestor.local");
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      status: "pending",
+      attempts: 1,
+      httpStatus: 503,
     });
   });
 

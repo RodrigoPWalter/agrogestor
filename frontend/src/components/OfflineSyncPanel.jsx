@@ -78,7 +78,11 @@ export function OfflineSyncPanel({ onClose }) {
                   <strong>{requestLabel(request.url)}</strong>
                   <span>{formatDateTime(request.createdAt)}</span>
                   {request.status === "error" && (
-                    <small>{request.lastError}</small>
+                    <small>
+                      {request.httpStatus === 409 || request.httpStatus === 422
+                        ? `Precisa de revisão: ${request.lastError}`
+                        : request.lastError}
+                    </small>
                   )}
                 </div>
                 <div className="offline-sync-item__actions">

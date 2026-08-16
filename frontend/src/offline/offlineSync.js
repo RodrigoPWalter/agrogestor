@@ -2,6 +2,7 @@ import { getAccessToken, getCurrentUserCacheScope } from "../auth/session";
 import { httpClient } from "../api/httpClient";
 import {
   deleteQueuedRequest,
+  cleanupOfflineCache,
   listQueuedRequests,
   putQueuedRequest,
   updateQueuedRequest,
@@ -108,11 +109,16 @@ export async function syncPendingRequests() {
         await deleteQueuedRequest(request.id);
         synchronized += 1;
       } catch (error) {
-        const recoverable = error.offlineEligible || error.status === 401;
+        const recoverable =
+          error.offlineEligible ||
+          error.status === 401 ||
+          error.status === 429 ||
+          error.status >= 500;
         await updateQueuedRequest(request.id, {
           status: recoverable ? "pending" : "error",
           attempts: request.attempts + 1,
           lastError: error.message,
+          httpStatus: error.status ?? null,
         });
         if (recoverable) break;
       }
@@ -139,6 +145,7 @@ export async function retryQueuedRequest(id) {
   await updateQueuedRequest(id, {
     status: "pending",
     lastError: null,
+    httpStatus: null,
   });
   await refreshOfflineSyncState();
   return syncPendingRequests();
@@ -155,6 +162,7 @@ export function initializeOfflineSync() {
   window.addEventListener("online", syncPendingRequests);
   window.addEventListener(SESSION_READY_EVENT, syncPendingRequests);
   refreshOfflineSyncState().catch(() => {});
+  cleanupOfflineCache().catch(() => {});
 }
 
 export function isOfflineResult(result) {
