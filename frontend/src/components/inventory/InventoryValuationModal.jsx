@@ -37,7 +37,6 @@ export function InventoryValuationModal({
             <span>Novo custo por {product.unitName.toLowerCase()}</span>
             <input
               required
-              autoFocus
               type="number"
               min="0.000001"
               step="0.000001"

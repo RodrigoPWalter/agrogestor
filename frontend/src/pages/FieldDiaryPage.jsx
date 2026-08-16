@@ -76,6 +76,7 @@ export function FieldDiaryPage() {
   const [offlineDataUnavailable, setOfflineDataUnavailable] = useState(false);
   const { pending: saving, run: runSaving } = useSingleFlight();
   const [error, setError] = useState("");
+  const [referenceWarning, setReferenceWarning] = useState("");
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -108,18 +109,41 @@ export function FieldDiaryPage() {
   );
 
   useEffect(() => {
-    api
-      .getAllPlantings()
-      .then((page) => setPlantings(page.content))
-      .catch((requestError) => setError(requestError.message));
-    api
-      .getInventoryProducts()
-      .then(setInventoryProducts)
-      .catch(() => {});
-    api
-      .getMachines()
-      .then(setMachines)
-      .catch(() => {});
+    let active = true;
+
+    Promise.allSettled([
+      api.getAllPlantings(),
+      api.getInventoryProducts(),
+      api.getMachines(),
+    ]).then(([plantingResult, inventoryResult, machineResult]) => {
+      if (!active) return;
+
+      if (plantingResult.status === "fulfilled") {
+        setPlantings(plantingResult.value.content);
+      }
+      if (inventoryResult.status === "fulfilled") {
+        setInventoryProducts(inventoryResult.value);
+      }
+      if (machineResult.status === "fulfilled") {
+        setMachines(machineResult.value);
+      }
+
+      const unavailable = [
+        plantingResult.status === "rejected" ? "plantios" : null,
+        inventoryResult.status === "rejected" ? "estoque" : null,
+        machineResult.status === "rejected" ? "máquinas" : null,
+      ].filter(Boolean);
+
+      setReferenceWarning(
+        unavailable.length > 0
+          ? `O Diário está disponível, mas não foi possível carregar: ${unavailable.join(", ")}. Algumas opções do formulário podem ficar indisponíveis.`
+          : "",
+      );
+    });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -389,6 +413,10 @@ export function FieldDiaryPage() {
       />
 
       <ErrorBanner message={error} onDismiss={() => setError("")} />
+      <ErrorBanner
+        message={referenceWarning}
+        onDismiss={() => setReferenceWarning("")}
+      />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
       {!offlineDataUnavailable && (
         <DiaryFilter

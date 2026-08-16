@@ -3,7 +3,13 @@ import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { useConfirmation } from "./ConfirmationProvider";
-import { ErrorBanner, LoadingState, SuccessBanner } from "./Feedback";
+import {
+  ErrorBanner,
+  InlineErrorState,
+  InlineLoadingState,
+  LoadingState,
+  SuccessBanner,
+} from "./Feedback";
 import { Modal } from "./Modal";
 import { HarvestProgressSection } from "./planting-details/HarvestProgressSection";
 import { PlantingActivitySections } from "./planting-details/PlantingActivitySections";
@@ -63,6 +69,8 @@ export function PlantingDetailsModal({
 }) {
   const requestConfirmation = useConfirmation();
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -84,40 +92,71 @@ export function PlantingDetailsModal({
   );
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+
+    const sections = [
+      ["resumo financeiro", () => api.getExpenseSummary(planting.id)],
+      ["gastos", () => api.getExpenses(planting.id)],
+      ["diário", () => api.getDiaryEntries(planting.id)],
+      ["chuvas", () => api.getRainfallByPlanting(planting.id)],
+      ["fechamento da safra", () => api.getSeasonClosing(planting.id)],
+      ["progresso do plantio", () => api.getPlantingSteps(planting.id)],
+      ["progresso da colheita", () => api.getHarvestSteps(planting.id)],
+      ["estoque", () => api.getInventoryProducts()],
+    ];
+
     try {
-      const [
-        summary,
-        expenses,
-        diary,
-        rainfall,
-        closing,
-        steps,
-        harvestSteps,
-        inventoryProducts,
-      ] = await Promise.all([
-        api.getExpenseSummary(planting.id),
-        api.getExpenses(planting.id),
-        api.getDiaryEntries(planting.id),
-        api.getRainfallByPlanting(planting.id).catch(() => []),
-        api.getSeasonClosing(planting.id),
-        api.getPlantingSteps(planting.id),
-        api.getHarvestSteps(planting.id),
-        api.getInventoryProducts(),
-      ]);
-      setData({
-        summary,
-        expenses: expenses.content,
-        diary: diary.content,
-        rainfall,
-        closing,
-        steps,
-        harvestSteps,
-        inventoryProducts,
+      const results = await Promise.allSettled(
+        sections.map(([, request]) => request()),
+      );
+      const fulfilledCount = results.filter(
+        ({ status }) => status === "fulfilled",
+      ).length;
+      const failedSections = results
+        .map((result, index) =>
+          result.status === "rejected" ? sections[index][0] : null,
+        )
+        .filter(Boolean);
+
+      if (fulfilledCount === 0) {
+        setData(null);
+        setLoadError(
+          "Não foi possível carregar o plantio. Verifique a conexão e tente novamente.",
+        );
+        return;
+      }
+
+      setData((current) => {
+        const valueOr = (index, fallback) =>
+          results[index].status === "fulfilled"
+            ? results[index].value
+            : fallback;
+        const expenses = valueOr(1, { content: current?.expenses ?? [] });
+        const diary = valueOr(2, { content: current?.diary ?? [] });
+
+        return {
+          summary: valueOr(0, current?.summary ?? null),
+          expenses: expenses.content,
+          diary: diary.content,
+          rainfall: valueOr(3, current?.rainfall ?? []),
+          closing: valueOr(4, current?.closing ?? null),
+          steps: valueOr(5, current?.steps ?? []),
+          harvestSteps: valueOr(6, current?.harvestSteps ?? []),
+          inventoryProducts: valueOr(7, current?.inventoryProducts ?? []),
+        };
       });
-      setSalePrice(closing.salePricePerUnit ?? "");
-      setError("");
-    } catch (requestError) {
-      setError(requestError.message);
+
+      if (results[4].status === "fulfilled") {
+        setSalePrice(results[4].value.salePricePerUnit ?? "");
+      }
+      if (failedSections.length > 0) {
+        setLoadError(
+          `O plantio foi aberto, mas não foi possível atualizar: ${failedSections.join(", ")}.`,
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   }, [planting.id]);
 
@@ -435,10 +474,18 @@ export function PlantingDetailsModal({
       <div className="planting-detail">
         <ErrorBanner message={error} onDismiss={() => setError("")} />
         <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
-        {!data ? (
+        {loading && !data ? (
           <LoadingState label="Carregando o plantio..." />
+        ) : !data ? (
+          <InlineErrorState message={loadError} onRetry={load} />
         ) : (
           <>
+            {loadError && (
+              <InlineErrorState message={loadError} onRetry={load} />
+            )}
+            {loading && (
+              <InlineLoadingState label="Atualizando informações do plantio..." />
+            )}
             <PlantingOverview
               planting={planting}
               summary={data.summary}
@@ -476,13 +523,23 @@ export function PlantingDetailsModal({
               onDelete={deleteHarvestStep}
               onFinish={onFinish}
             />
-            <SeasonClosingPanel
-              closing={data.closing}
-              salePrice={salePrice}
-              loading={closingLoading}
-              onSalePriceChange={(event) => setSalePrice(event.target.value)}
-              onSubmit={updateClosing}
-            />
+            {data.closing ? (
+              <SeasonClosingPanel
+                closing={data.closing}
+                salePrice={salePrice}
+                loading={closingLoading}
+                onSalePriceChange={(event) => setSalePrice(event.target.value)}
+                onSubmit={updateClosing}
+              />
+            ) : (
+              <section>
+                <h3>Fechamento de safra</h3>
+                <p className="muted-copy">
+                  O fechamento não está disponível no momento. Tente atualizar
+                  as informações acima.
+                </p>
+              </section>
+            )}
             <PlantingExpensesSection
               expenses={data.expenses}
               expense={expense}

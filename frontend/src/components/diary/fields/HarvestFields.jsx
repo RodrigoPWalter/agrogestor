@@ -12,7 +12,6 @@ export function HarvestFields({ form, legacy = false, onUpdate }) {
           <span>Hectares colhidos nesta etapa</span>
           <input
             required
-            autoFocus
             type="number"
             min="0.01"
             step="0.01"

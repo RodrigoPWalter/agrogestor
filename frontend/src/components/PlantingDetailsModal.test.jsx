@@ -161,6 +161,37 @@ describe("PlantingDetailsModal", () => {
     });
   });
 
+  it("abre os dados disponíveis quando uma seção falha", async () => {
+    api.getSeasonClosing.mockRejectedValue(
+      new Error("Fechamento indisponível"),
+    );
+
+    render(
+      <MemoryRouter>
+        <PlantingDetailsModal
+          planting={planting}
+          onClose={vi.fn()}
+          onFinish={vi.fn()}
+          onReactivate={vi.fn()}
+          onChanged={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: "Resumo financeiro" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/não foi possível atualizar: fechamento da safra/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/O fechamento não está disponível no momento/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Tentar novamente" }),
+    ).toBeInTheDocument();
+  });
+
   it("adiciona hectares e atualiza o progresso e o diário", async () => {
     const onChanged = vi.fn();
     const step = {

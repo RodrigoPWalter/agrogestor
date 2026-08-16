@@ -44,7 +44,6 @@ export function DynamicDiaryFields({
           <span>Quantidade de chuva (mm)</span>
           <input
             required
-            autoFocus
             type="number"
             min="0.01"
             step="0.01"

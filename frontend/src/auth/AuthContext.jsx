@@ -106,9 +106,12 @@ export function AuthProvider({ children }) {
         navigator.onLine === false &&
         session.offlineAccessUntil > Date.now()
       ) {
-        const offlineSession = { ...session, offlineAccess: true };
-        saveSession(offlineSession);
-        setSession(offlineSession);
+        setSession((current) => {
+          if (!current) return current;
+          const offlineSession = { ...current, offlineAccess: true };
+          saveSession(offlineSession);
+          return offlineSession;
+        });
         setAuthNotice(
           "Acesso offline ativo. Entre novamente quando a internet voltar para sincronizar.",
         );

@@ -31,7 +31,7 @@ function summarizeProduction(steps) {
   };
 }
 
-export function harvestProgressFromSteps(planting, steps, plantingSteps) {
+function harvestProgressFromSteps(planting, steps, plantingSteps) {
   const plantedArea = Array.isArray(plantingSteps)
     ? plantingSteps.reduce(
         (total, step) => total + Number(step.plantedAreaHectares),

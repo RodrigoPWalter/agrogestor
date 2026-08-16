@@ -1,5 +1,5 @@
 import { LoaderCircle, Plus, TrendingUp } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { CommodityQuotesPanel } from "../components/dashboard/CommodityQuotesPanel";
@@ -81,53 +81,56 @@ export function DashboardPage() {
       .finally(() => setLoading(false));
   }, [cachedDashboard, dashboardCacheKey]);
 
-  function loadCommodityQuotes({ force = false } = {}) {
-    const currentCache = readDashboardCache(dashboardCacheKey);
-    const cachedQuotes = currentCache?.commodityQuotes;
+  const loadCommodityQuotes = useCallback(
+    ({ force = false } = {}) => {
+      const currentCache = readDashboardCache(dashboardCacheKey);
+      const cachedQuotes = currentCache?.commodityQuotes;
 
-    if (
-      !force &&
-      cachedQuotes &&
-      isSameLocalDay(currentCache?.commodityQuotesSavedAt)
-    ) {
-      setCommodityQuotes(cachedQuotes);
-      setQuotesLoading(false);
-      return;
-    }
+      if (
+        !force &&
+        cachedQuotes &&
+        isSameLocalDay(currentCache?.commodityQuotesSavedAt)
+      ) {
+        setCommodityQuotes(cachedQuotes);
+        setQuotesLoading(false);
+        return;
+      }
 
-    setQuotesLoading(!cachedQuotes);
-    setQuotesError("");
-    api
-      .getCommodityQuotes()
-      .then((quotes) => {
-        setCommodityQuotes(quotes);
-        writeDashboardCache(
-          {
-            commodityQuotes: quotes,
-            commodityQuotesSavedAt: new Date().toISOString(),
-          },
-          dashboardCacheKey,
-        );
-      })
-      .catch((requestError) => {
-        if (cachedQuotes) {
-          setCommodityQuotes(cachedQuotes);
-          setQuotesError(
-            "Cotações antigas salvas. Tentaremos atualizar depois.",
+      setQuotesLoading(!cachedQuotes);
+      setQuotesError("");
+      api
+        .getCommodityQuotes()
+        .then((quotes) => {
+          setCommodityQuotes(quotes);
+          writeDashboardCache(
+            {
+              commodityQuotes: quotes,
+              commodityQuotesSavedAt: new Date().toISOString(),
+            },
+            dashboardCacheKey,
           );
-          return;
-        }
+        })
+        .catch((requestError) => {
+          if (cachedQuotes) {
+            setCommodityQuotes(cachedQuotes);
+            setQuotesError(
+              "Cotações antigas salvas. Tentaremos atualizar depois.",
+            );
+            return;
+          }
 
-        setQuotesError(requestError.message);
-      })
-      .finally(() => setQuotesLoading(false));
-  }
+          setQuotesError(requestError.message);
+        })
+        .finally(() => setQuotesLoading(false));
+    },
+    [dashboardCacheKey],
+  );
 
   useEffect(() => {
     if (loading) return;
 
     loadCommodityQuotes();
-  }, [dashboardCacheKey, loading]);
+  }, [loadCommodityQuotes, loading]);
 
   return (
     <div className="page">

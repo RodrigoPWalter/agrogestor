@@ -44,6 +44,23 @@ describe("FieldDiaryPage", () => {
     expect(api.getDiaryEntries).toHaveBeenCalledWith("");
   });
 
+  it("avisa quando os dados auxiliares do formulário não carregam", async () => {
+    api.getInventoryProducts.mockRejectedValue(new Error("Sem estoque"));
+
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText(/não foi possível carregar: estoque/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nova atividade" }),
+    ).toBeEnabled();
+  });
+
   it("mantém o diário visível durante a atualização após excluir", async () => {
     const entry = {
       id: "entry-1",

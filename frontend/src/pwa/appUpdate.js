@@ -5,7 +5,7 @@ let snapshot = {
   version: 0,
 };
 
-export const SERVICE_WORKER_UPDATE_INTERVAL_MS = 60 * 60 * 1000;
+const SERVICE_WORKER_UPDATE_INTERVAL_MS = 60 * 60 * 1000;
 
 export function getAppUpdateSnapshot() {
   return snapshot;

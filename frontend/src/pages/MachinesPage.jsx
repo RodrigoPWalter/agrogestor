@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { useConfirmation } from "../components/ConfirmationProvider";
 import {
@@ -57,29 +57,27 @@ export function MachinesPage() {
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenance);
   const beginMaintenanceRequest = useLatestRequestGuard();
 
-  async function loadMachines({ showLoading = true } = {}) {
+  const loadMachines = useCallback(async ({ showLoading = true } = {}) => {
     if (showLoading) setLoading(true);
     try {
       const data = await api.getMachines();
       setMachines(data);
       setOfflineDataUnavailable(false);
       setError("");
-      if (selectedMachine) {
-        setSelectedMachine(
-          data.find((item) => item.id === selectedMachine.id) || null,
-        );
-      }
+      setSelectedMachine((current) =>
+        current ? data.find((item) => item.id === current.id) || null : null,
+      );
     } catch (requestError) {
       setOfflineDataUnavailable(Boolean(requestError.offlineCacheMiss));
       setError(requestError.offlineCacheMiss ? "" : requestError.message);
     } finally {
       if (showLoading) setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadMachines();
-  }, []);
+  }, [loadMachines]);
 
   const summary = useMemo(
     () => ({

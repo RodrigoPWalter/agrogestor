@@ -3,183 +3,6 @@ body {
   background: var(--background);
 }
 
-.sidebar {
-  width: 232px;
-  padding: 0 14px 18px;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  background: #101b16;
-  box-shadow: 8px 0 28px rgba(8, 18, 13, 0.12);
-}
-
-.brand {
-  min-height: 66px;
-  margin: 0 -14px 14px;
-  padding: 0 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.brand__mark {
-  width: 36px;
-  height: 36px;
-  color: #dce9e1;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: #204b39;
-}
-
-.brand strong {
-  font-size: 1rem;
-  letter-spacing: -0.01em;
-}
-
-.brand small {
-  color: #89978f;
-  font-size: 0.68rem;
-}
-
-.navigation {
-  gap: 3px;
-}
-
-.navigation__item {
-  position: relative;
-  gap: 11px;
-  min-height: 40px;
-  padding: 9px 11px;
-  color: #a9b4ae;
-  border-radius: 7px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.navigation__item svg {
-  width: 18px;
-  height: 18px;
-}
-
-.navigation__item:hover {
-  color: #f4f8f5;
-  background: rgba(255, 255, 255, 0.055);
-}
-
-.navigation__item.is-active {
-  color: #f2f8f4;
-  background: #244b39;
-  box-shadow: inset 3px 0 #8eae78;
-}
-
-.sidebar__footer {
-  padding: 11px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.sidebar__footer strong {
-  font-size: 0.69rem;
-}
-
-.sidebar__footer small {
-  font-size: 0.62rem;
-}
-
-.main-content {
-  margin-left: 232px;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: flex;
-  min-height: 64px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 0 28px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(14px);
-}
-
-.topbar__context,
-.topbar__actions,
-.user-profile {
-  display: flex;
-  align-items: center;
-}
-
-.topbar__context {
-  gap: 10px;
-}
-
-.topbar__context > div > span,
-.topbar__context > div > strong {
-  display: block;
-}
-
-.topbar__context > div > span {
-  margin-bottom: 2px;
-  color: #7a847e;
-  font-size: 0.62rem;
-  font-weight: 650;
-}
-
-.topbar__context > div > strong {
-  color: #19251f;
-  font-size: 0.9rem;
-}
-
-.topbar__menu {
-  display: none;
-}
-
-.sidebar__close {
-  display: none;
-}
-
-.topbar__actions {
-  gap: 10px;
-}
-
-.topbar__actions > .icon-button {
-  color: #536159;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-}
-
-.user-profile {
-  gap: 9px;
-  padding-left: 10px;
-  border-left: 1px solid var(--line);
-}
-
-.user-profile > span {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  color: #eef5f0;
-  border-radius: 8px;
-  background: #244b39;
-  font-size: 0.68rem;
-  font-weight: 800;
-}
-
-.user-profile strong,
-.user-profile small {
-  display: block;
-}
-
-.user-profile strong {
-  font-size: 0.72rem;
-}
-
-.user-profile small {
-  margin-top: 1px;
-  color: var(--muted);
-  font-size: 0.6rem;
-}
-
 .page {
   width: min(1480px, 100%);
   padding: 24px 28px 44px;
@@ -523,62 +346,12 @@ body {
 }
 
 @media (max-width: 900px) {
-  .sidebar {
-    width: 216px;
-  }
-
-  .main-content {
-    margin-left: 216px;
-  }
-
-  .topbar {
-    padding: 0 20px;
-  }
-
   .page {
     padding: 20px;
   }
 }
 
 @media (max-width: 720px) {
-  .sidebar {
-    width: min(286px, 86vw);
-  }
-
-  .main-content {
-    margin-left: 0;
-  }
-
-  .topbar {
-    min-height: 58px;
-    padding: 0 14px;
-  }
-
-  .topbar__menu {
-    display: grid;
-  }
-
-  .sidebar__close {
-    display: grid;
-  }
-
-  .topbar__context > div > span {
-    display: none;
-  }
-
-  .topbar__context > div > strong {
-    font-size: 0.82rem;
-  }
-
-  .user-profile {
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .user-profile > div {
-    display: none;
-  }
-
   .page {
     padding: 16px 14px 30px;
   }
@@ -696,78 +469,6 @@ body {
   }
 }
 
-/* AgroGestor brand applications */
-.sidebar {
-  border-right-color: #102a1d;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 34%),
-    var(--green-900);
-  box-shadow: 8px 0 28px rgba(16, 42, 29, 0.16);
-}
-
-.brand {
-  border-bottom-color: rgba(214, 170, 42, 0.24);
-}
-
-.brand__mark {
-  color: var(--green-900);
-  border-color: var(--brand-gold);
-  background: var(--brand-gold);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
-}
-
-.brand small {
-  color: #b7c9b5;
-}
-
-.navigation__item {
-  color: #c1cec0;
-}
-
-.navigation__item:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.navigation__item.is-active {
-  color: #fff;
-  background: var(--brand-green);
-  box-shadow:
-    inset 3px 0 var(--brand-gold),
-    0 3px 10px rgba(16, 42, 29, 0.2);
-}
-
-.sidebar__footer {
-  border-color: rgba(214, 170, 42, 0.2);
-  background: rgba(0, 0, 0, 0.1);
-}
-
-.status-dot {
-  border-color: rgba(214, 170, 42, 0.3);
-  background: var(--brand-gold);
-  box-shadow: 0 0 0 4px rgba(214, 170, 42, 0.12);
-}
-
-.topbar {
-  border-bottom: 2px solid var(--brand-green);
-  background: rgba(255, 255, 255, 0.96);
-}
-
-.topbar__context > div > span {
-  color: #5e765d;
-}
-
-.topbar__actions > .icon-button:hover {
-  color: var(--brand-green-strong);
-  border-color: #a9c6a2;
-  background: var(--green-50);
-}
-
-.user-profile > span {
-  color: var(--green-950);
-  background: var(--brand-gold);
-}
-
 .eyebrow,
 .text-link {
   color: var(--brand-green);
@@ -814,11 +515,6 @@ body {
 .expense-item__icon {
   color: #594b00;
   background: var(--gold-100);
-}
-
-.bottom-navigation__item.is-active {
-  color: var(--brand-green-strong);
-  background: #e5f0e1;
 }
 
 .progress-track span {

@@ -5,7 +5,6 @@ export function PlantingOperationFields({ form, onUpdate }) {
         <span>Hectares plantados nesta etapa</span>
         <input
           required
-          autoFocus
           type="number"
           min="0.01"
           step="0.01"

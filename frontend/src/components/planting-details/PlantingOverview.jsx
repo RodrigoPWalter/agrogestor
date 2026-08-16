@@ -5,6 +5,8 @@ import {
 } from "../../utils/formatters";
 
 export function PlantingOverview({ planting, summary, expenseCount }) {
+  const financialSummaryAvailable = Boolean(summary);
+
   return (
     <>
       <section>
@@ -41,15 +43,27 @@ export function PlantingOverview({ planting, summary, expenseCount }) {
         <div className="planting-detail__summary">
           <div>
             <span>Total gasto</span>
-            <strong>{formatCurrency(summary.totalExpenses)}</strong>
+            <strong>
+              {financialSummaryAvailable
+                ? formatCurrency(summary.totalExpenses)
+                : "Indisponível"}
+            </strong>
           </div>
           <div>
             <span>Custo por hectare</span>
-            <strong>{formatCurrency(summary.expensePerHectare)}</strong>
+            <strong>
+              {financialSummaryAvailable
+                ? formatCurrency(summary.expensePerHectare)
+                : "Indisponível"}
+            </strong>
           </div>
           <div>
             <span>Lançamentos</span>
-            <strong>{summary.expenseCount ?? expenseCount}</strong>
+            <strong>
+              {financialSummaryAvailable
+                ? (summary.expenseCount ?? expenseCount)
+                : "—"}
+            </strong>
           </div>
         </div>
       </section>

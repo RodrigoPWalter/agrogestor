@@ -103,7 +103,6 @@ export function LoginPage() {
                 value={credentials.email}
                 onChange={handleChange}
                 required
-                autoFocus
               />
             </div>
 

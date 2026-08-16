@@ -91,7 +91,15 @@ export function Modal({
     <div
       className="modal-backdrop"
       role="presentation"
-      onMouseDown={closeOnBackdrop && dismissible ? onClose : undefined}
+      onMouseDown={(event) => {
+        if (
+          closeOnBackdrop &&
+          dismissible &&
+          event.target === event.currentTarget
+        ) {
+          onClose();
+        }
+      }}
     >
       <section
         ref={modalRef}
@@ -100,7 +108,6 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        onMouseDown={(event) => event.stopPropagation()}
       >
         <header className="modal__header">
           <div>
