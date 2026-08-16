@@ -87,14 +87,18 @@ class FieldDiaryServiceTest {
         currentProperty = mock(CurrentPropertyService.class);
         when(currentProperty.id()).thenReturn(PROPERTY_ID);
         when(currentProperty.get()).thenReturn(property);
+        FieldDiaryStockService stockService = new FieldDiaryStockService(
+                diaryProductRepository,
+                inventoryRepository,
+                movementRepository,
+                currentProperty
+        );
         service = new FieldDiaryService(
                 diaryRepository,
                 plantingRepository,
                 plantingStepRepository,
                 harvestStepRepository,
-                diaryProductRepository,
-                inventoryRepository,
-                movementRepository,
+                stockService,
                 rainfallRepository,
                 machineRepository,
                 maintenanceRepository,
