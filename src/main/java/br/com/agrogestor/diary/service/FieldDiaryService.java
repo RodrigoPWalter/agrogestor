@@ -1,6 +1,5 @@
 package br.com.agrogestor.diary.service;
 
-import br.com.agrogestor.diary.dto.FieldDiaryProductResponse;
 import br.com.agrogestor.diary.dto.FieldDiaryRequest;
 import br.com.agrogestor.diary.dto.FieldDiaryResponse;
 import br.com.agrogestor.diary.entity.ActivityType;
@@ -67,6 +66,7 @@ public class FieldDiaryService {
     private final MaintenanceRepository maintenanceRepository;
     private final ExpenseRepository expenseRepository;
     private final CurrentPropertyService currentProperty;
+    private final FieldDiaryResponseMapper responseMapper;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
@@ -80,7 +80,8 @@ public class FieldDiaryService {
             MachineRepository machineRepository,
             MaintenanceRepository maintenanceRepository,
             ExpenseRepository expenseRepository,
-            CurrentPropertyService currentProperty
+            CurrentPropertyService currentProperty,
+            FieldDiaryResponseMapper responseMapper
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
@@ -94,6 +95,7 @@ public class FieldDiaryService {
         this.maintenanceRepository = maintenanceRepository;
         this.expenseRepository = expenseRepository;
         this.currentProperty = currentProperty;
+        this.responseMapper = responseMapper;
     }
 
     @Transactional
@@ -114,7 +116,7 @@ public class FieldDiaryService {
         FieldDiaryEntry saved = diaryRepository.save(entry);
         List<FieldDiaryProduct> products = replaceProducts(saved, request, List.of());
         createIntegratedRecords(saved, request, planting, products);
-        return toResponse(saved, null, null);
+        return responseMapper.toResponse(saved, null, null);
     }
 
     @Transactional(readOnly = true)
@@ -141,7 +143,7 @@ public class FieldDiaryService {
                         .collect(Collectors.toMap(
                                 HarvestStep::getDiaryEntryId, Function.identity()));
         List<FieldDiaryResponse> content = entries.getContent().stream()
-                .map(entry -> toResponse(
+                .map(entry -> responseMapper.toResponse(
                         entry,
                         plantingSteps.get(entry.getId()),
                         harvestSteps.get(entry.getId())))
@@ -160,7 +162,7 @@ public class FieldDiaryService {
     @Transactional(readOnly = true)
     public FieldDiaryResponse findById(UUID id) {
         FieldDiaryEntry entry = findEntry(id);
-        return toResponse(
+        return responseMapper.toResponse(
                 entry,
                 plantingStepRepository.findByDiaryEntryId(id).orElse(null),
                 harvestStepRepository.findByDiaryEntryId(id).orElse(null)
@@ -187,7 +189,7 @@ public class FieldDiaryService {
         updateDetails(entry, request);
         List<FieldDiaryProduct> products = replaceProducts(entry, request, previousProducts);
         createIntegratedRecords(entry, request, entry.getPlanting(), products);
-        return toResponse(entry, null, null);
+        return responseMapper.toResponse(entry, null, null);
     }
 
     @Transactional
@@ -441,70 +443,6 @@ public class FieldDiaryService {
         if (id == null) return null;
         return plantingRepository.findByIdAndPropertyId(id, currentProperty.id()).orElseThrow(() ->
                 new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
-    }
-
-    private FieldDiaryResponse toResponse(
-            FieldDiaryEntry entry,
-            PlantingStep plantingStep,
-            HarvestStep harvestStep
-    ) {
-        Planting planting = entry.getPlanting();
-        List<FieldDiaryProductResponse> products = entry.getId() == null
-                ? List.of()
-                : diaryProductRepository.findByEntryId(entry.getId()).stream()
-                .map(item -> new FieldDiaryProductResponse(
-                        item.getProduct().getId(), item.getProduct().getName(),
-                        item.getQuantity(), item.getProduct().getUnit().getDisplayName(),
-                        item.getUnitCost(), item.getTotalCost()))
-                .toList();
-        return new FieldDiaryResponse(
-                entry.getId(),
-                planting == null ? null : planting.getId(),
-                planting == null ? null : planting.getCrop(),
-                planting == null ? null : planting.getHarvest(),
-                entry.getEntryDate(), entry.getActivityType(),
-                entry.getActivityType().getDisplayName(), entry.getActivity(),
-                entry.getWeatherCondition(), entry.getAppliedProducts(), products,
-                entry.getObservations(), entry.getCreatedAt(), entry.getUpdatedAt(),
-                entry.getRainfallMillimeters(), entry.getSupplier(), entry.getAmount(),
-                entry.getMachineId(), entry.getHarvestQuantity(), entry.getHarvestUnit(),
-                operationId(plantingStep, harvestStep),
-                operationArea(plantingStep, harvestStep),
-                operationSeedVariety(plantingStep, harvestStep),
-                operationStartTime(plantingStep, harvestStep),
-                operationEndTime(plantingStep, harvestStep),
-                harvestStep == null ? null : harvestStep.getHarvestUnit().name());
-    }
-
-    private UUID operationId(PlantingStep plantingStep, HarvestStep harvestStep) {
-        if (plantingStep != null) return plantingStep.getId();
-        return harvestStep == null ? null : harvestStep.getId();
-    }
-
-    private BigDecimal operationArea(PlantingStep plantingStep, HarvestStep harvestStep) {
-        if (plantingStep != null) return plantingStep.getPlantedAreaHectares();
-        return harvestStep == null ? null : harvestStep.getHarvestedAreaHectares();
-    }
-
-    private String operationSeedVariety(PlantingStep plantingStep, HarvestStep harvestStep) {
-        if (plantingStep != null) return plantingStep.getSeedVariety();
-        return harvestStep == null ? null : harvestStep.getSeedVariety();
-    }
-
-    private java.time.LocalTime operationStartTime(
-            PlantingStep plantingStep,
-            HarvestStep harvestStep
-    ) {
-        if (plantingStep != null) return plantingStep.getStartTime();
-        return harvestStep == null ? null : harvestStep.getStartTime();
-    }
-
-    private java.time.LocalTime operationEndTime(
-            PlantingStep plantingStep,
-            HarvestStep harvestStep
-    ) {
-        if (plantingStep != null) return plantingStep.getEndTime();
-        return harvestStep == null ? null : harvestStep.getEndTime();
     }
 
     private String activityDescription(FieldDiaryRequest request) {

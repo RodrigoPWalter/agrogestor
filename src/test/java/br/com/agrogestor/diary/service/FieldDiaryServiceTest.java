@@ -99,7 +99,8 @@ class FieldDiaryServiceTest {
                 machineRepository,
                 maintenanceRepository,
                 expenseRepository,
-                currentProperty
+                currentProperty,
+                new FieldDiaryResponseMapper(diaryProductRepository)
         );
     }
 

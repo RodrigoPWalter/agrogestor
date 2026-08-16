@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { api } from "../api/client";
 import { formatDate, formatNumber, toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
-import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
+import { usePlantingDetailsData } from "../hooks/usePlantingDetailsData";
 import { useConfirmation } from "./ConfirmationProvider";
 import {
   ErrorBanner,
@@ -69,9 +69,9 @@ export function PlantingDetailsModal({
   onChanged,
 }) {
   const requestConfirmation = useConfirmation();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const { data, setData, loading, loadError, load } = usePlantingDetailsData(
+    planting.id,
+  );
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -92,80 +92,11 @@ export function PlantingDetailsModal({
     emptyHarvestStep(planting.seedVariety),
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
-
-    const sections = [
-      ["resumo financeiro", () => api.getExpenseSummary(planting.id)],
-      ["gastos", () => api.getExpenses(planting.id)],
-      ["diário", () => api.getDiaryEntries(planting.id)],
-      ["chuvas", () => api.getRainfallByPlanting(planting.id)],
-      ["fechamento da safra", () => api.getSeasonClosing(planting.id)],
-      ["progresso do plantio", () => api.getPlantingSteps(planting.id)],
-      ["progresso da colheita", () => api.getHarvestSteps(planting.id)],
-      ["estoque", () => api.getInventoryProducts()],
-    ];
-
-    try {
-      const results = await Promise.allSettled(
-        sections.map(([, request]) => request()),
-      );
-      const fulfilledCount = results.filter(
-        ({ status }) => status === "fulfilled",
-      ).length;
-      const failedSections = results
-        .map((result, index) =>
-          result.status === "rejected" ? sections[index][0] : null,
-        )
-        .filter(Boolean);
-
-      if (fulfilledCount === 0) {
-        setData(null);
-        setLoadError(
-          "Não foi possível carregar o plantio. Verifique a conexão e tente novamente.",
-        );
-        return;
-      }
-
-      setData((current) => {
-        const valueOr = (index, fallback) =>
-          results[index].status === "fulfilled"
-            ? results[index].value
-            : fallback;
-        const expenses = valueOr(1, { content: current?.expenses ?? [] });
-        const diary = valueOr(2, { content: current?.diary ?? [] });
-
-        return {
-          summary: valueOr(0, current?.summary ?? null),
-          expenses: expenses.content,
-          diary: diary.content,
-          rainfall: valueOr(3, current?.rainfall ?? []),
-          closing: valueOr(4, current?.closing ?? null),
-          steps: valueOr(5, current?.steps ?? []),
-          harvestSteps: valueOr(6, current?.harvestSteps ?? []),
-          inventoryProducts: valueOr(7, current?.inventoryProducts ?? []),
-        };
-      });
-
-      if (results[4].status === "fulfilled") {
-        setSalePrice(results[4].value.salePricePerUnit ?? "");
-      }
-      if (failedSections.length > 0) {
-        setLoadError(
-          `O plantio foi aberto, mas não foi possível atualizar: ${failedSections.join(", ")}.`,
-        );
-      }
-    } finally {
-      setLoading(false);
+  useLayoutEffect(() => {
+    if (data?.closing) {
+      setSalePrice(data.closing.salePricePerUnit ?? "");
     }
-  }, [planting.id]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  useOfflineRefresh(load);
+  }, [data?.closing]);
 
   async function refreshStepsAndDiary() {
     const [steps, diary] = await Promise.all([

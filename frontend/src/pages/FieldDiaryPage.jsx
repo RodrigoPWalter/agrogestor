@@ -14,7 +14,10 @@ import { PageHeader } from "../components/PageHeader";
 import { DiaryFilter } from "../components/diary/DiaryFilter";
 import { DiaryFormModal } from "../components/diary/DiaryFormModal";
 import { DiaryTimeline } from "../components/diary/DiaryTimeline";
-import { toInputDate } from "../utils/formatters";
+import {
+  diaryActivityTypes,
+  newDiaryForm,
+} from "../components/diary/diaryForm";
 import { useSingleFlight } from "../hooks/useSingleFlight";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
@@ -25,46 +28,7 @@ import {
   readFormDraft,
   writeFormDraft,
 } from "../utils/formDraft";
-
-const activityTypes = [
-  { value: "PLANTING", label: "Etapa de plantio" },
-  { value: "INSPECTION", label: "Vistoria" },
-  { value: "RAIN", label: "Chuva" },
-  { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
-  { value: "PRODUCT_USE", label: "Uso de produto" },
-  { value: "MAINTENANCE", label: "Manutenção" },
-  { value: "OBSERVATION", label: "Observação" },
-  { value: "HARVEST", label: "Etapa de colheita" },
-  { value: "OTHER", label: "Outro" },
-];
-
-function emptyForm(plantingId = "") {
-  return {
-    plantingId,
-    entryDate: toInputDate(),
-    activityType: "INSPECTION",
-    activity: "",
-    weatherCondition: "",
-    appliedProducts: "",
-    products: [],
-    observations: "",
-    rainfallMillimeters: "",
-    productId: "",
-    productName: "",
-    productType: "PESTICIDE",
-    quantity: "",
-    unit: "LITER",
-    supplier: "",
-    amount: "",
-    machineId: "",
-    operationAreaHectares: "",
-    operationSeedVariety: "",
-    operationStartTime: "",
-    operationEndTime: "",
-    harvestQuantity: "",
-    harvestUnit: "BAGS_60_KG",
-  };
-}
+import { toInputDate } from "../utils/formatters";
 
 export function FieldDiaryPage() {
   const requestConfirmation = useConfirmation();
@@ -81,7 +45,7 @@ export function FieldDiaryPage() {
   const [success, setSuccess] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState(emptyForm());
+  const [form, setForm] = useState(newDiaryForm());
   const [searchParams, setSearchParams] = useSearchParams();
   const [draftRecovered, setDraftRecovered] = useState(false);
   const beginEntriesRequest = useLatestRequestGuard();
@@ -153,7 +117,7 @@ export function FieldDiaryPage() {
 
     setEditing(null);
     setForm({
-      ...emptyForm(searchParams.get("plantingId") || ""),
+      ...newDiaryForm(searchParams.get("plantingId") || ""),
       activityType: quickType === "rain" ? "RAIN" : "OBSERVATION",
     });
     setDraftRecovered(false);
@@ -178,7 +142,7 @@ export function FieldDiaryPage() {
   function openCreate() {
     const draft = readFormDraft("diario");
     setEditing(null);
-    setForm({ ...emptyForm(selectedPlantingId), ...draft });
+    setForm({ ...newDiaryForm(selectedPlantingId), ...draft });
     setDraftRecovered(Boolean(draft));
     setModalOpen(true);
     setError("");
@@ -461,7 +425,7 @@ export function FieldDiaryPage() {
           plantings={plantings}
           products={inventoryProducts}
           machines={machines}
-          activityTypes={activityTypes}
+          activityTypes={diaryActivityTypes}
           operationManaged={Boolean(editing?.operationStepId)}
           legacyHarvest={
             editing?.activityType === "HARVEST" && !editing?.operationStepId
