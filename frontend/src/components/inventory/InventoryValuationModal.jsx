@@ -1,14 +1,18 @@
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { Modal } from "../Modal";
+import { InlineErrorState, InlineLoadingState } from "../Feedback";
 
 export function InventoryValuationModal({
   product,
   form,
   history,
+  historyLoading,
+  historyError,
   saving,
   today,
   onChange,
   onClose,
+  onRetryHistory,
   onSubmit,
 }) {
   const estimatedValue =
@@ -72,7 +76,11 @@ export function InventoryValuationModal({
           lançados.
         </p>
 
-        {history.length > 0 && (
+        {historyLoading ? (
+          <InlineLoadingState label="Carregando ajustes anteriores..." />
+        ) : historyError ? (
+          <InlineErrorState message={historyError} onRetry={onRetryHistory} />
+        ) : history.length > 0 ? (
           <div className="mini-history">
             <strong>Ajustes recentes</strong>
             {history.slice(0, 4).map((item) => (
@@ -87,6 +95,8 @@ export function InventoryValuationModal({
               </div>
             ))}
           </div>
+        ) : (
+          <p className="inline-empty">Nenhum ajuste de custo registrado.</p>
         )}
 
         <div className="form-actions">

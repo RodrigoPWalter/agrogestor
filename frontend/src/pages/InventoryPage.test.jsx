@@ -93,6 +93,44 @@ describe("InventoryPage", () => {
     expect(screen.getByText("Movimentações recentes")).toBeInTheDocument();
   });
 
+  it("informa quando o histórico de movimentações não pode ser carregado", async () => {
+    api.getInventoryMovements.mockRejectedValueOnce(
+      new Error("Falha ao consultar as movimentações."),
+    );
+
+    render(<InventoryPage />);
+
+    expect(await screen.findByText("Glifosato")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Movimentar estoque" }));
+
+    expect(
+      await screen.findByText("Falha ao consultar as movimentações."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Nenhuma movimentação registrada."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("informa quando os ajustes de custo não podem ser carregados", async () => {
+    api.getInventoryValuationAdjustments.mockRejectedValueOnce(
+      new Error("Falha ao consultar os ajustes anteriores."),
+    );
+
+    render(<InventoryPage />);
+
+    expect(await screen.findByText("Glifosato")).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Ajustar custo de Glifosato" }),
+    );
+
+    expect(
+      await screen.findByText("Falha ao consultar os ajustes anteriores."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Nenhum ajuste de custo registrado."),
+    ).not.toBeInTheDocument();
+  });
+
   it("mantém o estoque visível enquanto atualiza após excluir", async () => {
     let finishRefresh;
     api.deleteInventoryProduct.mockResolvedValue();

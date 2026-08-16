@@ -17,6 +17,33 @@ export function LoadingState({ label = "Carregando informações..." }) {
   );
 }
 
+export function InlineLoadingState({ label = "Carregando informações..." }) {
+  return (
+    <div className="inline-state" role="status">
+      <LoaderCircle className="spin" size={20} />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+export function InlineErrorState({ message, onRetry }) {
+  return (
+    <div className="inline-state inline-state--error" role="alert">
+      <AlertCircle size={20} />
+      <span>{message}</span>
+      {onRetry && (
+        <button
+          className="button button--ghost"
+          type="button"
+          onClick={onRetry}
+        >
+          <RefreshCw size={17} /> Tentar novamente
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function EmptyState({ title, description, action }) {
   return (
     <div className="state-box state-box--empty">

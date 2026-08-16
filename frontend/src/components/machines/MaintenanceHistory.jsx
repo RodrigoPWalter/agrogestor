@@ -5,13 +5,17 @@ import {
   formatDate,
   formatNumber,
 } from "../../utils/formatters";
+import { InlineErrorState, InlineLoadingState } from "../Feedback";
 
 export function MaintenanceHistory({
   machine,
   maintenances,
+  loading,
+  error,
   onCreate,
   onEdit,
   onDelete,
+  onRetry,
 }) {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const counts = useMemo(
@@ -50,31 +54,37 @@ export function MaintenanceHistory({
           <Plus size={16} /> Registrar
         </button>
       </div>
-      {maintenances.length > 0 && (
-        <div className="maintenance-filters" aria-label="Filtrar manutenções">
-          {[
-            ["ALL", "Todas"],
-            ["PREVENTIVE", "Preventivas"],
-            ["CORRECTIVE", "Corretivas"],
-          ].map(([value, label]) => (
-            <button
-              key={value}
-              type="button"
-              className={typeFilter === value ? "is-active" : ""}
-              aria-pressed={typeFilter === value}
-              onClick={() => setTypeFilter(value)}
-            >
-              {label} <span>{counts[value]}</span>
-            </button>
-          ))}
-        </div>
+      {loading ? (
+        <InlineLoadingState label="Carregando manutenções..." />
+      ) : error ? (
+        <InlineErrorState message={error} onRetry={onRetry} />
+      ) : (
+        maintenances.length > 0 && (
+          <div className="maintenance-filters" aria-label="Filtrar manutenções">
+            {[
+              ["ALL", "Todas"],
+              ["PREVENTIVE", "Preventivas"],
+              ["CORRECTIVE", "Corretivas"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={typeFilter === value ? "is-active" : ""}
+                aria-pressed={typeFilter === value}
+                onClick={() => setTypeFilter(value)}
+              >
+                {label} <span>{counts[value]}</span>
+              </button>
+            ))}
+          </div>
+        )
       )}
-      {maintenances.length === 0 ? (
+      {!loading && !error && maintenances.length === 0 ? (
         <div className="compact-empty">
           <Wrench size={28} />
           <p>Nenhuma manutenção registrada.</p>
         </div>
-      ) : (
+      ) : !loading && !error ? (
         <div className="maintenance-list">
           {filteredMaintenances.map((item) => (
             <article key={item.id}>
@@ -126,7 +136,7 @@ export function MaintenanceHistory({
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

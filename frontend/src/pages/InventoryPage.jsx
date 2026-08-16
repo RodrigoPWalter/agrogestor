@@ -17,6 +17,7 @@ import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
 import { useSingleFlight } from "../hooks/useSingleFlight";
+import { useLatestRequestGuard } from "../hooks/useLatestRequestGuard";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 
@@ -50,12 +51,18 @@ export function InventoryPage() {
     notes: "",
   });
   const [movements, setMovements] = useState([]);
+  const [movementsLoading, setMovementsLoading] = useState(false);
+  const [movementsError, setMovementsError] = useState("");
   const [valuationHistory, setValuationHistory] = useState([]);
+  const [valuationHistoryLoading, setValuationHistoryLoading] = useState(false);
+  const [valuationHistoryError, setValuationHistoryError] = useState("");
   const [valuation, setValuation] = useState({
     adjustmentDate: toInputDate(),
     newUnitCost: "",
     reason: "",
   });
+  const beginMovementRequest = useLatestRequestGuard();
+  const beginValuationRequest = useLatestRequestGuard();
 
   async function loadProducts({ showLoading = true } = {}) {
     if (showLoading) setLoading(true);
@@ -103,7 +110,26 @@ export function InventoryPage() {
     setProductModal(true);
   }
 
-  async function openMovement(product) {
+  async function loadMovementHistory(product) {
+    const isCurrentRequest = beginMovementRequest();
+    setMovements([]);
+    setMovementsError("");
+    setMovementsLoading(true);
+    try {
+      const items = await api.getInventoryMovements(product.id);
+      if (isCurrentRequest()) setMovements(items);
+    } catch (requestError) {
+      if (isCurrentRequest()) {
+        setMovementsError(
+          requestError.message || "Não foi possível carregar as movimentações.",
+        );
+      }
+    } finally {
+      if (isCurrentRequest()) setMovementsLoading(false);
+    }
+  }
+
+  function openMovement(product) {
     setSelected(product);
     setMovement({
       movementType: "ENTRY",
@@ -112,14 +138,30 @@ export function InventoryPage() {
       notes: "",
     });
     setMovementModal(true);
+    void loadMovementHistory(product);
+  }
+
+  async function loadValuationHistory(product) {
+    const isCurrentRequest = beginValuationRequest();
+    setValuationHistory([]);
+    setValuationHistoryError("");
+    setValuationHistoryLoading(true);
     try {
-      setMovements(await api.getInventoryMovements(product.id));
-    } catch {
-      setMovements([]);
+      const items = await api.getInventoryValuationAdjustments(product.id);
+      if (isCurrentRequest()) setValuationHistory(items);
+    } catch (requestError) {
+      if (isCurrentRequest()) {
+        setValuationHistoryError(
+          requestError.message ||
+            "Não foi possível carregar os ajustes anteriores.",
+        );
+      }
+    } finally {
+      if (isCurrentRequest()) setValuationHistoryLoading(false);
     }
   }
 
-  async function openValuation(product) {
+  function openValuation(product) {
     setSelected(product);
     setValuation({
       adjustmentDate: toInputDate(),
@@ -127,13 +169,17 @@ export function InventoryPage() {
       reason: "",
     });
     setValuationModal(true);
-    try {
-      setValuationHistory(
-        await api.getInventoryValuationAdjustments(product.id),
-      );
-    } catch {
-      setValuationHistory([]);
-    }
+    void loadValuationHistory(product);
+  }
+
+  function closeMovement() {
+    beginMovementRequest();
+    setMovementModal(false);
+  }
+
+  function closeValuation() {
+    beginValuationRequest();
+    setValuationModal(false);
   }
 
   async function submitProduct(event) {
@@ -287,9 +333,12 @@ export function InventoryPage() {
           product={selected}
           movement={movement}
           movements={movements}
+          historyLoading={movementsLoading}
+          historyError={movementsError}
           saving={saving}
           onChange={setMovement}
-          onClose={() => setMovementModal(false)}
+          onClose={closeMovement}
+          onRetryHistory={() => loadMovementHistory(selected)}
           onSubmit={submitMovement}
         />
       )}
@@ -299,10 +348,13 @@ export function InventoryPage() {
           product={selected}
           form={valuation}
           history={valuationHistory}
+          historyLoading={valuationHistoryLoading}
+          historyError={valuationHistoryError}
           saving={saving}
           today={toInputDate()}
           onChange={setValuation}
-          onClose={() => setValuationModal(false)}
+          onClose={closeValuation}
+          onRetryHistory={() => loadValuationHistory(selected)}
           onSubmit={submitValuation}
         />
       )}

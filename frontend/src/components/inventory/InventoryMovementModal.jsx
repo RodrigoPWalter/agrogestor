@@ -5,14 +5,18 @@ import {
   formatNumber,
 } from "../../utils/formatters";
 import { Modal } from "../Modal";
+import { InlineErrorState, InlineLoadingState } from "../Feedback";
 
 export function InventoryMovementModal({
   product,
   movement,
   movements,
+  historyLoading,
+  historyError,
   saving,
   onChange,
   onClose,
+  onRetryHistory,
   onSubmit,
 }) {
   function update(field, value) {
@@ -82,7 +86,11 @@ export function InventoryMovementModal({
             />
           </label>
         </div>
-        {movements.length > 0 && (
+        {historyLoading ? (
+          <InlineLoadingState label="Carregando movimentações..." />
+        ) : historyError ? (
+          <InlineErrorState message={historyError} onRetry={onRetryHistory} />
+        ) : movements.length > 0 ? (
           <div className="mini-history">
             <strong>Movimentações recentes</strong>
             {movements.slice(0, 4).map((item) => (
@@ -99,6 +107,8 @@ export function InventoryMovementModal({
               </div>
             ))}
           </div>
+        ) : (
+          <p className="inline-empty">Nenhuma movimentação registrada.</p>
         )}
         <div className="form-actions">
           <button

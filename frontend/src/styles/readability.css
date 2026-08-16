@@ -1,0 +1,523 @@
+/*
+ * Camada final de legibilidade.
+ * Mantém os módulos existentes responsivos e oferece uma leitura confortável
+ * para pessoas com menor acuidade visual e para uso no campo.
+ */
+
+:root {
+  font-size: 18px;
+  --muted: #55615a;
+  --line: #cfd6cf;
+}
+
+body {
+  line-height: 1.5;
+}
+
+.app-header__inner,
+.main-content--horizontal .page {
+  width: min(1720px, 100%);
+}
+
+.app-header__inner {
+  min-height: 72px;
+  padding-right: clamp(20px, 2.2vw, 40px);
+  padding-left: clamp(20px, 2.2vw, 40px);
+}
+
+.main-content--horizontal .page {
+  padding: 32px clamp(20px, 2.2vw, 40px) 64px;
+}
+
+.app-brand > span {
+  width: 40px;
+  height: 40px;
+}
+
+.app-brand > strong {
+  font-size: 1.05rem;
+}
+
+.desktop-navigation__item {
+  font-size: 0.82rem;
+}
+
+.connection-status {
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 0.75rem;
+}
+
+.header-profile {
+  min-height: 48px;
+}
+
+.header-profile strong {
+  font-size: 0.82rem;
+}
+
+.header-profile small,
+.profile-dropdown small {
+  font-size: 0.72rem;
+}
+
+.page-header,
+.expenses-page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1,
+.expenses-page-header h1 {
+  font-size: clamp(1.75rem, 2.4vw, 2.25rem);
+}
+
+.page-header p,
+.expenses-page-header p {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+}
+
+.button {
+  min-height: 46px;
+  padding: 10px 17px;
+  font-size: 0.88rem;
+}
+
+.icon-button,
+.expense-table-actions .icon-button {
+  width: 44px;
+  height: 44px;
+}
+
+.panel {
+  padding: 22px;
+}
+
+.panel__header {
+  margin-bottom: 18px;
+}
+
+.panel__header h2 {
+  font-size: 1.05rem;
+}
+
+.metric-grid {
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  min-height: 104px;
+  padding: 18px;
+}
+
+.metric-card__icon {
+  width: 46px;
+  height: 46px;
+}
+
+.metric-card small,
+.expense-summary-item small,
+.module-summary-grid span,
+.expense-summary-grid span {
+  font-size: 0.78rem;
+}
+
+.metric-card strong {
+  font-size: 1.28rem;
+}
+
+.metric-card div > span {
+  font-size: 0.76rem;
+}
+
+.quick-action {
+  min-height: 78px;
+  padding: 13px;
+}
+
+.quick-action__icon {
+  width: 42px;
+  height: 42px;
+}
+
+.quick-action strong {
+  font-size: 0.88rem;
+}
+
+.quick-action small,
+.tip-banner p,
+.tip-banner strong {
+  font-size: 0.78rem;
+}
+
+.quotation-card strong {
+  font-size: 1.08rem;
+}
+
+.quotation-card small,
+.quotation-panel__date,
+.record-count {
+  font-size: 0.78rem;
+}
+
+.quotation-history table,
+.data-table,
+.expense-data-table {
+  font-size: 0.86rem;
+}
+
+.quotation-history th,
+.data-table th,
+.expense-data-table th {
+  font-size: 0.72rem;
+}
+
+.quotation-history th,
+.quotation-history td,
+.data-table th,
+.data-table td,
+.expense-data-table th,
+.expense-data-table td {
+  padding: 11px 13px;
+}
+
+.data-table td small,
+.managed-expense-copy,
+.expense-origin-label {
+  font-size: 0.74rem;
+}
+
+.expenses-scope-tabs button {
+  min-height: 44px;
+  padding: 8px 15px;
+  font-size: 0.82rem;
+}
+
+.expenses-context-selector,
+.expense-form-scope-note span {
+  font-size: 0.82rem;
+}
+
+.expense-form-scope-note strong {
+  font-size: 0.88rem;
+}
+
+.expense-summary-item {
+  min-height: 88px;
+  padding: 16px 18px;
+}
+
+.expense-summary-item > span {
+  width: 40px;
+  height: 40px;
+}
+
+.expense-summary-item strong {
+  font-size: 1.08rem;
+}
+
+.expenses-table-toolbar {
+  padding: 13px 18px;
+}
+
+.expenses-search {
+  min-height: 46px;
+}
+
+.expenses-search input {
+  font-size: 0.88rem;
+}
+
+.form label > span,
+.choice-fieldset legend,
+.quick-stock-use-form label > span,
+.season-price-form label span {
+  font-size: 0.88rem;
+}
+
+.form input,
+.form select,
+.form textarea,
+.planting-selector select,
+.search-box,
+.quick-stock-use-form input,
+.quick-stock-use-form select,
+.season-price-form input {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+.form textarea {
+  min-height: 112px;
+  line-height: 1.5;
+}
+
+.form-note,
+.card-note,
+.muted-copy {
+  font-size: 0.84rem;
+}
+
+.modal {
+  width: min(760px, calc(100vw - 48px));
+}
+
+.modal--wide {
+  width: min(1500px, calc(100vw - 48px));
+}
+
+.modal__header {
+  padding: 26px 30px 22px;
+}
+
+.modal__header h2 {
+  font-size: 1.4rem;
+}
+
+.modal__header p {
+  font-size: 0.9rem;
+}
+
+.modal .form {
+  padding: 26px 30px 30px;
+}
+
+.details-list,
+.compact-list > div,
+.mini-history div {
+  font-size: 0.86rem;
+}
+
+.mini-history > strong,
+.maintenance-list strong {
+  font-size: 0.9rem;
+}
+
+.maintenance-list small,
+.machine-hours span,
+.compact-empty p {
+  font-size: 0.8rem;
+}
+
+.maintenance-type,
+.maintenance-filters button {
+  font-size: 0.76rem;
+}
+
+.maintenance-filters button {
+  min-height: 44px;
+  padding: 8px 13px;
+}
+
+.machine-cost-summary span,
+.machine-cost-summary small {
+  font-size: 0.76rem;
+}
+
+.machine-cost-summary strong {
+  font-size: 0.9rem;
+}
+
+.planting-detail {
+  gap: 22px;
+}
+
+.planting-detail section {
+  padding: 20px;
+}
+
+.planting-detail h3 {
+  font-size: 1rem;
+}
+
+.planting-card-finance span,
+.planting-detail__summary span,
+.planting-progress__caption,
+.planting-progress-label,
+.planting-progress-summary span,
+.planting-step-form__header small,
+.planting-step-history__title span,
+.season-closing-grid span,
+.season-harvest-list span,
+.quick-stock-use-form label > span,
+.stock-cost-preview {
+  font-size: 0.78rem;
+}
+
+.planting-card-finance strong,
+.planting-detail__summary strong,
+.planting-progress-summary strong,
+.season-closing-grid strong {
+  font-size: 1rem;
+}
+
+.planting-step-form__header strong,
+.planting-step-history__title {
+  font-size: 0.88rem;
+}
+
+.inline-state,
+.inline-empty {
+  display: flex;
+  min-height: 74px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f7f9f6;
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.inline-state--error {
+  flex-wrap: wrap;
+  color: #8d302d;
+  border-color: #e8c5c2;
+  background: #fff5f4;
+}
+
+.inline-state--error .button {
+  margin-left: 6px;
+}
+
+.login-card {
+  width: min(470px, 100%);
+  min-width: 0;
+  max-width: 100%;
+  padding: 38px;
+}
+
+.login-card header p,
+.login-form > label {
+  font-size: 0.84rem;
+}
+
+.login-card header small,
+.login-error,
+.login-notice {
+  font-size: 0.86rem;
+}
+
+.login-input {
+  min-width: 0;
+  width: 100%;
+  height: 52px;
+}
+
+.login-input input {
+  font-size: 1rem;
+}
+
+.login-input button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+.login-submit {
+  min-height: 50px;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1180px) {
+  .desktop-navigation__item {
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    font-size: 17px;
+  }
+
+  .app-header__inner {
+    min-height: 64px;
+    padding: 0 16px;
+  }
+
+  .main-content--horizontal .page {
+    width: 100%;
+    padding: 24px 16px 104px;
+  }
+
+  .page-header h1,
+  .expenses-page-header h1 {
+    font-size: 1.65rem;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .button {
+    min-height: 48px;
+  }
+
+  .modal,
+  .modal--wide {
+    width: 100%;
+    max-height: 94vh;
+  }
+
+  .modal__header,
+  .modal .form,
+  .confirmation-dialog {
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .mobile-app-bar {
+    min-height: 76px;
+  }
+
+  .mobile-app-bar a,
+  .mobile-app-bar button {
+    min-height: 64px;
+    font-size: 0.7rem;
+  }
+
+  .mobile-more-menu > div:first-child strong {
+    font-size: 0.9rem;
+  }
+
+  .mobile-more-menu > div:first-child small,
+  .mobile-more-menu__grid a {
+    font-size: 0.78rem;
+  }
+
+  .mobile-more-menu__grid a {
+    min-height: 52px;
+  }
+
+  .login-access {
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    padding: 30px 24px;
+  }
+
+  .planting-detail section {
+    padding: 17px;
+  }
+
+  .inline-state--error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inline-state--error .button {
+    width: 100%;
+    margin-left: 0;
+  }
+}

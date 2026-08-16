@@ -77,4 +77,44 @@ describe("MachinesPage", () => {
       await screen.findByText("Nenhuma máquina cadastrada"),
     ).toBeInTheDocument();
   });
+
+  it("não mantém o histórico da máquina anterior durante uma nova consulta", async () => {
+    const secondMachine = {
+      ...machine,
+      id: "machine-2",
+      brand: "New Holland",
+      model: "T7",
+    };
+    api.getMachines.mockResolvedValueOnce([machine, secondMachine]);
+    api.getMaintenances
+      .mockResolvedValueOnce([
+        {
+          id: "maintenance-1",
+          maintenanceType: "PREVENTIVE",
+          maintenanceTypeName: "Preventiva",
+          maintenanceDate: "2026-08-10",
+          cost: 100,
+        },
+      ])
+      .mockRejectedValueOnce(new Error("Falha ao consultar as manutenções."));
+
+    render(<MachinesPage />);
+
+    expect(await screen.findByText("John Deere 6110J")).toBeInTheDocument();
+    const historyButtons = screen.getAllByRole("button", {
+      name: "Histórico",
+    });
+
+    fireEvent.click(historyButtons[0]);
+    expect(await screen.findByText(/R\$ 100,00/)).toBeInTheDocument();
+
+    fireEvent.click(historyButtons[1]);
+
+    expect(screen.getByText("Carregando manutenções...")).toBeInTheDocument();
+    expect(screen.queryByText(/R\$ 100,00/)).not.toBeInTheDocument();
+    expect(
+      await screen.findByText("Falha ao consultar as manutenções."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/R\$ 100,00/)).not.toBeInTheDocument();
+  });
 });

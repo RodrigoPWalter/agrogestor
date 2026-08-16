@@ -51,6 +51,8 @@ export function MachinesPage() {
   const [editingMaintenance, setEditingMaintenance] = useState(null);
   const [selectedMachine, setSelectedMachine] = useState(null);
   const [maintenances, setMaintenances] = useState([]);
+  const [maintenancesLoading, setMaintenancesLoading] = useState(false);
+  const [maintenancesError, setMaintenancesError] = useState("");
   const [machineForm, setMachineForm] = useState(emptyMachine);
   const [maintenanceForm, setMaintenanceForm] = useState(emptyMaintenance);
   const beginMaintenanceRequest = useLatestRequestGuard();
@@ -111,16 +113,26 @@ export function MachinesPage() {
   async function selectMachine(machine) {
     const isCurrentRequest = beginMaintenanceRequest();
     setSelectedMachine(machine);
+    setMaintenances([]);
+    setMaintenancesError("");
+    setMaintenancesLoading(true);
     try {
       const items = await api.getMaintenances(machine.id);
       if (isCurrentRequest()) setMaintenances(items);
     } catch (requestError) {
-      if (isCurrentRequest()) setError(requestError.message);
+      if (isCurrentRequest()) {
+        setMaintenancesError(
+          requestError.message || "Não foi possível carregar as manutenções.",
+        );
+      }
+    } finally {
+      if (isCurrentRequest()) setMaintenancesLoading(false);
     }
   }
 
   function openMaintenance(machine) {
-    setSelectedMachine(machine);
+    if (selectedMachine?.id !== machine.id) void selectMachine(machine);
+    else setSelectedMachine(machine);
     setEditingMaintenance(null);
     setMaintenanceForm({
       ...emptyMaintenance,
@@ -212,7 +224,13 @@ export function MachinesPage() {
 
     try {
       const result = await api.deleteMachine(machine.id);
-      if (selectedMachine?.id === machine.id) setSelectedMachine(null);
+      if (selectedMachine?.id === machine.id) {
+        beginMaintenanceRequest();
+        setSelectedMachine(null);
+        setMaintenances([]);
+        setMaintenancesError("");
+        setMaintenancesLoading(false);
+      }
       setSuccess(mutationFeedback(result, "Máquina excluída."));
       if (isOfflineResult(result)) return;
       await loadMachines({ showLoading: false });
@@ -283,9 +301,12 @@ export function MachinesPage() {
           <MaintenanceHistory
             machine={selectedMachine}
             maintenances={maintenances}
+            loading={maintenancesLoading}
+            error={maintenancesError}
             onCreate={() => openMaintenance(selectedMachine)}
             onEdit={openEditMaintenance}
             onDelete={removeMaintenance}
+            onRetry={() => selectMachine(selectedMachine)}
           />
         </div>
       )}
