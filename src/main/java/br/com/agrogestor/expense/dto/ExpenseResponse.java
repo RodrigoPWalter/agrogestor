@@ -25,6 +25,7 @@ public record ExpenseResponse(
         boolean managedByMaintenance,
         boolean managedByDiary,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        BigDecimal fuelLiters
 ) {
 }

@@ -30,6 +30,20 @@ public record ExpenseRequest(
         LocalDate expenseDate,
 
         @Size(max = 1000, message = "As observações devem ter no máximo 1000 caracteres")
-        String observations
+        String observations,
+
+        @DecimalMin(value = "0.001", message = "A quantidade de combustível deve ser maior que zero")
+        @Digits(integer = 11, fraction = 3, message = "A quantidade aceita até 11 inteiros e 3 decimais")
+        BigDecimal fuelLiters
 ) {
+    public ExpenseRequest(
+            UUID plantingId,
+            String description,
+            ExpenseCategory category,
+            BigDecimal amount,
+            LocalDate expenseDate,
+            String observations
+    ) {
+        this(plantingId, description, category, amount, expenseDate, observations, null);
+    }
 }

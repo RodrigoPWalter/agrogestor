@@ -103,6 +103,13 @@ export function DiaryTimeline({ entries, onEdit, onDelete }) {
                     <BadgeDollarSign size={16} />
                     {expenseCategoryLabel(entry.expenseCategory)} ·{" "}
                     {formatCurrency(entry.amount)}
+                    {entry.fuelLiters && (
+                      <>
+                        {" "}
+                        · {formatNumber(entry.fuelLiters, 3)} L ·{" "}
+                        {formatCurrency(entry.amount / entry.fuelLiters)} por L
+                      </>
+                    )}
                   </span>
                 )}
               </div>

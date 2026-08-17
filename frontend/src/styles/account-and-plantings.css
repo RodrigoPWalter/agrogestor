@@ -1008,6 +1008,12 @@
   margin: 10px 0;
 }
 
+.quick-expense-form--with-fuel {
+  grid-template-columns:
+    minmax(0, 2fr) repeat(4, minmax(0, 1fr))
+    auto;
+}
+
 .quick-expense-form > *,
 .season-price-form > * {
   min-width: 0;

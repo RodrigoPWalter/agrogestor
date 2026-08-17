@@ -1,5 +1,9 @@
 import { PackageOpen, Plus, ReceiptText } from "lucide-react";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "../../utils/formatters";
 
 const categories = [
   ["SEEDS", "Sementes"],
@@ -78,7 +82,14 @@ export function PlantingExpensesSection({
           </div>
 
           {formMode === "DIRECT" ? (
-            <form className="quick-expense-form" onSubmit={onSubmit}>
+            <form
+              className={`quick-expense-form${
+                expense.category === "FUEL"
+                  ? " quick-expense-form--with-fuel"
+                  : ""
+              }`}
+              onSubmit={onSubmit}
+            >
               <input
                 required
                 placeholder="Descrição"
@@ -104,6 +115,18 @@ export function PlantingExpensesSection({
                 value={expense.amount}
                 onChange={(event) => update("amount", event.target.value)}
               />
+              {expense.category === "FUEL" && (
+                <input
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  inputMode="decimal"
+                  aria-label="Quantidade comprada (L, opcional)"
+                  placeholder="Quantidade em litros"
+                  value={expense.fuelLiters}
+                  onChange={(event) => update("fuelLiters", event.target.value)}
+                />
+              )}
               <input
                 required
                 type="date"
@@ -219,6 +242,12 @@ export function PlantingExpensesSection({
                 )}
                 {item.managedByDiary && (
                   <small className="expense-origin-label">Diário</small>
+                )}
+                {item.fuelLiters && (
+                  <small className="expense-origin-label">
+                    {formatNumber(item.fuelLiters, 3)} L ·{" "}
+                    {formatCurrency(item.amount / item.fuelLiters)}/L
+                  </small>
                 )}
               </span>
               <strong>{formatCurrency(item.amount)}</strong>

@@ -90,6 +90,20 @@ export function ExpenseFormModal({
               placeholder="2.500,00"
             />
           </label>
+          {form.category === "FUEL" && (
+            <label>
+              <span>Quantidade comprada (L, opcional)</span>
+              <input
+                type="number"
+                min="0.001"
+                step="0.001"
+                inputMode="decimal"
+                value={form.fuelLiters}
+                onChange={(event) => update("fuelLiters", event.target.value)}
+                placeholder="Ex.: 50"
+              />
+            </label>
+          )}
           <label>
             <span>Data do gasto</span>
             <input

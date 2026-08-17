@@ -1,6 +1,10 @@
 import { Edit3, Plus, Search, Trash2 } from "lucide-react";
 import { EmptyState } from "../Feedback";
-import { formatCurrency, formatDate } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "../../utils/formatters";
 
 export function ExpenseTable({
   expenses,
@@ -108,7 +112,18 @@ export function ExpenseTable({
                           <small className="expense-origin-label">Diário</small>
                         )}
                       </td>
-                      <td>{expense.categoryDisplayName}</td>
+                      <td>
+                        {expense.categoryDisplayName}
+                        {expense.fuelLiters && (
+                          <small className="expense-origin-label">
+                            {formatNumber(expense.fuelLiters, 3)} L ·{" "}
+                            {formatCurrency(
+                              expense.amount / expense.fuelLiters,
+                            )}
+                            /L
+                          </small>
+                        )}
+                      </td>
                       <td className="expense-table-value">
                         {formatCurrency(expense.amount)}
                       </td>

@@ -53,6 +53,9 @@ public class Expense {
     @Column(length = 1000)
     private String observations;
 
+    @Column(name = "fuel_liters", precision = 14, scale = 3)
+    private BigDecimal fuelLiters;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ExpenseOrigin origin;
@@ -89,9 +92,24 @@ public class Expense {
             String observations,
             ExpenseOrigin origin
     ) {
+        this(property, planting, description, category, amount, expenseDate,
+                observations, origin, null);
+    }
+
+    public Expense(
+            Property property,
+            Planting planting,
+            String description,
+            ExpenseCategory category,
+            BigDecimal amount,
+            LocalDate expenseDate,
+            String observations,
+            ExpenseOrigin origin,
+            BigDecimal fuelLiters
+    ) {
         this.property = property;
         this.origin = origin;
-        update(planting, description, category, amount, expenseDate, observations);
+        update(planting, description, category, amount, expenseDate, observations, fuelLiters);
     }
 
     public void update(
@@ -102,12 +120,25 @@ public class Expense {
             LocalDate expenseDate,
             String observations
     ) {
+        update(planting, description, category, amount, expenseDate, observations, null);
+    }
+
+    public void update(
+            Planting planting,
+            String description,
+            ExpenseCategory category,
+            BigDecimal amount,
+            LocalDate expenseDate,
+            String observations,
+            BigDecimal fuelLiters
+    ) {
         this.planting = planting;
         this.description = description;
         this.category = category;
         this.amount = amount;
         this.expenseDate = expenseDate;
         this.observations = observations;
+        this.fuelLiters = category == ExpenseCategory.FUEL ? fuelLiters : null;
     }
 
     @PrePersist
@@ -152,6 +183,10 @@ public class Expense {
 
     public String getObservations() {
         return observations;
+    }
+
+    public BigDecimal getFuelLiters() {
+        return fuelLiters;
     }
 
     public ExpenseOrigin getOrigin() {

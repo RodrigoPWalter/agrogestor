@@ -229,6 +229,12 @@ public class FieldDiaryService {
                 && (request.amount() == null || request.amount().signum() <= 0)) {
             throw new BusinessRuleException("Informe um valor de gasto maior que zero");
         }
+        if (type == ActivityType.EXPENSE && request.fuelLiters() != null
+                && request.fuelLiters().signum() <= 0) {
+            throw new BusinessRuleException(
+                    "Informe uma quantidade de combustível maior que zero"
+            );
+        }
         if (type == ActivityType.HARVEST
                 && (request.harvestQuantity() == null
                 || request.harvestQuantity().signum() <= 0
@@ -287,7 +293,8 @@ public class FieldDiaryService {
                     currentProperty.get(),
                     request.activityType() == ActivityType.EXPENSE ? planting : null,
                     activityDescription(request), category, request.amount(),
-                    request.entryDate(), normalizeNullable(request.observations()), origin));
+                    request.entryDate(), normalizeNullable(request.observations()), origin,
+                    category == ExpenseCategory.FUEL ? request.fuelLiters() : null));
             entry.linkExpense(expense.getId());
             if (maintenance != null) {
                 maintenance.linkExpense(expense.getId());
@@ -361,9 +368,11 @@ public class FieldDiaryService {
                 request.activityType() == ActivityType.SALE
                         ? request.salePricePerBag() : null
         );
-        entry.updateExpenseCategory(
+        entry.updateExpenseDetails(
                 request.activityType() == ActivityType.EXPENSE
-                        ? request.expenseCategory() : null
+                        ? request.expenseCategory() : null,
+                request.activityType() == ActivityType.EXPENSE
+                        ? request.fuelLiters() : null
         );
     }
 

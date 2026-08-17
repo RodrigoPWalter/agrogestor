@@ -75,6 +75,29 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void shouldKeepFuelQuantityWithExpense() {
+        when(expenseRepository.save(any(Expense.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        var request = new ExpenseRequest(
+                null,
+                "Óleo diesel",
+                ExpenseCategory.FUEL,
+                new BigDecimal("850.00"),
+                LocalDate.of(2026, 8, 17),
+                null,
+                new BigDecimal("120.500")
+        );
+
+        var response = service.create(request);
+
+        ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        assertThat(captor.getValue().getFuelLiters())
+                .isEqualByComparingTo("120.500");
+        assertThat(response.fuelLiters()).isEqualByComparingTo("120.500");
+    }
+
+    @Test
     void shouldRejectExpenseForUnknownPlanting() {
         UUID plantingId = UUID.randomUUID();
         when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.empty());

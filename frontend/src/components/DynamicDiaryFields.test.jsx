@@ -27,6 +27,7 @@ const initialForm = {
   supplier: "",
   amount: "",
   expenseCategory: "OTHER",
+  fuelLiters: "",
   machineId: "",
   operationAreaHectares: "",
   operationSeedVariety: "",
@@ -127,6 +128,14 @@ describe("DynamicDiaryFields", () => {
     expect(screen.getByLabelText("Categoria")).toBeRequired();
     expect(screen.getByLabelText("Valor do gasto (R$)")).toBeRequired();
     expect(screen.getByLabelText("Plantio (opcional)")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Categoria"), {
+      target: { value: "FUEL" },
+    });
+
+    expect(
+      screen.getByLabelText("Quantidade comprada (L, opcional)"),
+    ).toBeInTheDocument();
   });
 
   it("mantém produto zerado disponível para compra, mas não para uso", () => {

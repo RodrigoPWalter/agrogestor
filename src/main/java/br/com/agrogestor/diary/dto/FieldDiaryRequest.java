@@ -52,7 +52,8 @@ public record FieldDiaryRequest(
         BigDecimal saleQuantityBags,
         BigDecimal salePricePerBag,
         String buyer,
-        ExpenseCategory expenseCategory
+        ExpenseCategory expenseCategory,
+        BigDecimal fuelLiters
 ) {
     public FieldDiaryRequest(
             UUID plantingId,
@@ -67,7 +68,7 @@ public record FieldDiaryRequest(
         this(plantingId, entryDate, activityType, activity, weatherCondition,
                 appliedProducts, products, observations, null, null, null,
                 null, null, null, null, null, null, null, null,
-                null, null, null, null);
+                null, null, null, null, null);
     }
 
     public FieldDiaryRequest(
@@ -126,6 +127,38 @@ public record FieldDiaryRequest(
                 appliedProducts, products, observations, rainfallMillimeters,
                 productId, productName, productType, quantity, unit, supplier,
                 amount, machineId, harvestQuantity, harvestUnit,
-                saleQuantityBags, salePricePerBag, buyer, null);
+                saleQuantityBags, salePricePerBag, buyer, null, null);
+    }
+
+    public FieldDiaryRequest(
+            UUID plantingId,
+            LocalDate entryDate,
+            ActivityType activityType,
+            String activity,
+            String weatherCondition,
+            String appliedProducts,
+            List<FieldDiaryProductRequest> products,
+            String observations,
+            BigDecimal rainfallMillimeters,
+            UUID productId,
+            String productName,
+            ProductType productType,
+            BigDecimal quantity,
+            MeasurementUnit unit,
+            String supplier,
+            BigDecimal amount,
+            UUID machineId,
+            BigDecimal harvestQuantity,
+            String harvestUnit,
+            BigDecimal saleQuantityBags,
+            BigDecimal salePricePerBag,
+            String buyer,
+            ExpenseCategory expenseCategory
+    ) {
+        this(plantingId, entryDate, activityType, activity, weatherCondition,
+                appliedProducts, products, observations, rainfallMillimeters,
+                productId, productName, productType, quantity, unit, supplier,
+                amount, machineId, harvestQuantity, harvestUnit,
+                saleQuantityBags, salePricePerBag, buyer, expenseCategory, null);
     }
 }

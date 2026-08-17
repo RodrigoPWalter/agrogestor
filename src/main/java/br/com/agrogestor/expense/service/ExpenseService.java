@@ -7,6 +7,7 @@ import br.com.agrogestor.expense.dto.PlantingExpenseSummaryResponse;
 import br.com.agrogestor.expense.dto.PlantingExpenseOverviewResponse;
 import br.com.agrogestor.expense.dto.PropertyExpenseSummaryResponse;
 import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.expense.repository.ExpenseCategoryTotalProjection;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
@@ -60,7 +61,9 @@ public class ExpenseService {
                 request.category(),
                 money(request.amount()),
                 request.expenseDate(),
-                normalizeNullable(request.observations())
+                normalizeNullable(request.observations()),
+                ExpenseOrigin.DIRECT,
+                fuelLiters(request)
         );
         return toResponse(expenseRepository.save(expense));
     }
@@ -112,7 +115,8 @@ public class ExpenseService {
                 request.category(),
                 money(request.amount()),
                 request.expenseDate(),
-                normalizeNullable(request.observations())
+                normalizeNullable(request.observations()),
+                fuelLiters(request)
         );
         return toResponse(expense);
     }
@@ -268,8 +272,13 @@ public class ExpenseService {
                 expense.getOrigin() == ExpenseOrigin.MAINTENANCE,
                 expense.getOrigin() == ExpenseOrigin.DIARY,
                 expense.getCreatedAt(),
-                expense.getUpdatedAt()
+                expense.getUpdatedAt(),
+                expense.getFuelLiters()
         );
+    }
+
+    private BigDecimal fuelLiters(ExpenseRequest request) {
+        return request.category() == ExpenseCategory.FUEL ? request.fuelLiters() : null;
     }
 
     private BigDecimal percentage(BigDecimal value, BigDecimal total) {

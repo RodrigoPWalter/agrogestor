@@ -240,7 +240,7 @@ describe("FieldDiaryPage", () => {
     );
   });
 
-  it("registra gasto da propriedade pelo diário", async () => {
+  it("registra compra de combustível com litros pelo diário", async () => {
     api.createDiaryEntry.mockResolvedValue({});
 
     render(
@@ -256,14 +256,20 @@ describe("FieldDiaryPage", () => {
       target: { value: "EXPENSE" },
     });
     fireEvent.change(screen.getByLabelText("Descrição do gasto"), {
-      target: { value: "Conserto da cerca" },
+      target: { value: "Óleo diesel" },
     });
     fireEvent.change(screen.getByLabelText("Categoria"), {
-      target: { value: "MAINTENANCE" },
+      target: { value: "FUEL" },
     });
     fireEvent.change(screen.getByLabelText("Valor do gasto (R$)"), {
-      target: { value: "480.50" },
+      target: { value: "850" },
     });
+    fireEvent.change(
+      screen.getByLabelText("Quantidade comprada (L, opcional)"),
+      {
+        target: { value: "120.5" },
+      },
+    );
     fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
 
     await waitFor(() =>
@@ -271,9 +277,10 @@ describe("FieldDiaryPage", () => {
         expect.objectContaining({
           activityType: "EXPENSE",
           plantingId: null,
-          activity: "Conserto da cerca",
-          expenseCategory: "MAINTENANCE",
-          amount: 480.5,
+          activity: "Óleo diesel",
+          expenseCategory: "FUEL",
+          amount: 850,
+          fuelLiters: 120.5,
         }),
       ),
     );

@@ -32,6 +32,7 @@ export function newDiaryForm(plantingId = "") {
     supplier: "",
     amount: "",
     expenseCategory: "OTHER",
+    fuelLiters: "",
     machineId: "",
     operationAreaHectares: "",
     operationSeedVariety: "",

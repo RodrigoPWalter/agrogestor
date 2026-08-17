@@ -40,6 +40,20 @@ export function ExpenseFields({ form, onUpdate }) {
           placeholder="Ex.: 350,00"
         />
       </label>
+      {form.expenseCategory === "FUEL" && (
+        <label>
+          <span>Quantidade comprada (L, opcional)</span>
+          <input
+            type="number"
+            min="0.001"
+            step="0.001"
+            inputMode="decimal"
+            value={form.fuelLiters}
+            onChange={(event) => onUpdate("fuelLiters", event.target.value)}
+            placeholder="Ex.: 50"
+          />
+        </label>
+      )}
     </>
   );
 }

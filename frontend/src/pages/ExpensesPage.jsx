@@ -32,6 +32,7 @@ function newExpenseForm(plantingId = "") {
     description: "",
     category: "FERTILIZERS",
     amount: "",
+    fuelLiters: "",
     expenseDate: toInputDate(),
     observations: "",
   };
@@ -166,6 +167,7 @@ export function ExpensesPage() {
       description: expense.description,
       category: expense.category,
       amount: expense.amount,
+      fuelLiters: expense.fuelLiters || "",
       expenseDate: expense.expenseDate,
       observations: expense.observations || "",
     });
@@ -187,6 +189,10 @@ export function ExpensesPage() {
         ...form,
         plantingId: scope === "property" ? null : form.plantingId || null,
         amount: Number(form.amount),
+        fuelLiters:
+          form.category === "FUEL" && form.fuelLiters
+            ? Number(form.fuelLiters)
+            : null,
         observations: form.observations || null,
       };
       try {

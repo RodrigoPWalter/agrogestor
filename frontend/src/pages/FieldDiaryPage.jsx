@@ -173,6 +173,7 @@ export function FieldDiaryPage() {
       supplier: entry.supplier || "",
       amount: entry.amount || "",
       expenseCategory: entry.expenseCategory || "OTHER",
+      fuelLiters: entry.fuelLiters || "",
       machineId: entry.machineId || "",
       operationAreaHectares: entry.operationAreaHectares || "",
       operationSeedVariety: entry.operationSeedVariety || "",
@@ -233,6 +234,7 @@ export function FieldDiaryPage() {
         supplier: form.supplier || null,
         amount: form.amount ? Number(form.amount) : null,
         expenseCategory: form.expenseCategory || null,
+        fuelLiters: form.fuelLiters ? Number(form.fuelLiters) : null,
         machineId: form.machineId || null,
         harvestQuantity: form.harvestQuantity
           ? Number(form.harvestQuantity)

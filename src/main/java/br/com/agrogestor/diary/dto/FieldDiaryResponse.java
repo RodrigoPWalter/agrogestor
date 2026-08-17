@@ -39,6 +39,7 @@ public record FieldDiaryResponse(
         String operationHarvestUnit,
         UUID productionSaleId,
         BigDecimal salePricePerBag,
-        ExpenseCategory expenseCategory
+        ExpenseCategory expenseCategory,
+        BigDecimal fuelLiters
 ) {
 }

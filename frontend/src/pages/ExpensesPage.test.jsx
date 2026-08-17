@@ -167,6 +167,47 @@ describe("ExpensesPage", () => {
     );
   });
 
+  it("registra os litros quando o gasto é de combustível", async () => {
+    api.createExpense.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <ExpensesPage />
+      </MemoryRouter>,
+    );
+
+    await screen.findByText("Adubo de base");
+    fireEvent.click(screen.getByRole("button", { name: "Registrar gasto" }));
+    fireEvent.change(screen.getByLabelText("Descrição"), {
+      target: { value: "Óleo diesel" },
+    });
+    fireEvent.change(screen.getByLabelText("Categoria"), {
+      target: { value: "FUEL" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor (R$)"), {
+      target: { value: "700" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Quantidade comprada (L, opcional)"),
+      {
+        target: { value: "100" },
+      },
+    );
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Registrar gasto" }).at(-1),
+    );
+
+    await waitFor(() =>
+      expect(api.createExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: "FUEL",
+          amount: 700,
+          fuelLiters: 100,
+        }),
+      ),
+    );
+  });
+
   it("carrega o resumo e permite pesquisar os gastos do plantio", async () => {
     render(
       <MemoryRouter>

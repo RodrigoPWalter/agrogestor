@@ -94,6 +94,9 @@ public class FieldDiaryEntry {
     @Column(name = "expense_category", length = 30)
     private ExpenseCategory expenseCategory;
 
+    @Column(name = "fuel_liters", precision = 14, scale = 3)
+    private BigDecimal fuelLiters;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -229,13 +232,15 @@ public class FieldDiaryEntry {
     public UUID getProductionSaleId() { return productionSaleId; }
     public BigDecimal getSalePricePerBag() { return salePricePerBag; }
     public ExpenseCategory getExpenseCategory() { return expenseCategory; }
+    public BigDecimal getFuelLiters() { return fuelLiters; }
 
     public void linkRainfall(UUID id) { rainfallId = id; }
     public void linkMaintenance(UUID id) { maintenanceId = id; }
     public void linkExpense(UUID id) { expenseId = id; }
     public void linkProductionSale(UUID id) { productionSaleId = id; }
-    public void updateExpenseCategory(ExpenseCategory category) {
+    public void updateExpenseDetails(ExpenseCategory category, BigDecimal liters) {
         expenseCategory = category;
+        fuelLiters = category == ExpenseCategory.FUEL ? liters : null;
     }
 
     public void clearIntegrationLinks() {
@@ -245,5 +250,6 @@ public class FieldDiaryEntry {
         productionSaleId = null;
         salePricePerBag = null;
         expenseCategory = null;
+        fuelLiters = null;
     }
 }

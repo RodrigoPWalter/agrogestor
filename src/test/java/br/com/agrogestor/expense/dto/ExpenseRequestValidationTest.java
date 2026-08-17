@@ -58,4 +58,21 @@ class ExpenseRequestValidationTest {
                 .extracting(violation -> violation.getPropertyPath().toString())
                 .contains("description", "amount");
     }
+
+    @Test
+    void shouldRejectNonPositiveFuelQuantityWhenProvided() {
+        var request = new ExpenseRequest(
+                null,
+                "Óleo diesel",
+                ExpenseCategory.FUEL,
+                new BigDecimal("500.00"),
+                LocalDate.of(2026, 8, 17),
+                null,
+                BigDecimal.ZERO
+        );
+
+        assertThat(validator.validate(request))
+                .extracting(violation -> violation.getPropertyPath().toString())
+                .contains("fuelLiters");
+    }
 }

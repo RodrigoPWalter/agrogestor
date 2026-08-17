@@ -27,6 +27,7 @@ const emptyExpense = {
   description: "",
   category: "FERTILIZERS",
   amount: "",
+  fuelLiters: "",
   expenseDate: toInputDate(),
   observations: "",
 };
@@ -337,6 +338,10 @@ export function PlantingDetailsModal({
           ...expense,
           plantingId: planting.id,
           amount: Number(expense.amount),
+          fuelLiters:
+            expense.category === "FUEL" && expense.fuelLiters
+              ? Number(expense.fuelLiters)
+              : null,
           observations: expense.observations || null,
         });
         setExpense({ ...emptyExpense, expenseDate: toInputDate() });

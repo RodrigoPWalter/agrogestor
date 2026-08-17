@@ -311,7 +311,8 @@ class FieldDiaryServiceTest {
                 null,
                 null,
                 null,
-                ExpenseCategory.FUEL
+                ExpenseCategory.FUEL,
+                new BigDecimal("120.500")
         ));
 
         ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
@@ -320,7 +321,9 @@ class FieldDiaryServiceTest {
         assertThat(expense.getValue().getPlanting()).isSameAs(planting);
         assertThat(expense.getValue().getCategory()).isEqualTo(ExpenseCategory.FUEL);
         assertThat(expense.getValue().getAmount()).isEqualByComparingTo("850.00");
+        assertThat(expense.getValue().getFuelLiters()).isEqualByComparingTo("120.500");
         assertThat(response.expenseCategory()).isEqualTo(ExpenseCategory.FUEL);
+        assertThat(response.fuelLiters()).isEqualByComparingTo("120.500");
     }
 
     @Test
