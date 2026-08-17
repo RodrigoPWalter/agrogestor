@@ -1,14 +1,5 @@
 import { Modal } from "../Modal";
-
-const categories = [
-  { value: "SEEDS", label: "Sementes" },
-  { value: "FERTILIZERS", label: "Fertilizantes" },
-  { value: "PESTICIDES", label: "Defensivos" },
-  { value: "FUEL", label: "Combustível" },
-  { value: "MAINTENANCE", label: "Manutenção" },
-  { value: "LABOR", label: "Mão de obra" },
-  { value: "OTHER", label: "Outros" },
-];
+import { expenseCategories } from "./expenseCategories";
 
 export function ExpenseFormModal({
   editing,
@@ -80,7 +71,7 @@ export function ExpenseFormModal({
               value={form.category}
               onChange={(event) => update("category", event.target.value)}
             >
-              {categories.map((category) => (
+              {expenseCategories.map((category) => (
                 <option key={category.value} value={category.value}>
                   {category.label}
                 </option>

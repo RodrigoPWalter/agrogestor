@@ -11,6 +11,7 @@ import {
   formatDate,
   formatNumber,
 } from "../../utils/formatters";
+import { expenseCategoryLabel } from "../expenses/expenseCategories";
 
 const dayFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit" });
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "short" });
@@ -96,6 +97,13 @@ export function DiaryTimeline({ entries, onEdit, onDelete }) {
                       </span>
                     )}
                   </>
+                )}
+                {entry.activityType === "EXPENSE" && (
+                  <span>
+                    <BadgeDollarSign size={16} />
+                    {expenseCategoryLabel(entry.expenseCategory)} ·{" "}
+                    {formatCurrency(entry.amount)}
+                  </span>
                 )}
               </div>
               {entry.observations && <p>{entry.observations}</p>}

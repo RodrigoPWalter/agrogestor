@@ -266,6 +266,7 @@ public class ExpenseService {
                 expense.getOrigin().getDisplayName(),
                 expense.getOrigin() == ExpenseOrigin.STOCK_ALLOCATION,
                 expense.getOrigin() == ExpenseOrigin.MAINTENANCE,
+                expense.getOrigin() == ExpenseOrigin.DIARY,
                 expense.getCreatedAt(),
                 expense.getUpdatedAt()
         );
@@ -293,9 +294,11 @@ public class ExpenseService {
 
     private void ensureDirectExpense(Expense expense) {
         if (expense.getOrigin() != ExpenseOrigin.DIRECT) {
-            String source = expense.getOrigin() == ExpenseOrigin.MAINTENANCE
-                    ? "em Máquinas"
-                    : "pelo uso do produto no estoque";
+            String source = switch (expense.getOrigin()) {
+                case MAINTENANCE -> "em Máquinas";
+                case DIARY -> "no Diário";
+                default -> "pelo uso do produto no estoque";
+            };
             throw new BusinessRuleException(
                     "Este custo é controlado " + source + ". "
                             + "Edite ou exclua o registro no módulo de origem"

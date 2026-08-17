@@ -1,6 +1,7 @@
 package br.com.agrogestor.diary.dto;
 
 import br.com.agrogestor.diary.entity.ActivityType;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.inventory.entity.MeasurementUnit;
 import br.com.agrogestor.inventory.entity.ProductType;
 import jakarta.validation.Valid;
@@ -50,7 +51,8 @@ public record FieldDiaryRequest(
         String harvestUnit,
         BigDecimal saleQuantityBags,
         BigDecimal salePricePerBag,
-        String buyer
+        String buyer,
+        ExpenseCategory expenseCategory
 ) {
     public FieldDiaryRequest(
             UUID plantingId,
@@ -65,7 +67,7 @@ public record FieldDiaryRequest(
         this(plantingId, entryDate, activityType, activity, weatherCondition,
                 appliedProducts, products, observations, null, null, null,
                 null, null, null, null, null, null, null, null,
-                null, null, null);
+                null, null, null, null);
     }
 
     public FieldDiaryRequest(
@@ -92,6 +94,38 @@ public record FieldDiaryRequest(
         this(plantingId, entryDate, activityType, activity, weatherCondition,
                 appliedProducts, products, observations, rainfallMillimeters,
                 productId, productName, productType, quantity, unit, supplier,
-                amount, machineId, harvestQuantity, harvestUnit, null, null, null);
+                amount, machineId, harvestQuantity, harvestUnit, null, null, null,
+                null);
+    }
+
+    public FieldDiaryRequest(
+            UUID plantingId,
+            LocalDate entryDate,
+            ActivityType activityType,
+            String activity,
+            String weatherCondition,
+            String appliedProducts,
+            List<FieldDiaryProductRequest> products,
+            String observations,
+            BigDecimal rainfallMillimeters,
+            UUID productId,
+            String productName,
+            ProductType productType,
+            BigDecimal quantity,
+            MeasurementUnit unit,
+            String supplier,
+            BigDecimal amount,
+            UUID machineId,
+            BigDecimal harvestQuantity,
+            String harvestUnit,
+            BigDecimal saleQuantityBags,
+            BigDecimal salePricePerBag,
+            String buyer
+    ) {
+        this(plantingId, entryDate, activityType, activity, weatherCondition,
+                appliedProducts, products, observations, rainfallMillimeters,
+                productId, productName, productType, quantity, unit, supplier,
+                amount, machineId, harvestQuantity, harvestUnit,
+                saleQuantityBags, salePricePerBag, buyer, null);
     }
 }

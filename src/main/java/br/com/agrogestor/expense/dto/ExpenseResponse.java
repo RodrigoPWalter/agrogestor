@@ -23,6 +23,7 @@ public record ExpenseResponse(
         String originDisplayName,
         boolean managedByInventory,
         boolean managedByMaintenance,
+        boolean managedByDiary,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

@@ -84,7 +84,9 @@ export function ExpenseTable({
               ) : (
                 filteredExpenses.map((expense) => {
                   const managedExpense =
-                    expense.managedByInventory || expense.managedByMaintenance;
+                    expense.managedByInventory ||
+                    expense.managedByMaintenance ||
+                    expense.managedByDiary;
                   return (
                     <tr key={expense.id}>
                       <td>{formatDate(expense.expenseDate)}</td>
@@ -101,6 +103,9 @@ export function ExpenseTable({
                           <small className="expense-origin-label">
                             Manutenção
                           </small>
+                        )}
+                        {expense.managedByDiary && (
+                          <small className="expense-origin-label">Diário</small>
                         )}
                       </td>
                       <td>{expense.categoryDisplayName}</td>

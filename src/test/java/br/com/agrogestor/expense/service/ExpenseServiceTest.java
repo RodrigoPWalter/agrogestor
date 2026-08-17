@@ -12,6 +12,7 @@ import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
+import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,28 @@ class ExpenseServiceTest {
         assertThatThrownBy(() -> service.create(request(plantingId, "Adubo")))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(plantingId.toString());
+    }
+
+    @Test
+    void shouldRequireDiaryForExpenseCreatedThere() {
+        UUID expenseId = UUID.randomUUID();
+        Expense expense = new Expense(
+                property,
+                null,
+                "Conserto da cerca",
+                ExpenseCategory.MAINTENANCE,
+                new BigDecimal("480.00"),
+                LocalDate.now(),
+                null,
+                ExpenseOrigin.DIARY
+        );
+        when(expenseRepository.findByIdAndPropertyId(expenseId, PROPERTY_ID))
+                .thenReturn(Optional.of(expense));
+
+        assertThatThrownBy(() -> service.update(
+                expenseId, request(null, "Conserto atualizado")
+        )).isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("no Diário");
     }
 
     @Test

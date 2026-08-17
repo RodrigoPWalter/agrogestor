@@ -218,6 +218,17 @@ public class FieldDiaryService {
         if (type == ActivityType.MAINTENANCE && request.machineId() == null) {
             throw new BusinessRuleException("Selecione a máquina da manutenção");
         }
+        if (type == ActivityType.EXPENSE
+                && (request.activity() == null || request.activity().isBlank())) {
+            throw new BusinessRuleException("Informe a descrição do gasto");
+        }
+        if (type == ActivityType.EXPENSE && request.expenseCategory() == null) {
+            throw new BusinessRuleException("Selecione a categoria do gasto");
+        }
+        if (type == ActivityType.EXPENSE
+                && (request.amount() == null || request.amount().signum() <= 0)) {
+            throw new BusinessRuleException("Informe um valor de gasto maior que zero");
+        }
         if (type == ActivityType.HARVEST
                 && (request.harvestQuantity() == null
                 || request.harvestQuantity().signum() <= 0
@@ -263,14 +274,19 @@ public class FieldDiaryService {
         }
         if (request.amount() != null && request.amount().signum() > 0
                 && (request.activityType() == ActivityType.PRODUCT_PURCHASE
-                || request.activityType() == ActivityType.MAINTENANCE)) {
-            ExpenseCategory category = request.activityType() == ActivityType.MAINTENANCE
-                    ? ExpenseCategory.MAINTENANCE : productCategory(products, request.productType());
+                || request.activityType() == ActivityType.MAINTENANCE
+                || request.activityType() == ActivityType.EXPENSE)) {
+            ExpenseCategory category = switch (request.activityType()) {
+                case MAINTENANCE -> ExpenseCategory.MAINTENANCE;
+                case EXPENSE -> request.expenseCategory();
+                default -> productCategory(products, request.productType());
+            };
             ExpenseOrigin origin = request.activityType() == ActivityType.MAINTENANCE
-                    ? ExpenseOrigin.MAINTENANCE : ExpenseOrigin.DIRECT;
+                    ? ExpenseOrigin.MAINTENANCE : ExpenseOrigin.DIARY;
             Expense expense = expenseRepository.save(new Expense(
                     currentProperty.get(),
-                    null, activityDescription(request), category, request.amount(),
+                    request.activityType() == ActivityType.EXPENSE ? planting : null,
+                    activityDescription(request), category, request.amount(),
                     request.entryDate(), normalizeNullable(request.observations()), origin));
             entry.linkExpense(expense.getId());
             if (maintenance != null) {
@@ -345,6 +361,10 @@ public class FieldDiaryService {
                 request.activityType() == ActivityType.SALE
                         ? request.salePricePerBag() : null
         );
+        entry.updateExpenseCategory(
+                request.activityType() == ActivityType.EXPENSE
+                        ? request.expenseCategory() : null
+        );
     }
 
     private FieldDiaryEntry findEntry(UUID id) {
@@ -377,6 +397,7 @@ public class FieldDiaryService {
             case RAIN -> "Chuva de " + request.rainfallMillimeters() + " mm";
             case PRODUCT_PURCHASE -> "Compra de produto";
             case PRODUCT_USE -> "Uso de produto";
+            case EXPENSE -> "Gasto";
             case MAINTENANCE -> "Manutenção de máquina";
             case OBSERVATION -> "Observação da propriedade";
             case HARVEST -> "Colheita";

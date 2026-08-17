@@ -55,7 +55,8 @@ public class FieldDiaryResponseMapper {
                 operationEndTime(plantingStep, harvestStep),
                 harvestStep == null ? null : harvestStep.getHarvestUnit().name(),
                 entry.getProductionSaleId(),
-                entry.getSalePricePerBag());
+                entry.getSalePricePerBag(),
+                entry.getExpenseCategory());
     }
 
     private UUID operationId(PlantingStep plantingStep, HarvestStep harvestStep) {

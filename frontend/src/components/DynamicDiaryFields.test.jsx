@@ -8,6 +8,7 @@ const activityTypes = [
   { value: "RAIN", label: "Chuva" },
   { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
   { value: "PRODUCT_USE", label: "Uso de produto" },
+  { value: "EXPENSE", label: "Gasto" },
   { value: "PLANTING", label: "Etapa de plantio" },
   { value: "HARVEST", label: "Etapa de colheita" },
   { value: "SALE", label: "Venda da produção" },
@@ -25,6 +26,7 @@ const initialForm = {
   unit: "LITER",
   supplier: "",
   amount: "",
+  expenseCategory: "OTHER",
   machineId: "",
   operationAreaHectares: "",
   operationSeedVariety: "",
@@ -112,6 +114,19 @@ describe("DynamicDiaryFields", () => {
     expect(screen.getByLabelText("Preço por saca (R$)")).toBeRequired();
     expect(screen.getByLabelText("Comprador (opcional)")).toBeInTheDocument();
     expect(screen.getByLabelText("Plantio (obrigatório)")).toBeInTheDocument();
+  });
+
+  it("mostra os campos financeiros para um gasto geral ou do plantio", () => {
+    render(<DiaryFieldsHarness />);
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "EXPENSE" },
+    });
+
+    expect(screen.getByLabelText("Descrição do gasto")).toBeRequired();
+    expect(screen.getByLabelText("Categoria")).toBeRequired();
+    expect(screen.getByLabelText("Valor do gasto (R$)")).toBeRequired();
+    expect(screen.getByLabelText("Plantio (opcional)")).toBeInTheDocument();
   });
 
   it("mantém produto zerado disponível para compra, mas não para uso", () => {

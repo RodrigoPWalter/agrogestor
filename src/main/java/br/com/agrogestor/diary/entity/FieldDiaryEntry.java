@@ -1,5 +1,6 @@
 package br.com.agrogestor.diary.entity;
 
+import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.property.entity.Property;
 import jakarta.persistence.Column;
@@ -88,6 +89,10 @@ public class FieldDiaryEntry {
 
     @Column(name = "sale_price_per_bag", precision = 12, scale = 2)
     private BigDecimal salePricePerBag;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "expense_category", length = 30)
+    private ExpenseCategory expenseCategory;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -223,11 +228,15 @@ public class FieldDiaryEntry {
     public UUID getExpenseId() { return expenseId; }
     public UUID getProductionSaleId() { return productionSaleId; }
     public BigDecimal getSalePricePerBag() { return salePricePerBag; }
+    public ExpenseCategory getExpenseCategory() { return expenseCategory; }
 
     public void linkRainfall(UUID id) { rainfallId = id; }
     public void linkMaintenance(UUID id) { maintenanceId = id; }
     public void linkExpense(UUID id) { expenseId = id; }
     public void linkProductionSale(UUID id) { productionSaleId = id; }
+    public void updateExpenseCategory(ExpenseCategory category) {
+        expenseCategory = category;
+    }
 
     public void clearIntegrationLinks() {
         rainfallId = null;
@@ -235,5 +244,6 @@ public class FieldDiaryEntry {
         expenseId = null;
         productionSaleId = null;
         salePricePerBag = null;
+        expenseCategory = null;
     }
 }

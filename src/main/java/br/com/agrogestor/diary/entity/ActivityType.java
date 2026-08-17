@@ -8,6 +8,7 @@ public enum ActivityType {
     RAIN("Chuva"),
     PRODUCT_PURCHASE("Compra de produto"),
     PRODUCT_USE("Uso de produto"),
+    EXPENSE("Gasto"),
     MAINTENANCE("Manutenção"),
     OBSERVATION("Observação"),
     HARVEST("Colheita"),

@@ -239,4 +239,43 @@ describe("FieldDiaryPage", () => {
       ),
     );
   });
+
+  it("registra gasto da propriedade pelo diário", async () => {
+    api.createDiaryEntry.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Nova atividade" }),
+    );
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "EXPENSE" },
+    });
+    fireEvent.change(screen.getByLabelText("Descrição do gasto"), {
+      target: { value: "Conserto da cerca" },
+    });
+    fireEvent.change(screen.getByLabelText("Categoria"), {
+      target: { value: "MAINTENANCE" },
+    });
+    fireEvent.change(screen.getByLabelText("Valor do gasto (R$)"), {
+      target: { value: "480.50" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+
+    await waitFor(() =>
+      expect(api.createDiaryEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          activityType: "EXPENSE",
+          plantingId: null,
+          activity: "Conserto da cerca",
+          expenseCategory: "MAINTENANCE",
+          amount: 480.5,
+        }),
+      ),
+    );
+  });
 });

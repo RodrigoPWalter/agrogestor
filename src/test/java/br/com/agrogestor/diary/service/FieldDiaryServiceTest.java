@@ -29,6 +29,7 @@ import br.com.agrogestor.machine.entity.Machine;
 import br.com.agrogestor.machine.entity.Maintenance;
 import br.com.agrogestor.expense.repository.ExpenseRepository;
 import br.com.agrogestor.expense.entity.Expense;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
 import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.property.entity.Property;
@@ -265,8 +266,61 @@ class FieldDiaryServiceTest {
         assertThat(product.getAverageUnitCost()).isEqualByComparingTo("5000.000000");
         ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
         verify(expenseRepository).save(expense.capture());
-        assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.DIRECT);
+        assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.DIARY);
         assertThat(expense.getValue().getPlanting()).isNull();
+    }
+
+    @Test
+    void shouldCreatePlantingExpenseFromDiary() {
+        UUID plantingId = UUID.randomUUID();
+        UUID expenseId = UUID.randomUUID();
+        Planting planting = planting();
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
+        when(diaryRepository.save(any(FieldDiaryEntry.class))).thenAnswer(invocation -> {
+            FieldDiaryEntry entry = invocation.getArgument(0);
+            ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+            return entry;
+        });
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(invocation -> {
+            Expense expense = invocation.getArgument(0);
+            ReflectionTestUtils.setField(expense, "id", expenseId);
+            return expense;
+        });
+
+        var response = service.create(new FieldDiaryRequest(
+                plantingId,
+                LocalDate.now(),
+                ActivityType.EXPENSE,
+                "Óleo diesel",
+                null,
+                null,
+                null,
+                "Abastecimento da operação",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BigDecimal("850.00"),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                ExpenseCategory.FUEL
+        ));
+
+        ArgumentCaptor<Expense> expense = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(expense.capture());
+        assertThat(expense.getValue().getOrigin()).isEqualTo(ExpenseOrigin.DIARY);
+        assertThat(expense.getValue().getPlanting()).isSameAs(planting);
+        assertThat(expense.getValue().getCategory()).isEqualTo(ExpenseCategory.FUEL);
+        assertThat(expense.getValue().getAmount()).isEqualByComparingTo("850.00");
+        assertThat(response.expenseCategory()).isEqualTo(ExpenseCategory.FUEL);
     }
 
     @Test

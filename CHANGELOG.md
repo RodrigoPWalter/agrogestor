@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Gastos gerais ou vinculados a um plantio agora podem ser lançados pelo Diário e aparecem automaticamente na visão financeira correspondente.
 - Vendas da produção agora também podem ser lançadas pelo Diário, com baixa automática do saldo colhido e sincronização entre as duas telas.
 - A opção redundante de Vistoria foi retirada dos novos lançamentos do Diário; registros antigos continuam preservados.
 - Edição do produto e do custo unitário reunida no botão de lápis, sem exigir motivo para reajustes de preço.

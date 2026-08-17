@@ -1,4 +1,5 @@
 import { DiaryBaseFields } from "./diary/fields/DiaryBaseFields";
+import { ExpenseFields } from "./diary/fields/ExpenseFields";
 import { HarvestFields } from "./diary/fields/HarvestFields";
 import { MaintenanceFields } from "./diary/fields/MaintenanceFields";
 import { PlantingOperationFields } from "./diary/fields/PlantingOperationFields";
@@ -70,6 +71,8 @@ export function DynamicDiaryFields({
       {type === "MAINTENANCE" && (
         <MaintenanceFields form={form} machines={machines} onUpdate={update} />
       )}
+
+      {type === "EXPENSE" && <ExpenseFields form={form} onUpdate={update} />}
 
       {type === "HARVEST" && (
         <HarvestFields form={form} legacy={legacyHarvest} onUpdate={update} />

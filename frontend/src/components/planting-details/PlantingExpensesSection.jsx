@@ -217,6 +217,9 @@ export function PlantingExpensesSection({
                 {item.managedByMaintenance && (
                   <small className="expense-origin-label">Manutenção</small>
                 )}
+                {item.managedByDiary && (
+                  <small className="expense-origin-label">Diário</small>
+                )}
               </span>
               <strong>{formatCurrency(item.amount)}</strong>
             </div>

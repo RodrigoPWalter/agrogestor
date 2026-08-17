@@ -102,6 +102,33 @@ describe("ExpensesPage", () => {
     expect(screen.queryByRole("button", { name: "Editar gasto" })).toBeNull();
   });
 
+  it("indica quando o gasto deve ser alterado pelo diário", async () => {
+    api.getPropertyExpenses.mockResolvedValue({
+      content: [
+        {
+          ...propertyExpense,
+          description: "Conserto da cerca",
+          managedByMaintenance: false,
+          managedByDiary: true,
+        },
+      ],
+    });
+
+    render(
+      <MemoryRouter>
+        <ExpensesPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Da propriedade" }));
+
+    expect(await screen.findByText("Conserto da cerca")).toBeInTheDocument();
+    expect(screen.getByText("Gerenciado no Diário")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Editar gasto" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("registra um gasto da propriedade sem vincular plantio", async () => {
     api.createExpense.mockResolvedValue({});
 

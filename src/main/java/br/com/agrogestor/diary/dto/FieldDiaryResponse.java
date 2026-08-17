@@ -1,6 +1,7 @@
 package br.com.agrogestor.diary.dto;
 
 import br.com.agrogestor.diary.entity.ActivityType;
+import br.com.agrogestor.expense.entity.ExpenseCategory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,6 +38,7 @@ public record FieldDiaryResponse(
         LocalTime operationEndTime,
         String operationHarvestUnit,
         UUID productionSaleId,
-        BigDecimal salePricePerBag
+        BigDecimal salePricePerBag,
+        ExpenseCategory expenseCategory
 ) {
 }
