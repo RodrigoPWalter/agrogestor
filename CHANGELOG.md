@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Edição do produto e do custo unitário reunida no botão de lápis, sem exigir motivo para reajustes de preço.
 - Produtos com saldo zerado agora ficam fora do estoque ativo, mas permanecem no catálogo para reposição e novas compras sem recadastro.
 - Novo módulo de Produção com saldo derivado das colheitas e visão consolidada por safra.
 - Vendas da produção com data, comprador, quantidade, preço por saca, faturamento e preço médio realizado.

@@ -2,7 +2,6 @@ package br.com.agrogestor.inventory.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
@@ -21,7 +20,6 @@ public record InventoryValuationAdjustmentRequest(
                 message = "O custo aceita até 10 inteiros e 6 casas decimais")
         BigDecimal newUnitCost,
 
-        @NotBlank(message = "Informe o motivo do ajuste")
         @Size(max = 500, message = "O motivo deve ter no máximo 500 caracteres")
         String reason
 ) {

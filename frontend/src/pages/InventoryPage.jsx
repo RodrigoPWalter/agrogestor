@@ -12,7 +12,6 @@ import {
 import { InventoryMovementModal } from "../components/inventory/InventoryMovementModal";
 import { InventoryProductList } from "../components/inventory/InventoryProductList";
 import { InventorySummary } from "../components/inventory/InventorySummary";
-import { InventoryValuationModal } from "../components/inventory/InventoryValuationModal";
 import { ProductFormModal } from "../components/inventory/ProductFormModal";
 import { PageHeader } from "../components/PageHeader";
 import { toInputDate } from "../utils/formatters";
@@ -29,6 +28,8 @@ const emptyProduct = {
   unit: "KILOGRAM",
   minimumStock: "",
   expirationDate: "",
+  newUnitCost: "",
+  adjustmentDate: toInputDate(),
 };
 
 export function InventoryPage() {
@@ -41,7 +42,6 @@ export function InventoryPage() {
   const [success, setSuccess] = useState("");
   const [productModal, setProductModal] = useState(false);
   const [movementModal, setMovementModal] = useState(false);
-  const [valuationModal, setValuationModal] = useState(false);
   const [stockView, setStockView] = useState("available");
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -58,11 +58,6 @@ export function InventoryPage() {
   const [valuationHistory, setValuationHistory] = useState([]);
   const [valuationHistoryLoading, setValuationHistoryLoading] = useState(false);
   const [valuationHistoryError, setValuationHistoryError] = useState("");
-  const [valuation, setValuation] = useState({
-    adjustmentDate: toInputDate(),
-    newUnitCost: "",
-    reason: "",
-  });
   const beginMovementRequest = useLatestRequestGuard();
   const beginValuationRequest = useLatestRequestGuard();
 
@@ -120,8 +115,11 @@ export function InventoryPage() {
       unit: product.unit,
       minimumStock: product.minimumStock,
       expirationDate: product.expirationDate || "",
+      newUnitCost: product.averageUnitCost || "",
+      adjustmentDate: toInputDate(),
     });
     setProductModal(true);
+    void loadValuationHistory(product);
   }
 
   async function loadMovementHistory(product) {
@@ -175,45 +173,43 @@ export function InventoryPage() {
     }
   }
 
-  function openValuation(product) {
-    setSelected(product);
-    setValuation({
-      adjustmentDate: toInputDate(),
-      newUnitCost: product.averageUnitCost || "",
-      reason: "",
-    });
-    setValuationModal(true);
-    void loadValuationHistory(product);
-  }
-
   function closeMovement() {
     beginMovementRequest();
     setMovementModal(false);
   }
 
-  function closeValuation() {
+  function closeProduct() {
     beginValuationRequest();
-    setValuationModal(false);
+    setProductModal(false);
   }
 
   async function submitProduct(event) {
     event.preventDefault();
     await runSaving(async () => {
-      const payload = {
-        ...form,
-        initialQuantity: Number(form.initialQuantity || 0),
+      const productData = {
+        name: form.name,
+        productType: form.productType,
+        unit: form.unit,
         minimumStock: Number(form.minimumStock || 0),
         expirationDate: form.expirationDate || null,
       };
       try {
         let result;
         if (editing) {
-          result = await api.updateInventoryProduct(editing.id, payload);
+          result = await api.updateInventoryProduct(editing.id, {
+            ...productData,
+            newUnitCost:
+              Number(editing.quantity) > 0 ? Number(form.newUnitCost) : null,
+            adjustmentDate: form.adjustmentDate,
+          });
           setSuccess(
             mutationFeedback(result, "Produto atualizado com sucesso."),
           );
         } else {
-          result = await api.createInventoryProduct(payload);
+          result = await api.createInventoryProduct({
+            ...productData,
+            initialQuantity: Number(form.initialQuantity || 0),
+          });
           setSuccess(
             mutationFeedback(result, "Produto adicionado ao estoque."),
           );
@@ -243,27 +239,6 @@ export function InventoryPage() {
           ),
         );
         setMovementModal(false);
-        if (isOfflineResult(result)) return;
-        await loadProducts({ showLoading: false });
-      } catch (requestError) {
-        setError(requestError.message);
-      }
-    });
-  }
-
-  async function submitValuation(event) {
-    event.preventDefault();
-    await runSaving(async () => {
-      try {
-        const result = await api.adjustInventoryValuation(selected.id, {
-          adjustmentDate: valuation.adjustmentDate,
-          newUnitCost: Number(valuation.newUnitCost),
-          reason: valuation.reason,
-        });
-        setSuccess(
-          mutationFeedback(result, "Custo atual do estoque ajustado."),
-        );
-        setValuationModal(false);
         if (isOfflineResult(result)) return;
         await loadProducts({ showLoading: false });
       } catch (requestError) {
@@ -367,7 +342,6 @@ export function InventoryPage() {
               onEdit={openEdit}
               onDelete={removeProduct}
               onMovement={openMovement}
-              onValuation={openValuation}
             />
           )}
         </>
@@ -376,10 +350,16 @@ export function InventoryPage() {
       {productModal && (
         <ProductFormModal
           editing={Boolean(editing)}
+          product={editing}
           form={form}
+          history={valuationHistory}
+          historyLoading={valuationHistoryLoading}
+          historyError={valuationHistoryError}
           saving={saving}
+          today={toInputDate()}
           onChange={setForm}
-          onClose={() => setProductModal(false)}
+          onClose={closeProduct}
+          onRetryHistory={() => loadValuationHistory(editing)}
           onSubmit={submitProduct}
         />
       )}
@@ -396,22 +376,6 @@ export function InventoryPage() {
           onClose={closeMovement}
           onRetryHistory={() => loadMovementHistory(selected)}
           onSubmit={submitMovement}
-        />
-      )}
-
-      {valuationModal && selected && (
-        <InventoryValuationModal
-          product={selected}
-          form={valuation}
-          history={valuationHistory}
-          historyLoading={valuationHistoryLoading}
-          historyError={valuationHistoryError}
-          saving={saving}
-          today={toInputDate()}
-          onChange={setValuation}
-          onClose={closeValuation}
-          onRetryHistory={() => loadValuationHistory(selected)}
-          onSubmit={submitValuation}
         />
       )}
     </div>

@@ -43,7 +43,7 @@ public class InventoryValuationAdjustment {
     @Column(name = "new_inventory_value", nullable = false, precision = 16, scale = 2)
     private BigDecimal newInventoryValue;
 
-    @Column(nullable = false, length = 500)
+    @Column(length = 500)
     private String reason;
 
     @Column(name = "created_at", nullable = false, updatable = false)

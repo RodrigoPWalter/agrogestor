@@ -12,7 +12,6 @@ vi.mock("../api/client", () => ({
     deleteInventoryProduct: vi.fn(),
     moveInventory: vi.fn(),
     getInventoryValuationAdjustments: vi.fn(),
-    adjustInventoryValuation: vi.fn(),
   },
 }));
 
@@ -57,33 +56,27 @@ describe("InventoryPage", () => {
     api.getInventoryValuationAdjustments.mockResolvedValue([]);
   });
 
-  it("ajusta o custo atual sem editar o cadastro do produto", async () => {
-    api.adjustInventoryValuation.mockResolvedValue({});
+  it("edita cadastro e custo pelo botão de lápis sem pedir motivo", async () => {
+    api.updateInventoryProduct.mockResolvedValue({});
     render(<InventoryPage />);
 
     expect(await screen.findByText("Glifosato")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ajustar custo de Glifosato" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Editar Glifosato" }));
 
-    fireEvent.change(screen.getByLabelText("Novo custo por l"), {
+    expect(screen.queryByText("Motivo do ajuste")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Custo por l"), {
       target: { value: "62.5" },
     });
-    fireEvent.change(screen.getByLabelText("Motivo do ajuste"), {
-      target: { value: "Correção conforme nota fiscal" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar novo custo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar produto" }));
 
     await waitFor(() =>
-      expect(api.adjustInventoryValuation).toHaveBeenCalledWith(
+      expect(api.updateInventoryProduct).toHaveBeenCalledWith(
         product.id,
         expect.objectContaining({
           newUnitCost: 62.5,
-          reason: "Correção conforme nota fiscal",
         }),
       ),
     );
-    expect(api.updateInventoryProduct).not.toHaveBeenCalled();
   });
 
   it("carrega os produtos e abre o histórico de movimentações", async () => {
@@ -153,15 +146,13 @@ describe("InventoryPage", () => {
     render(<InventoryPage />);
 
     expect(await screen.findByText("Glifosato")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Ajustar custo de Glifosato" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Editar Glifosato" }));
 
     expect(
       await screen.findByText("Falha ao consultar os ajustes anteriores."),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText("Nenhum ajuste de custo registrado."),
+      screen.queryByText("Nenhum custo anterior registrado."),
     ).not.toBeInTheDocument();
   });
 

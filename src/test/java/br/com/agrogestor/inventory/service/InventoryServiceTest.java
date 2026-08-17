@@ -113,11 +113,39 @@ class InventoryServiceTest {
                 ProductType.FERTILIZER,
                 MeasurementUnit.KILOGRAM,
                 new BigDecimal("2.000"),
+                null,
+                null,
                 null
         ));
 
         verify(productRepository).findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID);
         assertThat(product.getName()).isEqualTo("Adubo atualizado");
+    }
+
+    @Test
+    void shouldAdjustCurrentCostWhileEditingProductWithoutReason() {
+        UUID productId = UUID.randomUUID();
+        InventoryProduct product = product();
+        when(productRepository.findByIdAndPropertyIdForUpdate(productId, PROPERTY_ID))
+                .thenReturn(Optional.of(product));
+
+        service.update(productId, new InventoryProductUpdateRequest(
+                "Adubo NPK",
+                ProductType.FERTILIZER,
+                MeasurementUnit.KILOGRAM,
+                BigDecimal.ZERO,
+                null,
+                new BigDecimal("125.50"),
+                LocalDate.of(2026, 8, 17)
+        ));
+
+        assertThat(product.getAverageUnitCost()).isEqualByComparingTo("125.500000");
+        ArgumentCaptor<InventoryValuationAdjustment> adjustment =
+                ArgumentCaptor.forClass(InventoryValuationAdjustment.class);
+        verify(valuationRepository).save(adjustment.capture());
+        assertThat(adjustment.getValue().getReason()).isNull();
+        assertThat(adjustment.getValue().getAdjustmentDate())
+                .isEqualTo(LocalDate.of(2026, 8, 17));
     }
 
     @Test

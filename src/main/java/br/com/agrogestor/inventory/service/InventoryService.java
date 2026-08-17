@@ -82,6 +82,15 @@ public class InventoryService {
         InventoryProduct product = findProductForUpdate(id);
         product.update(normalize(request.name()), request.productType(), request.unit(),
                 quantity(request.minimumStock()), request.expirationDate());
+        if (request.newUnitCost() != null
+                && request.newUnitCost().compareTo(product.getAverageUnitCost()) != 0) {
+            registerValuationAdjustment(
+                    product,
+                    request.adjustmentDate() == null ? LocalDate.now() : request.adjustmentDate(),
+                    request.newUnitCost(),
+                    null
+            );
+        }
         return toResponse(product);
     }
 
@@ -118,21 +127,35 @@ public class InventoryService {
             InventoryValuationAdjustmentRequest request
     ) {
         InventoryProduct product = findProductForUpdate(productId);
+        registerValuationAdjustment(
+                product,
+                request.adjustmentDate(),
+                request.newUnitCost(),
+                normalizeNullable(request.reason())
+        );
+        return toResponse(product);
+    }
+
+    private void registerValuationAdjustment(
+            InventoryProduct product,
+            LocalDate adjustmentDate,
+            BigDecimal requestedUnitCost,
+            String reason
+    ) {
         BigDecimal previousUnitCost = product.getAverageUnitCost();
         BigDecimal previousInventoryValue = product.getInventoryValue();
-        BigDecimal newUnitCost = request.newUnitCost().setScale(6, RoundingMode.HALF_UP);
+        BigDecimal newUnitCost = requestedUnitCost.setScale(6, RoundingMode.HALF_UP);
 
         product.adjustAverageUnitCost(newUnitCost);
         valuationRepository.save(new InventoryValuationAdjustment(
                 product,
-                request.adjustmentDate(),
+                adjustmentDate,
                 previousUnitCost,
                 newUnitCost,
                 previousInventoryValue,
                 product.getInventoryValue(),
-                normalize(request.reason())
+                reason
         ));
-        return toResponse(product);
     }
 
     @Transactional(readOnly = true)

@@ -1,4 +1,6 @@
 import { Modal } from "../Modal";
+import { InlineErrorState, InlineLoadingState } from "../Feedback";
+import { formatCurrency, formatDate } from "../../utils/formatters";
 
 const productTypes = [
   { value: "SEED", label: "Semente" },
@@ -14,10 +16,16 @@ const units = [
 
 export function ProductFormModal({
   editing,
+  product,
   form,
+  history,
+  historyLoading,
+  historyError,
   saving,
+  today,
   onChange,
   onClose,
+  onRetryHistory,
   onSubmit,
 }) {
   function update(field, value) {
@@ -104,7 +112,72 @@ export function ProductFormModal({
               onChange={(event) => update("expirationDate", event.target.value)}
             />
           </label>
+          {editing && Number(product?.quantity) > 0 && (
+            <>
+              <label>
+                <span>Custo por {product.unitName.toLowerCase()}</span>
+                <input
+                  required
+                  type="number"
+                  min="0.000001"
+                  step="0.000001"
+                  inputMode="decimal"
+                  value={form.newUnitCost}
+                  onChange={(event) =>
+                    update("newUnitCost", event.target.value)
+                  }
+                />
+              </label>
+              <label>
+                <span>Data do custo</span>
+                <input
+                  required
+                  type="date"
+                  max={today}
+                  value={form.adjustmentDate}
+                  onChange={(event) =>
+                    update("adjustmentDate", event.target.value)
+                  }
+                />
+              </label>
+            </>
+          )}
         </div>
+
+        {editing && Number(product?.quantity) > 0 && (
+          <>
+            <p className="form-note">
+              O custo vale para os próximos usos do estoque. Gastos já lançados
+              não serão alterados.
+            </p>
+            {historyLoading ? (
+              <InlineLoadingState label="Carregando custos anteriores..." />
+            ) : historyError ? (
+              <InlineErrorState
+                message={historyError}
+                onRetry={onRetryHistory}
+              />
+            ) : history.length > 0 ? (
+              <div className="mini-history">
+                <strong>Custos anteriores</strong>
+                {history.slice(0, 4).map((item) => (
+                  <div key={item.id}>
+                    <span>
+                      {formatDate(item.adjustmentDate)}
+                      {item.reason ? ` · ${item.reason}` : ""}
+                    </span>
+                    <b>
+                      {formatCurrency(item.previousUnitCost)} →{" "}
+                      {formatCurrency(item.newUnitCost)}
+                    </b>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="inline-empty">Nenhum custo anterior registrado.</p>
+            )}
+          </>
+        )}
         <div className="form-actions">
           <button
             type="button"
