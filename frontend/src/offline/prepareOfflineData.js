@@ -16,6 +16,7 @@ export function prepareOfflineData() {
       () => api.getPlantingHistory(),
       () => api.getPlantingExpenseSummaries("ACTIVE"),
       () => api.getPlantingExpenseSummaries("HARVESTED"),
+      () => api.getProductionStock(),
     ],
     [
       () => api.getInventoryProducts(),

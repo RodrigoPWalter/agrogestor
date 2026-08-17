@@ -16,7 +16,8 @@ export function SeasonClosingPanel({
             <BarChart3 size={17} /> Fechamento de safra
           </h3>
           <p>
-            Custo, produção e preço recebido preservados no histórico da safra.
+            Compare os custos com as vendas realizadas e projete o saldo que
+            ainda está disponível.
           </p>
         </div>
       </div>
@@ -31,11 +32,41 @@ export function SeasonClosingPanel({
           <strong>{formatCurrency(closing.expensePerHectare)}</strong>
         </div>
         <div>
-          <span>Produção registrada</span>
+          <span>Produção colhida</span>
           <strong>
             {formatNumber(closing.mainHarvestQuantity, 3)}{" "}
             {closing.mainHarvestUnit || "un."}
           </strong>
+        </div>
+        <div>
+          <span>Faturamento realizado</span>
+          <strong>{formatCurrency(closing.actualRevenue)}</strong>
+        </div>
+        <div>
+          <span>Preço médio vendido</span>
+          <strong>
+            {closing.saleCount > 0
+              ? `${formatCurrency(closing.averageSalePrice)} / sc`
+              : "Sem vendas"}
+          </strong>
+        </div>
+        <div
+          className={
+            Number(closing.actualResult || 0) < 0
+              ? "season-closing-result season-closing-result--negative"
+              : "season-closing-result"
+          }
+        >
+          <span>Resultado realizado</span>
+          <strong>
+            {closing.saleCount > 0
+              ? formatCurrency(closing.actualResult)
+              : "Sem vendas"}
+          </strong>
+        </div>
+        <div>
+          <span>Saldo para vender</span>
+          <strong>{formatNumber(closing.availableQuantity, 3)} sc</strong>
         </div>
         <div
           className={
@@ -44,38 +75,41 @@ export function SeasonClosingPanel({
               : "season-closing-result"
           }
         >
-          <span>Resultado da safra</span>
+          <span>Resultado projetado</span>
           <strong>
             {closing.revenueEstimated
               ? formatCurrency(closing.estimatedResult)
-              : "Salve o preço recebido"}
+              : "Informe uma projeção"}
           </strong>
         </div>
       </div>
 
-      <form className="season-price-form" onSubmit={onSubmit}>
-        <label>
-          <span>Preço recebido por saca de 60 kg</span>
-          <input
-            required
-            type="number"
-            min="0.01"
-            step="0.01"
-            inputMode="decimal"
-            placeholder="Ex.: 70,00"
-            value={salePrice}
-            onChange={onSalePriceChange}
-          />
-        </label>
-        <button className="button button--primary" disabled={loading}>
-          <TrendingUp size={17} /> {loading ? "Salvando..." : "Salvar preço"}
-        </button>
-      </form>
+      {Number(closing.availableQuantity || 0) > 0 && (
+        <form className="season-price-form" onSubmit={onSubmit}>
+          <label>
+            <span>Preço projetado para o saldo (saca de 60 kg)</span>
+            <input
+              required
+              type="number"
+              min="0.01"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="Ex.: 70,00"
+              value={salePrice}
+              onChange={onSalePriceChange}
+            />
+          </label>
+          <button className="button button--primary" disabled={loading}>
+            <TrendingUp size={17} />{" "}
+            {loading ? "Salvando..." : "Atualizar projeção"}
+          </button>
+        </form>
+      )}
 
       {closing.salePricePerUnit && (
         <p className="muted-copy" role="status">
-          Preço salvo no histórico: {formatCurrency(closing.salePricePerUnit)}
-          por saca de 60 kg. Você pode corrigir esse valor e salvar novamente.
+          Projeção salva: {formatCurrency(closing.salePricePerUnit)} por saca de
+          60 kg do saldo ainda não vendido.
         </p>
       )}
 

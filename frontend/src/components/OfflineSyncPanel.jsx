@@ -9,6 +9,7 @@ import { formatDateTime } from "../utils/formatters";
 import { Modal } from "./Modal";
 
 function requestLabel(path) {
+  if (path.includes("/sales")) return "Venda da produção";
   if (path.includes("field-diary")) return "Registro no diário";
   if (path.includes("rainfall")) return "Registro de chuva";
   if (path.includes("expenses")) return "Lançamento de gasto";

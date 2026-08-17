@@ -11,6 +11,8 @@ const sectionRequests = (plantingId) => [
   ["progresso do plantio", () => api.getPlantingSteps(plantingId)],
   ["progresso da colheita", () => api.getHarvestSteps(plantingId)],
   ["estoque", () => api.getInventoryProducts()],
+  ["saldo da produção", () => api.getPlantingProductionStock(plantingId)],
+  ["vendas da produção", () => api.getProductionSales(plantingId)],
 ];
 
 export function usePlantingDetailsData(plantingId) {
@@ -61,6 +63,8 @@ export function usePlantingDetailsData(plantingId) {
           steps: valueOr(5, current?.steps ?? []),
           harvestSteps: valueOr(6, current?.harvestSteps ?? []),
           inventoryProducts: valueOr(7, current?.inventoryProducts ?? []),
+          productionStock: valueOr(8, current?.productionStock ?? null),
+          productionSales: valueOr(9, current?.productionSales ?? []),
         };
       });
 

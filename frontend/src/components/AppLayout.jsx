@@ -16,6 +16,7 @@ import {
   KeyRound,
   UserRound,
   UsersRound,
+  Wheat,
 } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
@@ -49,6 +50,7 @@ const navigation = [
   },
   { to: "/diario", label: "Diário", icon: BookOpenText },
   { to: "/plantios", label: "Plantios", icon: Sprout },
+  { to: "/producao", label: "Produção", icon: Wheat },
   { to: "/estoque", label: "Estoque", icon: Warehouse },
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
   { to: "/chuvas", label: "Chuvas", icon: CloudRain },

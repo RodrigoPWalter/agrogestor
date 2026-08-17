@@ -19,6 +19,7 @@ import { PlantingOverview } from "./planting-details/PlantingOverview";
 import { PlantingProgressSection } from "./planting-details/PlantingProgressSection";
 import { PlantingQuickActions } from "./planting-details/PlantingQuickActions";
 import { SeasonClosingPanel } from "./planting-details/SeasonClosingPanel";
+import { ProductionSalesSection } from "./production/ProductionSalesSection";
 import { mutationFeedback } from "../offline/offlineFeedback";
 import { isOfflineResult } from "../offline/offlineSync";
 
@@ -111,15 +112,35 @@ export function PlantingDetailsModal({
   }
 
   async function refreshHarvestAndDiary() {
-    const [harvestSteps, diary, closing] = await Promise.all([
-      api.getHarvestSteps(planting.id),
-      api.getDiaryEntries(planting.id),
-      api.getSeasonClosing(planting.id),
-    ]);
+    const [harvestSteps, diary, closing, productionStock, productionSales] =
+      await Promise.all([
+        api.getHarvestSteps(planting.id),
+        api.getDiaryEntries(planting.id),
+        api.getSeasonClosing(planting.id),
+        api.getPlantingProductionStock(planting.id),
+        api.getProductionSales(planting.id),
+      ]);
     setData((current) => ({
       ...current,
       harvestSteps,
       diary: diary.content,
+      closing,
+      productionStock,
+      productionSales,
+    }));
+    setSalePrice(closing.salePricePerUnit ?? "");
+  }
+
+  async function refreshProduction() {
+    const [productionStock, productionSales, closing] = await Promise.all([
+      api.getPlantingProductionStock(planting.id),
+      api.getProductionSales(planting.id),
+      api.getSeasonClosing(planting.id),
+    ]);
+    setData((current) => ({
+      ...current,
+      productionStock,
+      productionSales,
       closing,
     }));
     setSalePrice(closing.salePricePerUnit ?? "");
@@ -384,7 +405,7 @@ export function PlantingDetailsModal({
         setSuccess(
           mutationFeedback(
             closing,
-            "Preço recebido salvo no histórico da safra.",
+            "Preço projetado salvo no fechamento da safra.",
           ),
         );
         if (isOfflineResult(closing)) return;
@@ -457,6 +478,13 @@ export function PlantingDetailsModal({
               onDelete={deleteHarvestStep}
               onFinish={onFinish}
             />
+            {data.productionStock && (
+              <ProductionSalesSection
+                stock={data.productionStock}
+                sales={data.productionSales}
+                onChanged={refreshProduction}
+              />
+            )}
             {data.closing ? (
               <SeasonClosingPanel
                 closing={data.closing}

@@ -242,6 +242,27 @@ export const api = {
       headers: JSON_HEADERS,
       body: JSON.stringify({ salePricePer60KgBag }),
     }),
+  getProductionStock: () => request("/api/v1/production/stock"),
+  getPlantingProductionStock: (plantingId) =>
+    request(`/api/v1/plantings/${plantingId}/production-stock`),
+  getProductionSales: (plantingId) =>
+    request(`/api/v1/plantings/${plantingId}/sales`),
+  createProductionSale: (plantingId, data) =>
+    request(`/api/v1/plantings/${plantingId}/sales`, {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateProductionSale: (plantingId, saleId, data) =>
+    request(`/api/v1/plantings/${plantingId}/sales/${saleId}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  deleteProductionSale: (plantingId, saleId) =>
+    request(`/api/v1/plantings/${plantingId}/sales/${saleId}`, {
+      method: "DELETE",
+    }),
 
   getExpenses: (plantingId) =>
     requestAllPages("/api/v1/expenses", { plantingId }),

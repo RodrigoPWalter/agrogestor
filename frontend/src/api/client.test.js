@@ -227,6 +227,28 @@ describe("cliente da API", () => {
     });
   });
 
+  it("registra uma venda vinculada ao plantio", async () => {
+    const data = {
+      saleDate: "2026-08-17",
+      quantityBags: 50,
+      pricePerBag: 72.5,
+      buyer: "Cooperativa",
+    };
+    httpClient.request.mockResolvedValueOnce({ status: 201, data: {} });
+
+    await api.createProductionSale("planting-1", data);
+
+    expect(httpClient.request).toHaveBeenCalledWith({
+      url: "/api/v1/plantings/planting-1/sales",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": expect.any(String),
+      },
+      data,
+    });
+  });
+
   it("guarda um lançamento no aparelho quando está sem internet", async () => {
     saveSession({
       accessToken: "jwt-assinado",

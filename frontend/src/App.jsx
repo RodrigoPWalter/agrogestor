@@ -13,6 +13,7 @@ const PlantingsPage = lazy(privatePageLoaders["/plantios"]);
 const InventoryPage = lazy(privatePageLoaders["/estoque"]);
 const MachinesPage = lazy(privatePageLoaders["/maquinas"]);
 const RainfallPage = lazy(privatePageLoaders["/chuvas"]);
+const ProductionPage = lazy(privatePageLoaders["/producao"]);
 const LoginPage = lazy(loginPageLoader);
 
 function PageLoader() {
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="maquinas" element={lazyPage(MachinesPage)} />
           <Route path="diario" element={lazyPage(FieldDiaryPage)} />
           <Route path="chuvas" element={lazyPage(RainfallPage)} />
+          <Route path="producao" element={lazyPage(ProductionPage)} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

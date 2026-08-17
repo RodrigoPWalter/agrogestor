@@ -36,6 +36,34 @@ function plantingFrom(payload) {
 async function mockApi(page) {
   let plantings = [];
   let expenses = [];
+  let productionSales = [];
+  const productionBase = {
+    plantingId: "33333333-3333-4333-8333-333333333333",
+    crop: "Soja",
+    harvest: "2026/2027",
+    fieldName: "Talhão Norte",
+    plantingStatus: "HARVESTED",
+    harvestedBags: 300,
+  };
+
+  function productionStock() {
+    const soldBags = productionSales.reduce(
+      (total, sale) => total + sale.quantityBags,
+      0,
+    );
+    const revenue = productionSales.reduce(
+      (total, sale) => total + sale.totalAmount,
+      0,
+    );
+    return {
+      ...productionBase,
+      soldBags,
+      availableBags: productionBase.harvestedBags - soldBags,
+      revenue,
+      averageSalePrice: soldBags ? revenue / soldBags : 0,
+      saleCount: productionSales.length,
+    };
+  }
 
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request();
@@ -133,6 +161,22 @@ async function mockApi(page) {
         categoryCount: 0,
         categories: [],
       };
+    } else if (path === "/api/v1/production/stock") {
+      body = [productionStock()];
+    } else if (path.match(/\/production-stock$/)) {
+      body = productionStock();
+    } else if (path.match(/\/sales$/) && method === "POST") {
+      const payload = request.postDataJSON();
+      const created = {
+        id: "44444444-4444-4444-8444-444444444444",
+        plantingId: productionBase.plantingId,
+        ...payload,
+        totalAmount: payload.quantityBags * payload.pricePerBag,
+      };
+      productionSales = [created];
+      body = created;
+    } else if (path.match(/\/sales$/)) {
+      body = productionSales;
     } else if (path === "/api/v1/field-diary") {
       body = pageOf([]);
     } else if (path === "/api/v1/rainfall/summary") {
@@ -227,4 +271,37 @@ test("layout móvel não cria rolagem horizontal", async ({ page }, testInfo) =>
   await expect(
     page.getByRole("navigation", { name: "Navegação móvel" }),
   ).toBeVisible();
+});
+
+test("estoque da produção registra venda e mantém o layout responsivo", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
+  await page.locator("#login-password").fill("senha-segura");
+  await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
+
+  await page.goto("/producao");
+  await expect(page.getByRole("heading", { name: "Produção" })).toBeVisible();
+  await expect(page.getByText("300 sc").first()).toBeVisible();
+  await page.getByRole("button", { name: "Gerenciar vendas" }).click();
+  await page.getByRole("button", { name: "Registrar venda" }).click();
+  await page.getByLabel("Quantidade (sacas de 60 kg)").fill("50");
+  await page.getByLabel("Preço por saca").fill("72.5");
+  await page.getByLabel("Comprador (opcional)").fill("Cooperativa local");
+  await page.getByRole("button", { name: "Salvar venda" }).click();
+
+  await expect(page.getByText("Cooperativa local")).toBeVisible();
+  await expect(
+    page
+      .getByRole("dialog", { name: "Vendas — Soja" })
+      .getByText("R$ 3.625,00")
+      .last(),
+  ).toBeVisible();
+
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport + 1);
 });

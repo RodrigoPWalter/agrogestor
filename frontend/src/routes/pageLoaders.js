@@ -46,6 +46,10 @@ export const privatePageLoaders = {
     () => import("../pages/RainfallPage"),
     "RainfallPage",
   ),
+  "/producao": createPageLoader(
+    () => import("../pages/ProductionPage"),
+    "ProductionPage",
+  ),
 };
 
 export const loginPageLoader = createPageLoader(

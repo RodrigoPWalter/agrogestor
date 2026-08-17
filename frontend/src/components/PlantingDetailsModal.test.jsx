@@ -15,6 +15,11 @@ vi.mock("../api/client", () => ({
     getPlantingSteps: vi.fn(),
     getHarvestSteps: vi.fn(),
     getInventoryProducts: vi.fn(),
+    getPlantingProductionStock: vi.fn(),
+    getProductionSales: vi.fn(),
+    createProductionSale: vi.fn(),
+    updateProductionSale: vi.fn(),
+    deleteProductionSale: vi.fn(),
     createExpense: vi.fn(),
     createDiaryEntry: vi.fn(),
     createPlantingStep: vi.fn(),
@@ -68,6 +73,11 @@ describe("PlantingDetailsModal", () => {
       mainHarvestQuantity: 0,
       mainHarvestUnit: null,
       salePricePerUnit: null,
+      availableQuantity: 0,
+      actualRevenue: 0,
+      actualResult: -1000,
+      averageSalePrice: 0,
+      saleCount: 0,
       estimatedResult: null,
       revenueEstimated: null,
       harvestTotals: [],
@@ -75,6 +85,16 @@ describe("PlantingDetailsModal", () => {
     api.getPlantingSteps.mockResolvedValue([]);
     api.getHarvestSteps.mockResolvedValue([]);
     api.getInventoryProducts.mockResolvedValue([]);
+    api.getPlantingProductionStock.mockResolvedValue({
+      plantingId: planting.id,
+      harvestedBags: 0,
+      soldBags: 0,
+      availableBags: 0,
+      revenue: 0,
+      averageSalePrice: 0,
+      saleCount: 0,
+    });
+    api.getProductionSales.mockResolvedValue([]);
   });
 
   it("carrega e atualiza o preço recebido salvo na safra", async () => {
@@ -84,6 +104,11 @@ describe("PlantingDetailsModal", () => {
       mainHarvestQuantity: 100,
       mainHarvestUnit: "sacas de 60 kg",
       salePricePerUnit: 72.5,
+      availableQuantity: 100,
+      actualRevenue: 0,
+      actualResult: -1000,
+      averageSalePrice: 0,
+      saleCount: 0,
       estimatedResult: 6250,
       revenueEstimated: true,
       harvestTotals: [{ quantity: 100, unit: "sacas de 60 kg" }],
@@ -108,12 +133,12 @@ describe("PlantingDetailsModal", () => {
     );
 
     const priceInput = await screen.findByLabelText(
-      "Preço recebido por saca de 60 kg",
+      "Preço projetado para o saldo (saca de 60 kg)",
     );
     expect(priceInput).toHaveValue(72.5);
 
     fireEvent.change(priceInput, { target: { value: "75.25" } });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar preço" }));
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar projeção" }));
 
     await waitFor(() => {
       expect(api.saveSeasonClosingPrice).toHaveBeenCalledWith(
@@ -122,7 +147,7 @@ describe("PlantingDetailsModal", () => {
       );
     });
     expect(
-      await screen.findByText("Preço recebido salvo no histórico da safra."),
+      await screen.findByText("Preço projetado salvo no fechamento da safra."),
     ).toBeInTheDocument();
     expect(screen.getByText(/R\$ 75,25/)).toBeInTheDocument();
   });
