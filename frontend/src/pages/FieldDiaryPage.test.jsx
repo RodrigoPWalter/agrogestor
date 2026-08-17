@@ -57,8 +57,26 @@ describe("FieldDiaryPage", () => {
       await screen.findByText(/não foi possível carregar: estoque/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Nova atividade" }),
+      screen.getByRole("button", { name: "Novo lançamento" }),
     ).toBeEnabled();
+  });
+
+  it("abre o formulário já configurado pelo atalho rápido", async () => {
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Registrar chuva" }),
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Registrar chuva" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Tipo de acontecimento")).toHaveValue("RAIN");
+    expect(screen.getByLabelText("Quantidade de chuva (mm)")).toBeRequired();
   });
 
   it("mantém o diário visível durante a atualização após excluir", async () => {
@@ -119,7 +137,7 @@ describe("FieldDiaryPage", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Nova atividade" }),
+      await screen.findByRole("button", { name: "Novo lançamento" }),
     );
     fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
       target: { value: "PLANTING" },
@@ -130,7 +148,7 @@ describe("FieldDiaryPage", () => {
     fireEvent.change(screen.getByLabelText("Hectares plantados nesta etapa"), {
       target: { value: "5" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
 
     await waitFor(() =>
       expect(api.createPlantingStep).toHaveBeenCalledWith(
@@ -159,7 +177,7 @@ describe("FieldDiaryPage", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Nova atividade" }),
+      await screen.findByRole("button", { name: "Novo lançamento" }),
     );
     fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
       target: { value: "HARVEST" },
@@ -173,7 +191,7 @@ describe("FieldDiaryPage", () => {
     fireEvent.change(screen.getByLabelText("Quantidade colhida"), {
       target: { value: "320" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
 
     await waitFor(() =>
       expect(api.createHarvestStep).toHaveBeenCalledWith(
@@ -204,7 +222,7 @@ describe("FieldDiaryPage", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Nova atividade" }),
+      await screen.findByRole("button", { name: "Novo lançamento" }),
     );
     expect(
       screen.queryByRole("option", { name: "Vistoria" }),
@@ -225,7 +243,7 @@ describe("FieldDiaryPage", () => {
     fireEvent.change(screen.getByLabelText("Comprador (opcional)"), {
       target: { value: "Cooperativa" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
 
     await waitFor(() =>
       expect(api.createDiaryEntry).toHaveBeenCalledWith(
@@ -250,7 +268,7 @@ describe("FieldDiaryPage", () => {
     );
 
     fireEvent.click(
-      await screen.findByRole("button", { name: "Nova atividade" }),
+      await screen.findByRole("button", { name: "Novo lançamento" }),
     );
     fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
       target: { value: "EXPENSE" },
@@ -270,7 +288,7 @@ describe("FieldDiaryPage", () => {
         target: { value: "120.5" },
       },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
 
     await waitFor(() =>
       expect(api.createDiaryEntry).toHaveBeenCalledWith(

@@ -17,16 +17,22 @@ export function DiaryFormModal({
   onClose,
   onSubmit,
 }) {
+  const selectedType = activityTypes.find(
+    (item) => item.value === form.activityType,
+  );
+  const activityLabel = selectedType?.label?.toLowerCase() || "atividade";
+
   return (
     <Modal
-      title={editing ? "Editar atividade" : "Nova atividade"}
+      title={editing ? "Editar atividade" : `Registrar ${activityLabel}`}
       description={
         draftRecovered
           ? "Recuperamos o rascunho que estava salvo neste aparelho."
-          : "Registre o trabalho como ele aconteceu no campo."
+          : "A data de hoje já está preenchida. Informe os demais dados."
       }
       onClose={onClose}
       dismissible={!saving}
+      className="diary-form-modal"
     >
       <form className="form" onSubmit={onSubmit}>
         <DynamicDiaryFields
@@ -50,7 +56,7 @@ export function DiaryFormModal({
             Cancelar
           </button>
           <button className="button button--primary" disabled={saving}>
-            {saving ? "Salvando..." : "Salvar atividade"}
+            {saving ? "Salvando..." : "Salvar lançamento"}
           </button>
         </div>
       </form>

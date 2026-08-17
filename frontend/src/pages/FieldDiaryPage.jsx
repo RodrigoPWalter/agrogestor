@@ -13,6 +13,7 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { DiaryFilter } from "../components/diary/DiaryFilter";
 import { DiaryFormModal } from "../components/diary/DiaryFormModal";
+import { DiaryQuickLaunch } from "../components/diary/DiaryQuickLaunch";
 import { DiaryTimeline } from "../components/diary/DiaryTimeline";
 import {
   diaryActivityTypes,
@@ -113,7 +114,7 @@ export function FieldDiaryPage() {
 
   useEffect(() => {
     const quickType = searchParams.get("new");
-    if (!quickType || plantings.length === 0) return;
+    if (!quickType) return;
 
     setEditing(null);
     setForm({
@@ -123,7 +124,7 @@ export function FieldDiaryPage() {
     setDraftRecovered(false);
     setModalOpen(true);
     setSearchParams({});
-  }, [plantings, searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     loadEntries(selectedPlantingId);
@@ -139,15 +140,22 @@ export function FieldDiaryPage() {
     }
   }, [editing, form, modalOpen]);
 
-  function openCreate() {
+  function openCreate(activityType = "") {
     const draft = readFormDraft("diario");
     const recoveredDraft =
       draft?.activityType === "INSPECTION"
         ? { ...draft, activityType: "OBSERVATION", activity: "" }
         : draft;
+    const shouldRecoverDraft =
+      recoveredDraft &&
+      (!activityType || recoveredDraft.activityType === activityType);
     setEditing(null);
-    setForm({ ...newDiaryForm(selectedPlantingId), ...recoveredDraft });
-    setDraftRecovered(Boolean(recoveredDraft));
+    setForm({
+      ...newDiaryForm(selectedPlantingId),
+      ...(shouldRecoverDraft ? recoveredDraft : {}),
+      ...(activityType ? { activityType } : {}),
+    });
+    setDraftRecovered(Boolean(shouldRecoverDraft));
     setModalOpen(true);
     setError("");
   }
@@ -390,12 +398,15 @@ export function FieldDiaryPage() {
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Rotina de campo"
-        title="Diário da lavoura"
-        description="Registre rapidamente o que aconteceu no plantio ou na propriedade."
+        eyebrow="Central de lançamentos"
+        title="Diário"
+        description="Registre o trabalho da propriedade de forma rápida e acompanhe tudo no histórico."
         action={
-          <button className="button button--primary" onClick={openCreate}>
-            <Plus size={18} /> Nova atividade
+          <button
+            className="button button--primary diary-header-action"
+            onClick={() => openCreate()}
+          >
+            <Plus size={18} /> Novo lançamento
           </button>
         }
       />
@@ -406,6 +417,10 @@ export function FieldDiaryPage() {
         onDismiss={() => setReferenceWarning("")}
       />
       <SuccessBanner message={success} onDismiss={() => setSuccess("")} />
+      <DiaryQuickLaunch
+        onSelect={(activityType) => openCreate(activityType)}
+        onMore={() => openCreate()}
+      />
       {!offlineDataUnavailable && (
         <DiaryFilter
           plantings={plantings}
@@ -421,11 +436,14 @@ export function FieldDiaryPage() {
         <LoadingState label="Abrindo o diário..." />
       ) : entries.length === 0 ? (
         <EmptyState
-          title="Nenhuma atividade registrada"
-          description="Anote plantio, colheita, vistoria, chuva, compra, manutenção ou observação."
+          title="Nenhum lançamento registrado"
+          description="Use os atalhos acima para registrar o primeiro acontecimento da propriedade."
           action={
-            <button className="button button--primary" onClick={openCreate}>
-              <Plus size={18} /> Registrar atividade
+            <button
+              className="button button--primary"
+              onClick={() => openCreate()}
+            >
+              <Plus size={18} /> Outro lançamento
             </button>
           }
         />

@@ -273,6 +273,46 @@ test("layout móvel não cria rolagem horizontal", async ({ page }, testInfo) =>
   ).toBeVisible();
 });
 
+test("diário oferece lançamentos rápidos no celular", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile",
+    "Verificação exclusiva do celular",
+  );
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
+  await page.locator("#login-password").fill("senha-segura");
+  await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
+
+  await page.goto("/diario");
+  await expect(page.getByRole("heading", { name: "Diário" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Registrar gasto" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Registrar chuva" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Registrar plantio" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Registrar gasto" }).click();
+  const dialog = page.getByRole("dialog", { name: "Registrar gasto" });
+  await expect(dialog).toBeVisible();
+  await expect(page.getByLabel("Descrição do gasto")).toBeVisible();
+
+  const [dimensions, dialogBox] = await Promise.all([
+    page.evaluate(() => ({
+      viewport: document.documentElement.clientWidth,
+      content: document.documentElement.scrollWidth,
+    })),
+    dialog.boundingBox(),
+  ]);
+  expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport + 1);
+  expect(dialogBox.width).toBeLessThanOrEqual(dimensions.viewport);
+});
+
 test("estoque da produção registra venda e mantém o layout responsivo", async ({
   page,
 }) => {
