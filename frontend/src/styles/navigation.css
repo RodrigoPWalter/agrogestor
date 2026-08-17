@@ -355,6 +355,30 @@
   }
 }
 
+@media (max-width: 1380px) and (min-width: 1121px) {
+  .app-header__inner {
+    gap: 14px;
+    padding: 0 18px;
+  }
+
+  .desktop-navigation {
+    gap: 10px;
+  }
+
+  .desktop-navigation__item {
+    font-size: 0.72rem;
+  }
+
+  .connection-status__label,
+  .header-profile > div {
+    display: none;
+  }
+
+  .app-header__actions {
+    gap: 7px;
+  }
+}
+
 @media (max-width: 768px) {
   .app-header {
     border-bottom-width: 1px;
