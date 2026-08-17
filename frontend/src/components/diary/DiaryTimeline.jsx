@@ -1,5 +1,16 @@
-import { CloudSun, Edit3, FlaskConical, Trash2 } from "lucide-react";
-import { formatDate } from "../../utils/formatters";
+import {
+  BadgeDollarSign,
+  CloudSun,
+  Edit3,
+  FlaskConical,
+  Trash2,
+  UserRound,
+} from "lucide-react";
+import {
+  formatCurrency,
+  formatDate,
+  formatNumber,
+} from "../../utils/formatters";
 
 const dayFormatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit" });
 const monthFormatter = new Intl.DateTimeFormat("pt-BR", { month: "short" });
@@ -27,6 +38,11 @@ export function DiaryTimeline({ entries, onEdit, onDelete }) {
                   {entry.operationStepId && (
                     <span className="integrated-source">
                       Atualiza o progresso do plantio
+                    </span>
+                  )}
+                  {entry.productionSaleId && (
+                    <span className="integrated-source">
+                      Atualiza a produção
                     </span>
                   )}
                   <h2>{entry.activity}</h2>
@@ -66,6 +82,21 @@ export function DiaryTimeline({ entries, onEdit, onDelete }) {
                     {product.quantity} {product.unitName}
                   </span>
                 ))}
+                {entry.activityType === "SALE" && (
+                  <>
+                    <span>
+                      <BadgeDollarSign size={16} />
+                      {formatNumber(entry.harvestQuantity, 3)} sacas ·{" "}
+                      {formatCurrency(entry.salePricePerBag)} por saca · total{" "}
+                      {formatCurrency(entry.amount)}
+                    </span>
+                    {entry.supplier && (
+                      <span>
+                        <UserRound size={16} /> Comprador: {entry.supplier}
+                      </span>
+                    )}
+                  </>
+                )}
               </div>
               {entry.observations && <p>{entry.observations}</p>}
             </div>

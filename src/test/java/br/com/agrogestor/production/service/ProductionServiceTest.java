@@ -1,5 +1,6 @@
 package br.com.agrogestor.production.service;
 
+import br.com.agrogestor.diary.service.ProductionSaleDiarySyncService;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
@@ -39,6 +40,8 @@ class ProductionServiceTest {
     private ProductionBalanceService balanceService;
     @Mock
     private CurrentPropertyService currentProperty;
+    @Mock
+    private ProductionSaleDiarySyncService diarySyncService;
 
     private ProductionService service;
     private Planting planting;
@@ -65,7 +68,8 @@ class ProductionServiceTest {
                 saleRepository,
                 plantingRepository,
                 balanceService,
-                currentProperty
+                currentProperty,
+                diarySyncService
         );
     }
 
@@ -93,5 +97,6 @@ class ProductionServiceTest {
                 ArgumentCaptor.forClass(ProductionSale.class);
         verify(saleRepository).save(captor.capture());
         assertThat(captor.getValue().getProperty().getId()).isEqualTo(PROPERTY_ID);
+        verify(diarySyncService).upsert(captor.getValue());
     }
 }

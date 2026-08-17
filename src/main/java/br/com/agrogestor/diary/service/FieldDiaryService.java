@@ -27,6 +27,9 @@ import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.dto.ProductionSaleRequest;
+import br.com.agrogestor.production.dto.ProductionSaleResponse;
+import br.com.agrogestor.production.service.ProductionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +58,7 @@ public class FieldDiaryService {
     private final ExpenseRepository expenseRepository;
     private final CurrentPropertyService currentProperty;
     private final FieldDiaryResponseMapper responseMapper;
+    private final ProductionService productionService;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
@@ -67,7 +71,8 @@ public class FieldDiaryService {
             MaintenanceRepository maintenanceRepository,
             ExpenseRepository expenseRepository,
             CurrentPropertyService currentProperty,
-            FieldDiaryResponseMapper responseMapper
+            FieldDiaryResponseMapper responseMapper,
+            ProductionService productionService
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
@@ -80,6 +85,7 @@ public class FieldDiaryService {
         this.expenseRepository = expenseRepository;
         this.currentProperty = currentProperty;
         this.responseMapper = responseMapper;
+        this.productionService = productionService;
     }
 
     @Transactional
@@ -188,6 +194,9 @@ public class FieldDiaryService {
         if (type == ActivityType.HARVEST && request.plantingId() == null) {
             throw new BusinessRuleException("Selecione o plantio que foi colhido");
         }
+        if (type == ActivityType.SALE && request.plantingId() == null) {
+            throw new BusinessRuleException("Selecione o plantio da produção vendida");
+        }
         if (type == ActivityType.RAIN
                 && (request.rainfallMillimeters() == null
                 || request.rainfallMillimeters().signum() <= 0)) {
@@ -215,6 +224,15 @@ public class FieldDiaryService {
                 || request.harvestUnit() == null
                 || request.harvestUnit().isBlank())) {
             throw new BusinessRuleException("Informe a quantidade e a unidade da colheita");
+        }
+        if (type == ActivityType.SALE
+                && (request.saleQuantityBags() == null
+                || request.saleQuantityBags().signum() <= 0
+                || request.salePricePerBag() == null
+                || request.salePricePerBag().signum() <= 0)) {
+            throw new BusinessRuleException(
+                    "Informe a quantidade vendida e o preço por saca"
+            );
         }
     }
 
@@ -277,9 +295,27 @@ public class FieldDiaryService {
                 entry.linkExpense(expense.getId());
             }
         }
+        if (request.activityType() == ActivityType.SALE && planting != null) {
+            ProductionSaleResponse sale = productionService.createSaleFromDiary(
+                    planting.getId(),
+                    new ProductionSaleRequest(
+                            request.entryDate(),
+                            request.saleQuantityBags(),
+                            request.salePricePerBag(),
+                            normalizeNullable(request.buyer()),
+                            normalizeNullable(request.observations())
+                    )
+            );
+            entry.linkProductionSale(sale.id());
+        }
     }
 
     private void deleteIntegratedRecords(FieldDiaryEntry entry) {
+        if (entry.getProductionSaleId() != null && entry.getPlanting() != null) {
+            productionService.deleteSaleFromDiary(
+                    entry.getPlanting().getId(), entry.getProductionSaleId()
+            );
+        }
         if (entry.getExpenseId() != null) {
             expenseRepository.deleteById(entry.getExpenseId());
         }
@@ -295,11 +331,19 @@ public class FieldDiaryService {
     private void updateDetails(FieldDiaryEntry entry, FieldDiaryRequest request) {
         entry.updateDetails(
                 request.rainfallMillimeters(),
-                normalizeNullable(request.supplier()),
-                request.amount(),
+                request.activityType() == ActivityType.SALE
+                        ? normalizeNullable(request.buyer())
+                        : normalizeNullable(request.supplier()),
+                request.activityType() == ActivityType.SALE
+                        ? request.saleQuantityBags().multiply(request.salePricePerBag())
+                        : request.amount(),
                 request.machineId(),
-                request.harvestQuantity(),
-                normalizeNullable(request.harvestUnit())
+                request.activityType() == ActivityType.SALE
+                        ? request.saleQuantityBags() : request.harvestQuantity(),
+                request.activityType() == ActivityType.SALE
+                        ? "BAGS_60_KG" : normalizeNullable(request.harvestUnit()),
+                request.activityType() == ActivityType.SALE
+                        ? request.salePricePerBag() : null
         );
     }
 
@@ -336,6 +380,7 @@ public class FieldDiaryService {
             case MAINTENANCE -> "Manutenção de máquina";
             case OBSERVATION -> "Observação da propriedade";
             case HARVEST -> "Colheita";
+            case SALE -> "Venda de " + display(request.saleQuantityBags()) + " sacas";
             default -> request.activityType().getDisplayName();
         };
     }
@@ -380,5 +425,11 @@ public class FieldDiaryService {
 
     private String normalizeNullable(String value) {
         return value == null || value.isBlank() ? null : normalize(value);
+    }
+
+    private String display(BigDecimal value) {
+        return value == null
+                ? "0"
+                : value.stripTrailingZeros().toPlainString().replace(".", ",");
     }
 }

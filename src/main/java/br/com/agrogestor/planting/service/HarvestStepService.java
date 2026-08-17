@@ -242,7 +242,8 @@ public class HarvestStepService {
                     null,
                     null,
                     quantity(request.harvestQuantity()),
-                    request.harvestUnit().getDisplayName()
+                    request.harvestUnit().getDisplayName(),
+                    null
             );
             return diaryRepository.save(diaryEntry);
         }
@@ -262,7 +263,8 @@ public class HarvestStepService {
                 null,
                 null,
                 quantity(request.harvestQuantity()),
-                request.harvestUnit().getDisplayName()
+                request.harvestUnit().getDisplayName(),
+                null
         );
         return diaryEntry;
     }

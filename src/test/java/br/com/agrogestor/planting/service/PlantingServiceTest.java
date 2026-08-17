@@ -437,7 +437,7 @@ class PlantingServiceTest {
                 null,
                 null
         );
-        entry.updateDetails(null, null, null, null, new BigDecimal(quantity), unit);
+        entry.updateDetails(null, null, null, null, new BigDecimal(quantity), unit, null);
         return entry;
     }
 }

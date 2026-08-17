@@ -53,7 +53,9 @@ public class FieldDiaryResponseMapper {
                 operationSeedVariety(plantingStep, harvestStep),
                 operationStartTime(plantingStep, harvestStep),
                 operationEndTime(plantingStep, harvestStep),
-                harvestStep == null ? null : harvestStep.getHarvestUnit().name());
+                harvestStep == null ? null : harvestStep.getHarvestUnit().name(),
+                entry.getProductionSaleId(),
+                entry.getSalePricePerBag());
     }
 
     private UUID operationId(PlantingStep plantingStep, HarvestStep harvestStep) {

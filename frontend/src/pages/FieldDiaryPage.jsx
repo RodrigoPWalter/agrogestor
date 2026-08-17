@@ -141,9 +141,13 @@ export function FieldDiaryPage() {
 
   function openCreate() {
     const draft = readFormDraft("diario");
+    const recoveredDraft =
+      draft?.activityType === "INSPECTION"
+        ? { ...draft, activityType: "OBSERVATION", activity: "" }
+        : draft;
     setEditing(null);
-    setForm({ ...newDiaryForm(selectedPlantingId), ...draft });
-    setDraftRecovered(Boolean(draft));
+    setForm({ ...newDiaryForm(selectedPlantingId), ...recoveredDraft });
+    setDraftRecovered(Boolean(recoveredDraft));
     setModalOpen(true);
     setError("");
   }
@@ -176,6 +180,10 @@ export function FieldDiaryPage() {
       harvestQuantity: entry.harvestQuantity || "",
       harvestUnit:
         entry.operationHarvestUnit || entry.harvestUnit || "BAGS_60_KG",
+      saleQuantityBags:
+        entry.activityType === "SALE" ? entry.harvestQuantity || "" : "",
+      salePricePerBag: entry.salePricePerBag || "",
+      buyer: entry.activityType === "SALE" ? entry.supplier || "" : "",
     });
     setModalOpen(true);
     setError("");
@@ -227,6 +235,13 @@ export function FieldDiaryPage() {
         harvestQuantity: form.harvestQuantity
           ? Number(form.harvestQuantity)
           : null,
+        saleQuantityBags: form.saleQuantityBags
+          ? Number(form.saleQuantityBags)
+          : null,
+        salePricePerBag: form.salePricePerBag
+          ? Number(form.salePricePerBag)
+          : null,
+        buyer: form.buyer || null,
       };
 
       try {
@@ -425,7 +440,14 @@ export function FieldDiaryPage() {
           plantings={plantings}
           products={inventoryProducts}
           machines={machines}
-          activityTypes={diaryActivityTypes}
+          activityTypes={
+            editing?.activityType === "INSPECTION"
+              ? [
+                  { value: "INSPECTION", label: "Vistoria (registro antigo)" },
+                  ...diaryActivityTypes,
+                ]
+              : diaryActivityTypes
+          }
           operationManaged={Boolean(editing?.operationStepId)}
           legacyHarvest={
             editing?.activityType === "HARVEST" && !editing?.operationStepId

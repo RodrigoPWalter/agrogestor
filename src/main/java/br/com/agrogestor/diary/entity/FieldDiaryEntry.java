@@ -83,6 +83,12 @@ public class FieldDiaryEntry {
     @Column(name = "expense_id")
     private UUID expenseId;
 
+    @Column(name = "production_sale_id", unique = true)
+    private UUID productionSaleId;
+
+    @Column(name = "sale_price_per_bag", precision = 12, scale = 2)
+    private BigDecimal salePricePerBag;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -138,7 +144,8 @@ public class FieldDiaryEntry {
             BigDecimal amount,
             UUID machineId,
             BigDecimal harvestQuantity,
-            String harvestUnit
+            String harvestUnit,
+            BigDecimal salePricePerBag
     ) {
         this.rainfallMillimeters = rainfallMillimeters;
         this.supplier = supplier;
@@ -146,6 +153,7 @@ public class FieldDiaryEntry {
         this.machineId = machineId;
         this.harvestQuantity = harvestQuantity;
         this.harvestUnit = harvestUnit;
+        this.salePricePerBag = salePricePerBag;
     }
 
     @PrePersist
@@ -213,14 +221,19 @@ public class FieldDiaryEntry {
     public UUID getRainfallId() { return rainfallId; }
     public UUID getMaintenanceId() { return maintenanceId; }
     public UUID getExpenseId() { return expenseId; }
+    public UUID getProductionSaleId() { return productionSaleId; }
+    public BigDecimal getSalePricePerBag() { return salePricePerBag; }
 
     public void linkRainfall(UUID id) { rainfallId = id; }
     public void linkMaintenance(UUID id) { maintenanceId = id; }
     public void linkExpense(UUID id) { expenseId = id; }
+    public void linkProductionSale(UUID id) { productionSaleId = id; }
 
     public void clearIntegrationLinks() {
         rainfallId = null;
         maintenanceId = null;
         expenseId = null;
+        productionSaleId = null;
+        salePricePerBag = null;
     }
 }

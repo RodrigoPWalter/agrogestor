@@ -11,6 +11,7 @@ public enum ActivityType {
     MAINTENANCE("Manutenção"),
     OBSERVATION("Observação"),
     HARVEST("Colheita"),
+    SALE("Venda da produção"),
     OTHER("Outra atividade");
 
     private final String displayName;

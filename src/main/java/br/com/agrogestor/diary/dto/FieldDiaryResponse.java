@@ -35,6 +35,8 @@ public record FieldDiaryResponse(
         String operationSeedVariety,
         LocalTime operationStartTime,
         LocalTime operationEndTime,
-        String operationHarvestUnit
+        String operationHarvestUnit,
+        UUID productionSaleId,
+        BigDecimal salePricePerBag
 ) {
 }

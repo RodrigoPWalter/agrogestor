@@ -6,6 +6,8 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Vendas da produção agora também podem ser lançadas pelo Diário, com baixa automática do saldo colhido e sincronização entre as duas telas.
+- A opção redundante de Vistoria foi retirada dos novos lançamentos do Diário; registros antigos continuam preservados.
 - Edição do produto e do custo unitário reunida no botão de lápis, sem exigir motivo para reajustes de preço.
 - Produtos com saldo zerado agora ficam fora do estoque ativo, mas permanecem no catálogo para reposição e novas compras sem recadastro.
 - Novo módulo de Produção com saldo derivado das colheitas e visão consolidada por safra.

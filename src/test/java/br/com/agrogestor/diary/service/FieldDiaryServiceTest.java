@@ -33,6 +33,8 @@ import br.com.agrogestor.expense.entity.ExpenseOrigin;
 import br.com.agrogestor.rainfall.entity.RainfallMeasurement;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.dto.ProductionSaleResponse;
+import br.com.agrogestor.production.service.ProductionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -69,6 +71,7 @@ class FieldDiaryServiceTest {
     private MaintenanceRepository maintenanceRepository;
     private ExpenseRepository expenseRepository;
     private CurrentPropertyService currentProperty;
+    private ProductionService productionService;
     private FieldDiaryService service;
 
     @BeforeEach
@@ -85,6 +88,7 @@ class FieldDiaryServiceTest {
         maintenanceRepository = mock(MaintenanceRepository.class);
         expenseRepository = mock(ExpenseRepository.class);
         currentProperty = mock(CurrentPropertyService.class);
+        productionService = mock(ProductionService.class);
         when(currentProperty.id()).thenReturn(PROPERTY_ID);
         when(currentProperty.get()).thenReturn(property);
         FieldDiaryStockService stockService = new FieldDiaryStockService(
@@ -104,7 +108,8 @@ class FieldDiaryServiceTest {
                 maintenanceRepository,
                 expenseRepository,
                 currentProperty,
-                new FieldDiaryResponseMapper(diaryProductRepository)
+                new FieldDiaryResponseMapper(diaryProductRepository),
+                productionService
         );
     }
 
@@ -443,6 +448,65 @@ class FieldDiaryServiceTest {
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("operação de semeadura ou colheita");
         verify(diaryRepository, never()).delete(any(FieldDiaryEntry.class));
+    }
+
+    @Test
+    void shouldCreateProductionSaleFromDiary() {
+        UUID plantingId = UUID.randomUUID();
+        UUID saleId = UUID.randomUUID();
+        Planting planting = planting();
+        ReflectionTestUtils.setField(planting, "id", plantingId);
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID))
+                .thenReturn(Optional.of(planting));
+        when(diaryRepository.save(any(FieldDiaryEntry.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(productionService.createSaleFromDiary(
+                org.mockito.ArgumentMatchers.eq(plantingId),
+                any()
+        )).thenReturn(new ProductionSaleResponse(
+                saleId,
+                plantingId,
+                LocalDate.now(),
+                new BigDecimal("50.000"),
+                new BigDecimal("72.50"),
+                new BigDecimal("3625.00"),
+                "Cooperativa",
+                null,
+                null,
+                null
+        ));
+
+        service.create(new FieldDiaryRequest(
+                plantingId,
+                LocalDate.now(),
+                ActivityType.SALE,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new BigDecimal("50"),
+                new BigDecimal("72.50"),
+                "Cooperativa"
+        ));
+
+        ArgumentCaptor<FieldDiaryEntry> entry =
+                ArgumentCaptor.forClass(FieldDiaryEntry.class);
+        verify(diaryRepository).save(entry.capture());
+        assertThat(entry.getValue().getProductionSaleId()).isEqualTo(saleId);
+        assertThat(entry.getValue().getAmount()).isEqualByComparingTo("3625.00");
+        assertThat(entry.getValue().getSupplier()).isEqualTo("Cooperativa");
     }
 
     private FieldDiaryRequest request(UUID plantingId, String activity) {

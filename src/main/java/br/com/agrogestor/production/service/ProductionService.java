@@ -1,5 +1,6 @@
 package br.com.agrogestor.production.service;
 
+import br.com.agrogestor.diary.service.ProductionSaleDiarySyncService;
 import br.com.agrogestor.planting.entity.Planting;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.production.dto.ProductionSaleRequest;
@@ -27,23 +28,42 @@ public class ProductionService {
     private final PlantingRepository plantingRepository;
     private final ProductionBalanceService balanceService;
     private final CurrentPropertyService currentProperty;
+    private final ProductionSaleDiarySyncService diarySyncService;
 
     public ProductionService(
             ProductionSaleRepository saleRepository,
             PlantingRepository plantingRepository,
             ProductionBalanceService balanceService,
-            CurrentPropertyService currentProperty
+            CurrentPropertyService currentProperty,
+            ProductionSaleDiarySyncService diarySyncService
     ) {
         this.saleRepository = saleRepository;
         this.plantingRepository = plantingRepository;
         this.balanceService = balanceService;
         this.currentProperty = currentProperty;
+        this.diarySyncService = diarySyncService;
     }
 
     @Transactional
     public ProductionSaleResponse createSale(
             UUID plantingId,
             ProductionSaleRequest request
+    ) {
+        return createSale(plantingId, request, true);
+    }
+
+    @Transactional
+    public ProductionSaleResponse createSaleFromDiary(
+            UUID plantingId,
+            ProductionSaleRequest request
+    ) {
+        return createSale(plantingId, request, false);
+    }
+
+    private ProductionSaleResponse createSale(
+            UUID plantingId,
+            ProductionSaleRequest request,
+            boolean synchronizeDiary
     ) {
         Planting planting = findPlantingForUpdate(plantingId);
         validateSaleDate(planting, request);
@@ -59,7 +79,11 @@ public class ProductionService {
                 normalizeNullable(request.buyer()),
                 normalizeNullable(request.observations())
         );
-        return toResponse(saleRepository.save(sale));
+        ProductionSale saved = saleRepository.save(sale);
+        if (synchronizeDiary) {
+            diarySyncService.upsert(saved);
+        }
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -105,13 +129,23 @@ public class ProductionService {
                 normalizeNullable(request.buyer()),
                 normalizeNullable(request.observations())
         );
+        diarySyncService.upsert(sale);
         return toResponse(sale);
     }
 
     @Transactional
     public void deleteSale(UUID plantingId, UUID saleId) {
         findPlantingForUpdate(plantingId);
+        ProductionSale sale = findSaleEntity(plantingId, saleId);
+        diarySyncService.deleteBySaleId(sale.getId());
+        saleRepository.delete(sale);
+    }
+
+    @Transactional
+    public void deleteSaleFromDiary(UUID plantingId, UUID saleId) {
+        findPlantingForUpdate(plantingId);
         saleRepository.delete(findSaleEntity(plantingId, saleId));
+        saleRepository.flush();
     }
 
     @Transactional(readOnly = true)

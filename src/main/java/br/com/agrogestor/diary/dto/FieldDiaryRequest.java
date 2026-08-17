@@ -47,7 +47,10 @@ public record FieldDiaryRequest(
         BigDecimal amount,
         UUID machineId,
         BigDecimal harvestQuantity,
-        String harvestUnit
+        String harvestUnit,
+        BigDecimal saleQuantityBags,
+        BigDecimal salePricePerBag,
+        String buyer
 ) {
     public FieldDiaryRequest(
             UUID plantingId,
@@ -61,6 +64,34 @@ public record FieldDiaryRequest(
     ) {
         this(plantingId, entryDate, activityType, activity, weatherCondition,
                 appliedProducts, products, observations, null, null, null,
-                null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null,
+                null, null, null);
+    }
+
+    public FieldDiaryRequest(
+            UUID plantingId,
+            LocalDate entryDate,
+            ActivityType activityType,
+            String activity,
+            String weatherCondition,
+            String appliedProducts,
+            List<FieldDiaryProductRequest> products,
+            String observations,
+            BigDecimal rainfallMillimeters,
+            UUID productId,
+            String productName,
+            ProductType productType,
+            BigDecimal quantity,
+            MeasurementUnit unit,
+            String supplier,
+            BigDecimal amount,
+            UUID machineId,
+            BigDecimal harvestQuantity,
+            String harvestUnit
+    ) {
+        this(plantingId, entryDate, activityType, activity, weatherCondition,
+                appliedProducts, products, observations, rainfallMillimeters,
+                productId, productName, productType, quantity, unit, supplier,
+                amount, machineId, harvestQuantity, harvestUnit, null, null, null);
     }
 }

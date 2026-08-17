@@ -187,4 +187,56 @@ describe("FieldDiaryPage", () => {
     );
     expect(api.createDiaryEntry).not.toHaveBeenCalled();
   });
+
+  it("registra venda da produção pelo diário", async () => {
+    const planting = {
+      id: "planting-1",
+      crop: "Soja",
+      harvest: "2026/2027",
+    };
+    api.getAllPlantings.mockResolvedValue({ content: [planting] });
+    api.createDiaryEntry.mockResolvedValue({});
+
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Nova atividade" }),
+    );
+    expect(
+      screen.queryByRole("option", { name: "Vistoria" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "SALE" },
+    });
+    fireEvent.change(screen.getByLabelText("Plantio (obrigatório)"), {
+      target: { value: planting.id },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Quantidade vendida (sacas de 60 kg)"),
+      { target: { value: "200" } },
+    );
+    fireEvent.change(screen.getByLabelText("Preço por saca (R$)"), {
+      target: { value: "122.50" },
+    });
+    fireEvent.change(screen.getByLabelText("Comprador (opcional)"), {
+      target: { value: "Cooperativa" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar atividade" }));
+
+    await waitFor(() =>
+      expect(api.createDiaryEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          activityType: "SALE",
+          plantingId: planting.id,
+          saleQuantityBags: 200,
+          salePricePerBag: 122.5,
+          buyer: "Cooperativa",
+        }),
+      ),
+    );
+  });
 });

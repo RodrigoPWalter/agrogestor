@@ -3,6 +3,7 @@ import { HarvestFields } from "./diary/fields/HarvestFields";
 import { MaintenanceFields } from "./diary/fields/MaintenanceFields";
 import { PlantingOperationFields } from "./diary/fields/PlantingOperationFields";
 import { ProductEventFields } from "./diary/fields/ProductEventFields";
+import { SaleFields } from "./diary/fields/SaleFields";
 
 export function DynamicDiaryFields({
   form,
@@ -73,6 +74,8 @@ export function DynamicDiaryFields({
       {type === "HARVEST" && (
         <HarvestFields form={form} legacy={legacyHarvest} onUpdate={update} />
       )}
+
+      {type === "SALE" && <SaleFields form={form} onUpdate={update} />}
 
       {needsDescription && (
         <label className="form-grid__full">

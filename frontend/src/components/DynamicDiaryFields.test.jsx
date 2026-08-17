@@ -4,16 +4,17 @@ import { describe, expect, it } from "vitest";
 import { DynamicDiaryFields } from "./DynamicDiaryFields";
 
 const activityTypes = [
-  { value: "INSPECTION", label: "Vistoria" },
+  { value: "OBSERVATION", label: "Observação" },
   { value: "RAIN", label: "Chuva" },
   { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
   { value: "PRODUCT_USE", label: "Uso de produto" },
   { value: "PLANTING", label: "Etapa de plantio" },
   { value: "HARVEST", label: "Etapa de colheita" },
+  { value: "SALE", label: "Venda da produção" },
 ];
 
 const initialForm = {
-  activityType: "INSPECTION",
+  activityType: "OBSERVATION",
   entryDate: "2026-07-29",
   plantingId: "",
   rainfallMillimeters: "",
@@ -31,6 +32,9 @@ const initialForm = {
   operationEndTime: "",
   harvestQuantity: "",
   harvestUnit: "BAGS_60_KG",
+  saleQuantityBags: "",
+  salePricePerBag: "",
+  buyer: "",
   activity: "",
   weatherCondition: "",
   observations: "",
@@ -59,17 +63,13 @@ describe("DynamicDiaryFields", () => {
   it("mostra somente os campos relacionados ao tipo escolhido", () => {
     render(<DiaryFieldsHarness />);
 
-    expect(screen.getByText("O que foi vistoriado")).toBeInTheDocument();
-    expect(
-      screen.getByText("Condição do tempo (opcional)"),
-    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Observação")).toBeRequired();
 
     fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
       target: { value: "RAIN" },
     });
 
     expect(screen.getByText("Quantidade de chuva (mm)")).toBeInTheDocument();
-    expect(screen.queryByText("O que foi vistoriado")).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
       target: { value: "PRODUCT_PURCHASE" },
@@ -97,6 +97,21 @@ describe("DynamicDiaryFields", () => {
       screen.getByLabelText("Hectares colhidos nesta etapa"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Quantidade colhida")).toBeInTheDocument();
+  });
+
+  it("mostra quantidade, preço e comprador para venda da produção", () => {
+    render(<DiaryFieldsHarness />);
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "SALE" },
+    });
+
+    expect(
+      screen.getByLabelText("Quantidade vendida (sacas de 60 kg)"),
+    ).toBeRequired();
+    expect(screen.getByLabelText("Preço por saca (R$)")).toBeRequired();
+    expect(screen.getByLabelText("Comprador (opcional)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Plantio (obrigatório)")).toBeInTheDocument();
   });
 
   it("mantém produto zerado disponível para compra, mas não para uso", () => {

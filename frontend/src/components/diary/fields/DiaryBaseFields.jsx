@@ -48,12 +48,12 @@ export function DiaryBaseFields({
       <label className="form-grid__full">
         <span>
           Plantio{" "}
-          {["PLANTING", "HARVEST"].includes(type)
+          {["PLANTING", "HARVEST", "SALE"].includes(type)
             ? "(obrigatório)"
             : "(opcional)"}
         </span>
         <select
-          required={["PLANTING", "HARVEST"].includes(type)}
+          required={["PLANTING", "HARVEST", "SALE"].includes(type)}
           disabled={operationManaged}
           value={plantingSelectValue}
           onChange={(event) => onUpdate("plantingId", event.target.value)}
@@ -82,6 +82,9 @@ function plantingOptionPrompt(type, availableCount) {
     return availableCount > 0
       ? "Selecione o plantio"
       : "Nenhum plantio com área para colher";
+  }
+  if (type === "SALE") {
+    return "Selecione o plantio da produção";
   }
   return "Propriedade em geral";
 }

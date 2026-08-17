@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface FieldDiaryRepository extends JpaRepository<FieldDiaryEntry, UUID> {
@@ -23,6 +24,8 @@ public interface FieldDiaryRepository extends JpaRepository<FieldDiaryEntry, UUI
     boolean existsByPropertyIdAndRainfallId(UUID propertyId, UUID rainfallId);
 
     boolean existsByPropertyIdAndMaintenanceId(UUID propertyId, UUID maintenanceId);
+
+    Optional<FieldDiaryEntry> findByProductionSaleId(UUID productionSaleId);
 
     @Query("select entry.rainfallId from FieldDiaryEntry entry "
             + "where entry.property.id = :propertyId and entry.rainfallId is not null")
