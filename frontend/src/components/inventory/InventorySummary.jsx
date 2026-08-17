@@ -8,7 +8,7 @@ export function InventorySummary({ summary }) {
           <Warehouse />
         </span>
         <div>
-          <small>Produtos cadastrados</small>
+          <small>Produtos em estoque</small>
           <strong>{summary.total}</strong>
         </div>
       </article>

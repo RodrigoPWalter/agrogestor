@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Archive, PackageCheck, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
 import { useConfirmation } from "../components/ConfirmationProvider";
@@ -42,6 +42,7 @@ export function InventoryPage() {
   const [productModal, setProductModal] = useState(false);
   const [movementModal, setMovementModal] = useState(false);
   const [valuationModal, setValuationModal] = useState(false);
+  const [stockView, setStockView] = useState("available");
   const [editing, setEditing] = useState(null);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyProduct);
@@ -85,13 +86,23 @@ export function InventoryPage() {
 
   useOfflineRefresh(() => loadProducts({ showLoading: false }));
 
+  const availableProducts = useMemo(
+    () => products.filter((product) => Number(product.quantity) > 0),
+    [products],
+  );
+  const outOfStockProducts = useMemo(
+    () => products.filter((product) => Number(product.quantity) <= 0),
+    [products],
+  );
+  const visibleProducts =
+    stockView === "available" ? availableProducts : outOfStockProducts;
   const summary = useMemo(
     () => ({
-      total: products.length,
-      low: products.filter((product) => product.lowStock).length,
-      expired: products.filter((product) => product.expired).length,
+      total: availableProducts.length,
+      low: availableProducts.filter((product) => product.lowStock).length,
+      expired: availableProducts.filter((product) => product.expired).length,
     }),
-    [products],
+    [availableProducts],
   );
 
   function openCreate() {
@@ -311,13 +322,55 @@ export function InventoryPage() {
           }
         />
       ) : (
-        <InventoryProductList
-          products={products}
-          onEdit={openEdit}
-          onDelete={removeProduct}
-          onMovement={openMovement}
-          onValuation={openValuation}
-        />
+        <>
+          <div
+            className="inventory-stock-tabs"
+            role="tablist"
+            aria-label="Situação do estoque"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={stockView === "available"}
+              className={stockView === "available" ? "is-active" : ""}
+              onClick={() => setStockView("available")}
+            >
+              <PackageCheck size={17} /> Em estoque ({availableProducts.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={stockView === "out"}
+              className={stockView === "out" ? "is-active" : ""}
+              onClick={() => setStockView("out")}
+            >
+              <Archive size={17} /> Sem estoque ({outOfStockProducts.length})
+            </button>
+          </div>
+
+          {visibleProducts.length === 0 ? (
+            <EmptyState
+              title={
+                stockView === "available"
+                  ? "Nenhum produto com saldo"
+                  : "Nenhum produto sem estoque"
+              }
+              description={
+                stockView === "available"
+                  ? "Os produtos zerados continuam guardados na aba Sem estoque para uma futura reposição."
+                  : "Quando um produto acabar, ele continuará cadastrado e aparecerá aqui."
+              }
+            />
+          ) : (
+            <InventoryProductList
+              products={visibleProducts}
+              onEdit={openEdit}
+              onDelete={removeProduct}
+              onMovement={openMovement}
+              onValuation={openValuation}
+            />
+          )}
+        </>
       )}
 
       {productModal && (

@@ -83,7 +83,7 @@ class DashboardServiceTest {
         when(plantingRepository.countByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE)).thenReturn(2L);
         when(expenseRepository.countByPropertyIdAndOriginNot(
                 PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(8L);
-        when(inventoryProductRepository.countByPropertyId(PROPERTY_ID)).thenReturn(4L);
+        when(inventoryProductRepository.countAvailableStock(PROPERTY_ID)).thenReturn(4L);
         when(inventoryProductRepository.countLowStock(PROPERTY_ID)).thenReturn(1L);
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
                 any(UUID.class),

@@ -83,7 +83,7 @@ public class DashboardService {
                         money(totalExpenses),
                         expenseRepository.countByPropertyIdAndOriginNot(
                                 propertyId, ExpenseOrigin.STOCK_ALLOCATION),
-                        inventoryProductRepository.countByPropertyId(propertyId),
+                        inventoryProductRepository.countAvailableStock(propertyId),
                         inventoryProductRepository.countLowStock(propertyId),
                         costPerHectare(plantingExpenses, plannedArea)
                 ),

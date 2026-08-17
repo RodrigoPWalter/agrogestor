@@ -1,6 +1,9 @@
 export function ProductEventFields({ form, type, products, onUpdate }) {
   const isPurchase = type === "PRODUCT_PURCHASE";
   const isNewProduct = isPurchase && !form.productId;
+  const selectableProducts = isPurchase
+    ? products
+    : products.filter((item) => Number(item.quantity) > 0);
 
   return (
     <>
@@ -14,7 +17,7 @@ export function ProductEventFields({ form, type, products, onUpdate }) {
           <option value="">
             {isPurchase ? "Cadastrar um novo produto" : "Selecione no estoque"}
           </option>
-          {products.map((item) => (
+          {selectableProducts.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name} — saldo {item.quantity} {item.unitName}
             </option>

@@ -32,6 +32,16 @@ const product = {
   inventoryValue: 500,
 };
 
+const outOfStockProduct = {
+  ...product,
+  id: "product-2",
+  name: "Ureia",
+  quantity: 0,
+  lowStock: true,
+  averageUnitCost: 0,
+  inventoryValue: 0,
+};
+
 describe("InventoryPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,6 +101,30 @@ describe("InventoryPage", () => {
       screen.getByRole("heading", { name: "Movimentar Glifosato" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Movimentações recentes")).toBeInTheDocument();
+  });
+
+  it("oculta produtos zerados sem apagar o cadastro e permite repor", async () => {
+    api.getInventoryProducts.mockResolvedValue([product, outOfStockProduct]);
+    render(<InventoryPage />);
+
+    expect(await screen.findByText("Glifosato")).toBeInTheDocument();
+    expect(screen.queryByText("Ureia")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: "Sem estoque (1)" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Sem estoque (1)" }));
+
+    expect(screen.getByText("Ureia")).toBeInTheDocument();
+    expect(screen.queryByText("Glifosato")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Repor produto" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Movimentar Ureia" }),
+    ).toBeInTheDocument();
+    expect(api.getInventoryMovements).toHaveBeenCalledWith(
+      outOfStockProduct.id,
+    );
   });
 
   it("informa quando o histórico de movimentações não pode ser carregado", async () => {

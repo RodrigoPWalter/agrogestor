@@ -16,13 +16,15 @@ public interface InventoryProductRepository extends JpaRepository<InventoryProdu
     Optional<InventoryProduct> findFirstByPropertyIdAndNameIgnoreCase(UUID propertyId, String name);
     Optional<InventoryProduct> findByIdAndPropertyId(UUID id, UUID propertyId);
     List<InventoryProduct> findByPropertyIdOrderByName(UUID propertyId);
-    long countByPropertyId(UUID propertyId);
+    @Query("select count(product) from InventoryProduct product where product.property.id = :propertyId and product.quantity > 0")
+    long countAvailableStock(@Param("propertyId") UUID propertyId);
 
     @Query("""
             select count(product)
             from InventoryProduct product
             where product.property.id = :propertyId
               and product.quantity <= product.minimumStock
+              and product.quantity > 0
             """)
     long countLowStock(@Param("propertyId") UUID propertyId);
 
@@ -30,6 +32,7 @@ public interface InventoryProductRepository extends JpaRepository<InventoryProdu
             select product
             from InventoryProduct product
             where product.property.id = :propertyId
+              and product.quantity > 0
             order by
                 case when product.quantity <= product.minimumStock then 0 else 1 end,
                 case when product.expirationDate is null then 1 else 0 end,

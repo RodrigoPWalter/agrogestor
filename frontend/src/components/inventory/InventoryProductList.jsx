@@ -106,7 +106,10 @@ export function InventoryProductList({
             className="button button--ghost button--wide"
             onClick={() => onMovement(product)}
           >
-            <ArrowDownToLine size={17} /> Movimentar estoque
+            <ArrowDownToLine size={17} />{" "}
+            {Number(product.quantity) <= 0
+              ? "Repor produto"
+              : "Movimentar estoque"}
           </button>
         </article>
       ))}

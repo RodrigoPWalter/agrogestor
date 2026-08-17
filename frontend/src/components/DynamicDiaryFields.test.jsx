@@ -7,6 +7,7 @@ const activityTypes = [
   { value: "INSPECTION", label: "Vistoria" },
   { value: "RAIN", label: "Chuva" },
   { value: "PRODUCT_PURCHASE", label: "Compra de produto" },
+  { value: "PRODUCT_USE", label: "Uso de produto" },
   { value: "PLANTING", label: "Etapa de plantio" },
   { value: "HARVEST", label: "Etapa de colheita" },
 ];
@@ -35,14 +36,18 @@ const initialForm = {
   observations: "",
 };
 
-function DiaryFieldsHarness({ plantings = [], initialState = initialForm }) {
+function DiaryFieldsHarness({
+  plantings = [],
+  products = [],
+  initialState = initialForm,
+}) {
   const [form, setForm] = useState(initialState);
   return (
     <DynamicDiaryFields
       form={form}
       setForm={setForm}
       plantings={plantings}
-      products={[]}
+      products={products}
       machines={[]}
       activityTypes={activityTypes}
       today="2026-07-29"
@@ -92,6 +97,34 @@ describe("DynamicDiaryFields", () => {
       screen.getByLabelText("Hectares colhidos nesta etapa"),
     ).toBeInTheDocument();
     expect(screen.getByLabelText("Quantidade colhida")).toBeInTheDocument();
+  });
+
+  it("mantém produto zerado disponível para compra, mas não para uso", () => {
+    const products = [
+      {
+        id: "product-zero",
+        name: "Ureia",
+        quantity: 0,
+        unitName: "kg",
+      },
+    ];
+    render(<DiaryFieldsHarness products={products} />);
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "PRODUCT_PURCHASE" },
+    });
+    expect(
+      within(screen.getByLabelText("Produto")).getByText("Ureia — saldo 0 kg"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Tipo de acontecimento"), {
+      target: { value: "PRODUCT_USE" },
+    });
+    expect(
+      within(screen.getByLabelText("Produto")).queryByText(
+        "Ureia — saldo 0 kg",
+      ),
+    ).not.toBeInTheDocument();
   });
 
   it("oculta plantios sem área restante para a operação escolhida", () => {

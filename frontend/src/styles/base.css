@@ -537,6 +537,42 @@ p {
   background: var(--red-100);
 }
 
+.inventory-stock-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f1f4ef;
+}
+
+.inventory-stock-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inventory-stock-tabs button.is-active {
+  color: var(--green-950);
+  background: #fff;
+  box-shadow: 0 2px 7px rgb(20 55 36 / 9%);
+}
+
+.inventory-stock-tabs button:focus-visible {
+  outline: 3px solid rgb(227 180 38 / 32%);
+  outline-offset: 2px;
+}
+
 .inventory-card,
 .machine-card {
   display: flex;
@@ -2035,6 +2071,16 @@ p {
 }
 
 @media (max-width: 720px) {
+  .inventory-stock-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .inventory-stock-tabs button {
+    padding-inline: 8px;
+  }
+
   .app-update-notice {
     right: 12px;
     bottom: calc(80px + env(safe-area-inset-bottom));
