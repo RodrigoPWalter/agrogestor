@@ -13,9 +13,11 @@ erDiagram
     PROPERTIES ||--o{ MACHINES : possui
     PROPERTIES ||--o{ FIELD_DIARY_ENTRIES : registra
     PROPERTIES ||--o{ RAINFALL_MEASUREMENTS : mede
+    PROPERTIES ||--o{ PRODUCTION_SALES : registra
     PLANTINGS ||--o{ EXPENSES : recebe
     PLANTINGS ||--o{ PLANTING_STEPS : executado_em
     PLANTINGS ||--o{ HARVEST_STEPS : colhido_em
+    PLANTINGS ||--o{ PRODUCTION_SALES : comercializa
     PLANTINGS ||--o{ FIELD_DIARY_ENTRIES : pode_referenciar
     PLANTING_STEPS o|--o| FIELD_DIARY_ENTRIES : registra
     HARVEST_STEPS o|--o| FIELD_DIARY_ENTRIES : registra
@@ -39,7 +41,7 @@ Representa o limite de isolamento dos dados. Cada conta criada atualmente recebe
 
 ### `plantings`
 
-Guarda cultura, safra, talhão, área total prevista, distância entre linhas em centímetros, data de início, variedade da semente, taxa de semeadura, status e o preço recebido por saca de 60 kg no fechamento. A taxa é registrada por hectare com uma unidade explícita: quilogramas por hectare (`KILOGRAMS_PER_HECTARE`) ou sementes por hectare (`SEEDS_PER_HECTARE`). A medida em quilogramas aceita decimais; a medida em sementes exige um número inteiro. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
+Guarda cultura, safra, talhão, área total prevista, distância entre linhas em centímetros, data de início, variedade da semente, taxa de semeadura, status e o preço projetado por saca de 60 kg no fechamento. A taxa é registrada por hectare com uma unidade explícita: quilogramas por hectare (`KILOGRAMS_PER_HECTARE`) ou sementes por hectare (`SEEDS_PER_HECTARE`). A medida em quilogramas aceita decimais; a medida em sementes exige um número inteiro. A safra aceita um ano (`2026`) ou um intervalo (`2026/2027`).
 
 A distância entre linhas é opcional para preservar os cadastros anteriores e atender culturas com diferentes configurações de semeadura.
 
@@ -49,7 +51,7 @@ A coluna física `seed_quantity` foi mantida por compatibilidade com versões an
 
 O campo de status separa plantios ativos de plantios colhidos, permitindo manter histórico sem apagar dados financeiros ou operacionais.
 
-O preço recebido por saca é opcional até o produtor informá-lo no fechamento. Depois de salvo, permanece associado ao plantio e é reutilizado automaticamente no cálculo do resultado ao consultar safras antigas. Quando houver vendas em valores diferentes, o usuário pode registrar o preço médio efetivamente recebido.
+O preço projetado por saca é opcional e serve somente para estimar o valor do saldo ainda não vendido. Os preços efetivamente recebidos ficam preservados em cada venda, sem substituir o histórico por uma média manual.
 
 ### `planting_steps`
 
@@ -66,6 +68,14 @@ Registra a colheita realizada em cada dia com área, quantidade produzida, unida
 As quantidades podem ser informadas em sacas de 60 kg, quilogramas ou toneladas. O fechamento converte essas unidades para sacas de 60 kg antes de calcular a receita estimada, enquanto o detalhe do plantio apresenta a produtividade média em sacas por hectare.
 
 Cada etapa cria um lançamento de colheita no Diário dentro da mesma transação. Edições e exclusões atualizam o lançamento relacionado, evitando duplicidade. A safra somente pode ser enviada ao histórico depois que toda a área plantada estiver colhida.
+
+Depois que parte da produção é vendida, uma etapa de colheita não pode ser reduzida ou excluída se isso fizer a produção total ficar abaixo da quantidade já comercializada.
+
+### `production_sales`
+
+Registra as vendas realizadas por plantio, com data, quantidade em sacas de 60 kg, preço unitário, comprador e observações. Quantidade e preço devem ser positivos, e cada consulta é limitada pela propriedade da conta autenticada.
+
+O estoque da produção não é duplicado em uma coluna de saldo: ele é derivado da soma das colheitas convertidas para sacas de 60 kg menos a soma das vendas. Criação e edição de venda bloqueiam o plantio durante a validação, impedindo que operações simultâneas comercializem mais do que o volume disponível.
 
 ### `expenses`
 

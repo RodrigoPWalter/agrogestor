@@ -6,6 +6,10 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Novo módulo de Produção com saldo derivado das colheitas e visão consolidada por safra.
+- Vendas da produção com data, comprador, quantidade, preço por saca, faturamento e preço médio realizado.
+- O fechamento agora separa resultado realizado de projeção para o saldo ainda não vendido.
+- Proteção transacional contra venda acima do saldo e contra redução de colheita já comprometida por vendas.
 - Cada máquina agora apresenta gastos totais, preventivos e corretivos, com quantidades e filtros no histórico de manutenções.
 - O fechamento da safra agora salva o preço efetivamente recebido por saca de 60 kg para consultas futuras no histórico.
 - O Diário agora registra etapas de semeadura e colheita com hectares, atualizando o progresso do plantio pela mesma regra usada em seus detalhes.

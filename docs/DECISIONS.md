@@ -91,3 +91,13 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 **Trade-off:** o custo médio ponderado é mais simples e previsível para o uso familiar, mas não identifica exatamente qual lote físico foi consumido. Saldos antigos sem compra valorizada permanecem com custo desconhecido até existir informação suficiente no Diário.
 
 **Evolução prevista:** adicionar lotes de compra e critérios FIFO ou custo específico somente se a rastreabilidade por lote se tornar necessária.
+
+## 10. Estoque da produção derivado das colheitas
+
+**Decisão:** o saldo comercializável não é armazenado diretamente. A aplicação converte a produção registrada nas etapas de colheita para sacas de 60 kg e subtrai as vendas do plantio.
+
+**Motivo:** colheita e venda são os fatos que explicam o saldo. Manter uma terceira quantidade editável criaria risco de divergência e exigiria conciliações manuais.
+
+**Trade-off:** a comercialização usa a saca de 60 kg como unidade comum. Isso atende o fluxo atual de grãos, mas uma futura cultura vendida por outra unidade exigirá saldo separado por produto e unidade.
+
+**Evolução prevista:** criar lotes físicos, locais de armazenagem e transferências somente quando a propriedade precisar controlar silos ou depósitos distintos.

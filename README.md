@@ -26,7 +26,9 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Progresso da Semeadura:** Registro dos hectares e da variedade utilizada em cada etapa, com área restante, percentual, histórico editável e lançamento automático no Diário.
 - **Colheita por Etapas:** Registro da área e produção colhidas em cada dia, cálculo de produtividade e atualização automática do fechamento da safra.
 - **Histórico de Safras:** Finalização e reativação de plantios, mantendo o histórico de cultivos colhidos.
-- **Fechamento de Safra:** Resumo por plantio com custo total, produção, preço recebido por saca de 60 kg persistido no histórico e resultado calculado.
+- **Estoque da Produção:** Saldo em sacas de 60 kg calculado diretamente das colheitas, com separação entre volume colhido, vendido e ainda disponível.
+- **Vendas da Safra:** Registro de quantidade, preço, data e comprador, com faturamento, preço médio e proteção contra venda acima da produção disponível.
+- **Fechamento de Safra:** Resumo por plantio com custos, faturamento realizado, resultado das vendas e projeção do saldo ainda não comercializado.
 - **Gestão de Gastos:** Separação entre despesas por plantio e custos gerais da propriedade, com totais por categoria e transferência proporcional do custo dos insumos utilizados.
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio ajustável com histórico, valor do saldo, validade e alerta de estoque baixo.
 - **Diário da Lavoura:** Central de lançamentos rápidos para acontecimentos, etapas de semeadura e colheita, múltiplos produtos e integrações transacionais com plantios, estoque e custos.
@@ -81,6 +83,7 @@ br.com.agrogestor
 ├── machine
 ├── planting
 ├── property
+├── production
 ├── quotation
 ├── rainfall
 └── shared
@@ -100,6 +103,8 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | Plantios               | `/api/v1/plantings`                    |
 | Etapas de plantio      | `/api/v1/plantings/{id}/steps`         |
 | Etapas de colheita     | `/api/v1/plantings/{id}/harvest-steps` |
+| Estoque da produção    | `/api/v1/production/stock`              |
+| Vendas da safra        | `/api/v1/plantings/{id}/sales`          |
 | Gastos                 | `/api/v1/expenses`                     |
 | Estoque                | `/api/v1/inventory/products`           |
 | Máquinas               | `/api/v1/machines`                     |
