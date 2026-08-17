@@ -14,6 +14,7 @@ import br.com.agrogestor.planting.repository.PlantingStepRepository;
 import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.service.ProductionBalanceService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,19 +31,22 @@ public class HarvestStepService {
     private final PlantingRepository plantingRepository;
     private final FieldDiaryRepository diaryRepository;
     private final CurrentPropertyService currentProperty;
+    private final ProductionBalanceService productionBalance;
 
     public HarvestStepService(
             HarvestStepRepository harvestRepository,
             PlantingStepRepository plantingStepRepository,
             PlantingRepository plantingRepository,
             FieldDiaryRepository diaryRepository,
-            CurrentPropertyService currentProperty
+            CurrentPropertyService currentProperty,
+            ProductionBalanceService productionBalance
     ) {
         this.harvestRepository = harvestRepository;
         this.plantingStepRepository = plantingStepRepository;
         this.plantingRepository = plantingRepository;
         this.diaryRepository = diaryRepository;
         this.currentProperty = currentProperty;
+        this.productionBalance = productionBalance;
     }
 
     @Transactional
@@ -108,6 +112,13 @@ public class HarvestStepService {
                 harvestedArea(plantingId),
                 step.getHarvestedAreaHectares()
         );
+        productionBalance.ensureHarvestChangeKeepsSoldStock(
+                plantingId,
+                step.getHarvestUnit(),
+                step.getHarvestQuantity(),
+                request.harvestUnit(),
+                request.harvestQuantity()
+        );
 
         step.update(
                 request.harvestDate(),
@@ -133,6 +144,13 @@ public class HarvestStepService {
         Planting planting = findPlantingForUpdate(plantingId);
         validatePlantingIsActive(planting);
         HarvestStep step = findStep(plantingId, stepId);
+        productionBalance.ensureHarvestChangeKeepsSoldStock(
+                plantingId,
+                step.getHarvestUnit(),
+                step.getHarvestQuantity(),
+                step.getHarvestUnit(),
+                BigDecimal.ZERO
+        );
         UUID diaryEntryId = step.getDiaryEntryId();
 
         harvestRepository.delete(step);

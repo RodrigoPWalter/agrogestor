@@ -15,6 +15,7 @@ import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.service.ProductionBalanceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,8 @@ class HarvestStepServiceTest {
     private FieldDiaryRepository diaryRepository;
     @Mock
     private CurrentPropertyService currentProperty;
+    @Mock
+    private ProductionBalanceService productionBalance;
 
     private HarvestStepService service;
 
@@ -64,7 +67,8 @@ class HarvestStepServiceTest {
                 plantingStepRepository,
                 plantingRepository,
                 diaryRepository,
-                currentProperty
+                currentProperty,
+                productionBalance
         );
         org.mockito.Mockito.lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
         org.mockito.Mockito.lenient().when(currentProperty.get()).thenReturn(property);

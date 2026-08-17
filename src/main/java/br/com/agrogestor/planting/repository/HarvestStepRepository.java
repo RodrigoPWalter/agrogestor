@@ -23,6 +23,8 @@ public interface HarvestStepRepository extends JpaRepository<HarvestStep, UUID> 
 
     List<HarvestStep> findByDiaryEntryIdIn(Collection<UUID> diaryEntryIds);
 
+    List<HarvestStep> findByPlantingPropertyId(UUID propertyId);
+
     @Query("""
             select coalesce(sum(step.harvestedAreaHectares), 0)
             from HarvestStep step

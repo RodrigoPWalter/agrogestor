@@ -19,6 +19,8 @@ import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.planting.entity.PlantingStatus;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.dto.ProductionStockResponse;
+import br.com.agrogestor.production.service.ProductionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,6 +66,8 @@ class PlantingServiceTest {
     private HarvestStepRepository harvestStepRepository;
     @Mock
     private CurrentPropertyService currentProperty;
+    @Mock
+    private ProductionService productionService;
 
     private PlantingService service;
 
@@ -82,13 +86,25 @@ class PlantingServiceTest {
                 .thenReturn(List.of());
         lenient().when(currentProperty.id()).thenReturn(PROPERTY_ID);
         lenient().when(currentProperty.get()).thenReturn(property);
+        lenient().when(productionService.stockForPlanting(any()))
+                .thenAnswer(invocation -> new ProductionStockResponse(
+                        invocation.getArgument(0), "Soja", "2026", null,
+                        PlantingStatus.ACTIVE,
+                        BigDecimal.ZERO.setScale(3),
+                        BigDecimal.ZERO.setScale(3),
+                        BigDecimal.ZERO.setScale(3),
+                        BigDecimal.ZERO.setScale(2),
+                        BigDecimal.ZERO.setScale(2),
+                        0
+                ));
         service = new PlantingService(
                 repository,
                 expenseRepository,
                 diaryRepository,
                 stepRepository,
                 harvestStepRepository,
-                currentProperty
+                currentProperty,
+                productionService
         );
     }
 
@@ -307,6 +323,16 @@ class PlantingServiceTest {
                 .thenReturn(List.of(
                         harvestEntry("Caixas", "999.000"),
                         harvestEntry("Sacas", "120.000")
+                ));
+        when(productionService.stockForPlanting(id))
+                .thenReturn(new ProductionStockResponse(
+                        id, "Soja", "2026", null, PlantingStatus.ACTIVE,
+                        new BigDecimal("120.000"),
+                        BigDecimal.ZERO.setScale(3),
+                        new BigDecimal("120.000"),
+                        BigDecimal.ZERO.setScale(2),
+                        BigDecimal.ZERO.setScale(2),
+                        0
                 ));
 
         var closing = service.seasonClosing(id, new BigDecimal("70.00"));

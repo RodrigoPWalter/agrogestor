@@ -111,7 +111,7 @@ public class PlantingController {
     }
 
     @PutMapping("/{id}/season-closing/price")
-    @Operation(summary = "Salvar o preço recebido por saca de 60 kg")
+    @Operation(summary = "Salvar preço projetado por saca de 60 kg")
     public SeasonClosingResponse updateSeasonClosingPrice(
             @PathVariable UUID id,
             @Valid @RequestBody SeasonClosingPriceRequest request

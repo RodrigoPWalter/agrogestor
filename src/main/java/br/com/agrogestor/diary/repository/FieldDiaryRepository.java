@@ -18,6 +18,8 @@ public interface FieldDiaryRepository extends JpaRepository<FieldDiaryEntry, UUI
 
     List<FieldDiaryEntry> findByPlantingIdAndActivityType(UUID plantingId, ActivityType activityType);
 
+    List<FieldDiaryEntry> findByPropertyIdAndActivityType(UUID propertyId, ActivityType activityType);
+
     boolean existsByPropertyIdAndRainfallId(UUID propertyId, UUID rainfallId);
 
     boolean existsByPropertyIdAndMaintenanceId(UUID propertyId, UUID maintenanceId);

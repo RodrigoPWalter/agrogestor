@@ -25,6 +25,7 @@ public interface PlantingRepository extends JpaRepository<Planting, UUID> {
             UUID propertyId, PlantingStatus status,
             Pageable pageable
     );
+    List<Planting> findByPropertyIdOrderByStartDateDescCropAsc(UUID propertyId);
     Page<Planting> findByPropertyIdAndHarvestIgnoreCaseAndStatus(
             UUID propertyId, String harvest, PlantingStatus status, Pageable pageable);
     Optional<Planting> findByIdAndPropertyId(UUID id, UUID propertyId);

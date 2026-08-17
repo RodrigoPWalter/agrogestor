@@ -23,6 +23,8 @@ import br.com.agrogestor.shared.exception.BusinessRuleException;
 import br.com.agrogestor.shared.dto.PageResponse;
 import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import br.com.agrogestor.property.service.CurrentPropertyService;
+import br.com.agrogestor.production.dto.ProductionStockResponse;
+import br.com.agrogestor.production.service.ProductionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +52,7 @@ public class PlantingService {
     private final PlantingStepRepository stepRepository;
     private final HarvestStepRepository harvestStepRepository;
     private final CurrentPropertyService currentProperty;
+    private final ProductionService productionService;
 
     public PlantingService(
             PlantingRepository repository,
@@ -57,7 +60,8 @@ public class PlantingService {
             FieldDiaryRepository diaryRepository,
             PlantingStepRepository stepRepository,
             HarvestStepRepository harvestStepRepository,
-            CurrentPropertyService currentProperty
+            CurrentPropertyService currentProperty,
+            ProductionService productionService
     ) {
         this.repository = repository;
         this.expenseRepository = expenseRepository;
@@ -65,6 +69,7 @@ public class PlantingService {
         this.stepRepository = stepRepository;
         this.harvestStepRepository = harvestStepRepository;
         this.currentProperty = currentProperty;
+        this.productionService = productionService;
     }
 
     @Transactional
@@ -240,7 +245,7 @@ public class PlantingService {
         Planting planting = findEntityForUpdate(id);
         if (salePricePer60KgBag == null || salePricePer60KgBag.signum() <= 0) {
             throw new BusinessRuleException(
-                    "O preço recebido por saca deve ser maior que zero"
+                    "O preço projetado por saca deve ser maior que zero"
             );
         }
         BigDecimal normalizedSalePrice = money(salePricePer60KgBag);
@@ -284,9 +289,12 @@ public class PlantingService {
         BigDecimal normalizedSalePrice = salePricePer60KgBag == null
                 ? null
                 : money(salePricePer60KgBag);
+        ProductionStockResponse stock = productionService.stockForPlanting(id);
+        BigDecimal actualResult = money(stock.revenue().subtract(totalExpenses));
         BigDecimal estimatedRevenue = normalizedSalePrice == null
                 ? null
-                : money(mainHarvest.quantity().multiply(normalizedSalePrice));
+                : money(stock.revenue().add(
+                        stock.availableBags().multiply(normalizedSalePrice)));
         BigDecimal estimatedResult = estimatedRevenue == null
                 ? null
                 : money(estimatedRevenue.subtract(totalExpenses));
@@ -303,6 +311,12 @@ public class PlantingService {
                 harvestTotals,
                 mainHarvest.quantity(),
                 mainHarvest.unit(),
+                stock.soldBags(),
+                stock.availableBags(),
+                stock.revenue(),
+                stock.averageSalePrice(),
+                stock.saleCount(),
+                actualResult,
                 normalizedSalePrice,
                 estimatedRevenue,
                 estimatedResult,
