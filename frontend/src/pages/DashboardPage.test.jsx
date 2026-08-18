@@ -55,6 +55,12 @@ describe("DashboardPage", () => {
     expect(
       screen.getByText("Nenhum plantio ativo no momento."),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Registrar chuva" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Registrar uso de produto" }),
+    ).toBeVisible();
   });
 });
 

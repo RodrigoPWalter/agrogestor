@@ -262,6 +262,9 @@ test("layout móvel não cria rolagem horizontal", async ({ page }, testInfo) =>
   await expect(
     page.getByRole("heading", { name: "Visão geral da propriedade" }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Registrar chuva" }),
+  ).toBeVisible();
 
   const dimensions = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -284,9 +287,12 @@ test("diário oferece lançamentos rápidos no celular", async ({
   await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
   await page.locator("#login-password").fill("senha-segura");
   await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
-
-  await page.goto("/diario");
+  await page.getByRole("button", { name: "Registrar chuva" }).click();
   await expect(page.getByRole("heading", { name: "Diário" })).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Registrar chuva" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Fechar" }).click();
   await expect(
     page.getByRole("button", { name: "Registrar gasto" }),
   ).toBeVisible();

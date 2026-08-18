@@ -116,10 +116,18 @@ export function FieldDiaryPage() {
     const quickType = searchParams.get("new");
     if (!quickType) return;
 
+    const requestedActivityType = diaryActivityTypes.some(
+      (item) => item.value === quickType,
+    )
+      ? quickType
+      : quickType === "rain"
+        ? "RAIN"
+        : "OBSERVATION";
+
     setEditing(null);
     setForm({
       ...newDiaryForm(searchParams.get("plantingId") || ""),
-      activityType: quickType === "rain" ? "RAIN" : "OBSERVATION",
+      activityType: requestedActivityType,
     });
     setDraftRecovered(false);
     setModalOpen(true);

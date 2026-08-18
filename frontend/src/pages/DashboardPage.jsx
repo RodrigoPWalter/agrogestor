@@ -1,6 +1,6 @@
 import { LoaderCircle, Plus, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { CommodityQuotesPanel } from "../components/dashboard/CommodityQuotesPanel";
 import { DashboardMetrics } from "../components/dashboard/DashboardMetrics";
@@ -10,6 +10,7 @@ import {
   RecentExpensesPanel,
   RecentPlantingsPanel,
 } from "../components/dashboard/DashboardTables";
+import { DiaryQuickLaunch } from "../components/diary/DiaryQuickLaunch";
 import { ErrorBanner, OfflineDataState } from "../components/Feedback";
 import { PageHeader } from "../components/PageHeader";
 import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
@@ -37,6 +38,7 @@ const emptySummary = {
 };
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [dashboardCacheKey] = useState(() => getDashboardCacheKey());
   const [cachedDashboard] = useState(() =>
     readDashboardCache(dashboardCacheKey),
@@ -175,6 +177,13 @@ export function DashboardPage() {
       ) : (
         <>
           <DashboardMetrics metrics={summary.metrics} />
+
+          <DiaryQuickLaunch
+            onSelect={(activityType) =>
+              navigate(`/diario?new=${encodeURIComponent(activityType)}`)
+            }
+            onMore={() => navigate("/diario?new=more")}
+          />
 
           <div className="dashboard-grid dashboard-grid--balanced">
             <DashboardQuickActions />
