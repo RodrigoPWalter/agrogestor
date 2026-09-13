@@ -9,6 +9,7 @@ echo.
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0backup-local.ps1" ^
   -OnlyDatabase ^
+  -VerifyRestore ^
   -DatabaseHost "ep-icy-darkness-actth13o.sa-east-1.aws.neon.tech" ^
   -DatabaseName "neondb" ^
   -DatabaseUser "neondb_owner"

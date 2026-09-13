@@ -7,13 +7,14 @@ param(
     [string]$DatabaseUser,
     [SecureString]$DatabasePassword,
     [switch]$OnlyDatabase,
+    [switch]$VerifyRestore,
     [switch]$SkipDatabase
 )
 
 $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$timestamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
+$timestamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'
 $folderName = if ($OnlyDatabase) { "dados_$timestamp" } else { $timestamp }
 $backupDirectory = Join-Path $BackupRoot $folderName
 $sourceArchive = Join-Path $backupDirectory 'agrogestor-codigo.zip'
@@ -65,7 +66,7 @@ if (-not $OnlyDatabase -and -not (Test-Path -LiteralPath (Join-Path $projectRoot
     throw 'O script precisa ser executado dentro do repositório Git do AgroGestor.'
 }
 
-New-Item -ItemType Directory -Path $backupDirectory -Force | Out-Null
+New-Item -ItemType Directory -Path $backupDirectory | Out-Null
 
 if (-not $OnlyDatabase) {
     git -C $projectRoot archive --format=zip --output=$sourceArchive HEAD
@@ -132,6 +133,10 @@ if (-not $SkipDatabase) {
         Remove-Item Env:PGSSLMODE -ErrorAction SilentlyContinue
         [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
     }
+    if ($VerifyRestore) {
+        & (Join-Path $PSScriptRoot 'test-postgres-local.ps1') `
+            -PostgresBin (Split-Path -Parent $pgDump) -RestoreDump $databaseDump
+    }
 }
 
 $databaseStatus = if ($databaseIncluded) { 'incluído' } else { 'não incluído' }
@@ -139,6 +144,7 @@ $backupDescription = if ($OnlyDatabase) {
     @"
 Tipo: dados do aplicativo
 Banco de dados: $databaseStatus
+Restauração em banco separado: $(if ($VerifyRestore -and $databaseIncluded) { 'verificada' } else { 'não executada' })
 
 Conteúdo:
 - agrogestor-banco.dump: plantios, gastos, estoque, diário e demais dados

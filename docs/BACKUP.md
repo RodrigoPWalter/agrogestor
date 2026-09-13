@@ -1,50 +1,12 @@
 # Backup e restauração
 
-O AgroGestor possui duas formas complementares de proteção: cópia local feita
-no computador e exportação automática criptografada pelo GitHub Actions. O
-backup do provedor do banco continua útil, mas não substitui uma cópia que possa
-ser baixada e guardada separadamente.
+O backup dos dados é feito no computador do produtor. A senha do banco não
+precisa ser enviada ao GitHub e não existe agendamento de backup no repositório.
+O backup do provedor continua útil, mas não substitui uma cópia independente.
 
-## Ativar o backup automático
-
-O workflow `Backup do banco` executa todos os dias e também pode ser iniciado
-manualmente na aba **Actions** do GitHub. Ele exporta o PostgreSQL, criptografa o
-arquivo antes do envio e conserva o artefato por 30 dias. Antes de armazenar a
-cópia, restaura o dump em um PostgreSQL temporário e verifica se a descriptografia
-recupera exatamente o arquivo original. Esse teste não altera o banco da propriedade.
-
-No repositório do GitHub, abra **Settings > Secrets and variables > Actions** e
-cadastre dois repository secrets:
-
-- `NEON_DATABASE_URL`: string completa de conexão do Neon, iniciando com
-  `postgresql://` e usando `sslmode=require`;
-- `BACKUP_ENCRYPTION_PASSWORD`: uma senha longa e exclusiva, usada somente para
-  criptografar os backups.
-
-Guarde a senha de criptografia em um gerenciador de senhas. Sem ela, o arquivo
-automático não poderá ser restaurado. O workflow não imprime os segredos no log
-e falha explicitamente quando a configuração estiver incompleta. Ter o workflow
-no repositório não significa que o backup já esteja ativado.
-
-Depois de configurar os dois segredos, execute **Actions > Backup do banco >
-Run workflow**. Confirme que a restauração de teste passou e que a execução
-gerou o artefato criptografado. Guarde uma cópia também fora do GitHub e mantenha
-as notificações de falha do Actions habilitadas.
-
-Para baixar uma cópia, abra **Actions > Backup do banco**, selecione a execução
-e baixe o artefato `agrogestor-dados-*`. Confira o arquivo antes de apagar uma
-cópia anterior.
-
-Para descriptografar em um computador com OpenSSL:
-
-```powershell
-openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 `
-  -in .\agrogestor.dump.enc `
-  -out .\agrogestor-banco.dump
-```
-
-O OpenSSL solicitará `BACKUP_ENCRYPTION_PASSWORD`. Depois disso, use o comando
-`pg_restore` descrito na seção de restauração do PostgreSQL.
+O arquivo `.dump` contém dados privados e não é criptografado por este script.
+Guarde-o em uma pasta protegida e não envie esses arquivos ao GitHub. A rotina
+é manual: alterações no aplicativo não geram automaticamente uma nova cópia.
 
 O backup local do AgroGestor guarda três partes independentes:
 
@@ -60,11 +22,16 @@ Este é o modo recomendado para a rotina do AgroGestor, porque o código já per
 
 No Windows, abra `scripts\fazer-backup-dados.cmd` com dois cliques e informe a senha do banco quando solicitado. O atalho criado na Área de Trabalho executa esse mesmo arquivo.
 
+Esse atalho inclui uma restauração de teste em um PostgreSQL separado, acessível
+apenas neste computador. O banco publicado não é alterado. A instalação local
+do PostgreSQL precisa incluir servidor e ferramentas de linha de comando.
+
 No PowerShell, a partir da raiz do projeto:
 
 ```powershell
 .\scripts\backup-local.ps1 `
   -OnlyDatabase `
+  -VerifyRestore `
   -DatabaseHost "servidor-do-banco" `
   -DatabaseName "nome-do-banco" `
   -DatabaseUser "usuario-do-banco"
@@ -86,6 +53,11 @@ No PowerShell, a partir da raiz do projeto:
 O script solicita a senha do banco de forma oculta. Ela é usada somente pelo processo do `pg_dump` e não é salva no projeto nem no backup.
 
 A conexão com o Neon exige SSL. Depois de criar o arquivo, o script também usa o `pg_restore` para conferir se o catálogo do backup pode ser lido antes de informar sucesso.
+
+Com `-VerifyRestore`, também verifica a restauração completa em um banco isolado.
+Se essa verificação falhar, a cópia é preservada para diagnóstico, mas não é
+anunciada como concluída. Os arquivos temporários de validação ficam em `work/`,
+fora do controle de versão, e o servidor temporário é encerrado ao terminar.
 
 Para copiar apenas o código e o histórico do Git:
 

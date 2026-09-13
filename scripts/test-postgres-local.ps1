@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$PostgresBin = 'C:\Program Files\PostgreSQL\17\bin'
+    [string]$PostgresBin = 'C:\Program Files\PostgreSQL\17\bin',
+    [string]$RestoreDump
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,6 +9,15 @@ $project = Split-Path -Parent $PSScriptRoot
 foreach ($executable in @('initdb.exe', 'pg_ctl.exe', 'createdb.exe')) {
     if (-not (Test-Path -LiteralPath (Join-Path $PostgresBin $executable))) {
         throw "PostgreSQL não encontrado em $PostgresBin. Informe -PostgresBin."
+    }
+}
+if ($RestoreDump) {
+    $RestoreDump = (Resolve-Path -LiteralPath $RestoreDump).Path
+    if (-not (Test-Path -LiteralPath $RestoreDump -PathType Leaf)) {
+        throw 'Informe um arquivo de backup existente.'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $PostgresBin 'pg_restore.exe'))) {
+        throw 'pg_restore não encontrado na instalação do PostgreSQL.'
     }
 }
 
@@ -60,7 +70,13 @@ try {
 
     Push-Location $project
     try {
-        & .\mvnw.cmd test *> $testLog
+        if ($RestoreDump) {
+            & (Join-Path $PostgresBin 'pg_restore.exe') -h 127.0.0.1 -p $port `
+                -U agrogestor -w --dbname=agrogestor_test --no-owner --no-acl `
+                --exit-on-error $RestoreDump *> $testLog
+        } else {
+            & .\mvnw.cmd test *> $testLog
+        }
         $testExitCode = $LASTEXITCODE
         Get-Content -LiteralPath $testLog -Tail 35
         if ($testExitCode -ne 0) { throw "Testes falharam. Consulte $testLog" }
