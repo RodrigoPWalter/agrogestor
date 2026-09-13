@@ -22,7 +22,13 @@ public class CurrentPropertyService {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new BusinessRuleException("Não foi possível identificar a propriedade da sessão");
         }
-        return usuarioRepository.findByEmailIgnoreCase(authentication.getName())
+        UUID userId;
+        try {
+            userId = UUID.fromString(authentication.getName());
+        } catch (IllegalArgumentException exception) {
+            throw new BusinessRuleException("Não foi possível identificar a propriedade da sessão");
+        }
+        return usuarioRepository.findById(userId)
                 .map(usuario -> usuario.getProperty())
                 .orElseThrow(() -> new BusinessRuleException(
                         "A conta não está vinculada a uma propriedade"

@@ -13,10 +13,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,7 +53,10 @@ class AuthServiceTest {
     @Test
     void shouldAuthenticateAndReturnToken() {
         Usuario usuario = usuario();
-        when(repository.findByEmailIgnoreCase("admin@agrogestor.local"))
+        when(authenticationManager.authenticate(any())).thenReturn(
+                UsernamePasswordAuthenticationToken.authenticated(
+                        usuario.getId().toString(), null, List.of()));
+        when(repository.findById(usuario.getId()))
                 .thenReturn(Optional.of(usuario));
         when(tokenService.generate(usuario)).thenReturn("jwt-assinado");
         when(tokenService.expiresInSeconds()).thenReturn(3600L);
@@ -84,7 +89,7 @@ class AuthServiceTest {
     @Test
     void shouldUpdateProfileAndReturnAValidSession() {
         Usuario usuario = usuario();
-        when(repository.findByEmailIgnoreCase("admin@agrogestor.local"))
+        when(repository.findById(usuario.getId()))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("senha-atual", "hash")).thenReturn(true);
         when(passwordEncoder.encode("nova-senha")).thenReturn("novo-hash");
@@ -93,7 +98,7 @@ class AuthServiceTest {
         when(tokenService.expiresInSeconds()).thenReturn(3600L);
 
         var response = service.updateProfile(
-                "admin@agrogestor.local",
+                usuario.getId(),
                 new ProfileUpdateRequest(
                         "Rodrigo",
                         " RODRIGO@AGRO.LOCAL ",
@@ -112,13 +117,13 @@ class AuthServiceTest {
     @Test
     void shouldRejectProfileUpdateWhenCurrentPasswordIsWrong() {
         Usuario usuario = usuario();
-        when(repository.findByEmailIgnoreCase("admin@agrogestor.local"))
+        when(repository.findById(usuario.getId()))
                 .thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches("senha-incorreta", "hash"))
                 .thenReturn(false);
 
         assertThatThrownBy(() -> service.updateProfile(
-                "admin@agrogestor.local",
+                usuario.getId(),
                 new ProfileUpdateRequest(
                         "Administrador",
                         "admin@agrogestor.local",

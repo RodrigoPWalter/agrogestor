@@ -55,7 +55,7 @@ class DatabaseIntegrationTest {
                 ));
         SecurityContextHolder.getContext().setAuthentication(
                 UsernamePasswordAuthenticationToken.authenticated(
-                        user.getEmail(), null, java.util.List.of()
+                        user.getId().toString(), null, java.util.List.of()
                 )
         );
     }

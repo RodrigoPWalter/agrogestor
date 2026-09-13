@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -41,28 +42,30 @@ public class AuthService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         String email = request.email().trim().toLowerCase(Locale.ROOT);
+        UUID authenticatedId;
         try {
-            authenticationManager.authenticate(
+            var authentication = authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(
                             email,
                             request.password()
                     )
             );
+            authenticatedId = UUID.fromString(authentication.getName());
         } catch (AuthenticationException exception) {
             throw new InvalidCredentialsException();
         }
 
-        var usuario = repository.findByEmailIgnoreCase(email)
+        var usuario = repository.findById(authenticatedId)
                 .orElseThrow(InvalidCredentialsException::new);
         return loginResponse(usuario);
     }
 
     @Transactional
     public LoginResponse updateProfile(
-            String authenticatedEmail,
+            UUID authenticatedId,
             ProfileUpdateRequest request
     ) {
-        var usuario = repository.findByEmailIgnoreCase(authenticatedEmail)
+        var usuario = repository.findById(authenticatedId)
                 .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(request.senhaAtual(), usuario.getSenhaHash())) {
