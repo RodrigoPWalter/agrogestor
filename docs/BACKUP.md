@@ -9,7 +9,9 @@ ser baixada e guardada separadamente.
 
 O workflow `Backup do banco` executa todos os dias e também pode ser iniciado
 manualmente na aba **Actions** do GitHub. Ele exporta o PostgreSQL, criptografa o
-arquivo antes do envio e conserva o artefato por 30 dias.
+arquivo antes do envio e conserva o artefato por 30 dias. Antes de armazenar a
+cópia, restaura o dump em um PostgreSQL temporário e verifica se a descriptografia
+recupera exatamente o arquivo original. Esse teste não altera o banco da propriedade.
 
 No repositório do GitHub, abra **Settings > Secrets and variables > Actions** e
 cadastre dois repository secrets:
@@ -21,7 +23,13 @@ cadastre dois repository secrets:
 
 Guarde a senha de criptografia em um gerenciador de senhas. Sem ela, o arquivo
 automático não poderá ser restaurado. O workflow não imprime os segredos no log
-e não cria um backup sem criptografia quando a configuração estiver incompleta.
+e falha explicitamente quando a configuração estiver incompleta. Ter o workflow
+no repositório não significa que o backup já esteja ativado.
+
+Depois de configurar os dois segredos, execute **Actions > Backup do banco >
+Run workflow**. Confirme que a restauração de teste passou e que a execução
+gerou o artefato criptografado. Guarde uma cópia também fora do GitHub e mantenha
+as notificações de falha do Actions habilitadas.
 
 Para baixar uma cópia, abra **Actions > Backup do banco**, selecione a execução
 e baixe o artefato `agrogestor-dados-*`. Confira o arquivo antes de apagar uma
