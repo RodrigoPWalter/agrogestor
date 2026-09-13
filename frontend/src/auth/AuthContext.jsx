@@ -11,13 +11,18 @@ import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import {
   AUTH_STORAGE_KEY,
   OFFLINE_SESSION_DURATION_MS,
-  clearAppCache,
+  assertSessionContextCurrent,
+  captureSessionContext,
   clearSession,
   readSession,
   saveSession,
+  isSessionContextCurrent,
 } from "./session";
-import { SESSION_READY_EVENT } from "../offline/offlineSync";
-import { moveOfflineScope } from "../offline/offlineStorage";
+import {
+  SESSION_READY_EVENT,
+  refreshOfflineSyncState,
+} from "../offline/offlineSync";
+import { migrateLegacyOfflineData } from "../offline/offlineStorage";
 
 const AuthContext = createContext(null);
 
@@ -40,12 +45,14 @@ export function AuthProvider({ children }) {
     clearSession();
     setSession(null);
     setAuthNotice("");
+    refreshOfflineSyncState().catch(() => {});
   }, []);
 
   const expireSession = useCallback(() => {
     clearSession();
     setSession(null);
     setAuthNotice("Sua sessão expirou. Entre novamente para continuar.");
+    refreshOfflineSyncState().catch(() => {});
   }, []);
 
   const login = useCallback(async (credentials) => {
@@ -55,33 +62,24 @@ export function AuthProvider({ children }) {
     saveSession(nextSession);
     setSession(nextSession);
     setAuthNotice("");
-    window.dispatchEvent(new Event(SESSION_READY_EVENT));
     return response.user;
   }, []);
 
-  const updateProfile = useCallback(
-    async (data) => {
-      const previousScope = session?.user?.email?.toLowerCase();
-      const response = await api.updateProfile(data);
-      const nextSession = createSession(response);
-      const nextScope = response.user.email.toLowerCase();
-
-      try {
-        await moveOfflineScope(previousScope, nextScope);
-      } catch {
-        // A atualização da conta já ocorreu no servidor; o cache local é complementar.
-      }
-      clearAppCache();
-      saveSession(nextSession);
-      setSession(nextSession);
-      window.dispatchEvent(new Event(SESSION_READY_EVENT));
-      return response.user;
-    },
-    [session?.user?.email],
-  );
+  const updateProfile = useCallback(async (data) => {
+    const context = captureSessionContext();
+    const response = await api.updateProfile(data);
+    const nextSession = createSession(response);
+    assertSessionContextCurrent(context);
+    saveSession(nextSession);
+    setSession(nextSession);
+    return response.user;
+  }, []);
 
   useEffect(() => {
-    const handleExpiredSession = () => expireSession();
+    const handleExpiredSession = (event) => {
+      if (!event.detail || isSessionContextCurrent(event.detail))
+        expireSession();
+    };
     const handleStorageChange = (event) => {
       if (event.key === AUTH_STORAGE_KEY) {
         setSession(readSession());
@@ -98,30 +96,55 @@ export function AuthProvider({ children }) {
   }, [expireSession]);
 
   useEffect(() => {
+    if (!session) return;
+    let active = true;
+    migrateLegacyOfflineData(session.user)
+      .catch(() => {
+        // Preserva os dados originais se o armazenamento local estiver indisponível.
+      })
+      .finally(() => {
+        if (active) window.dispatchEvent(new Event(SESSION_READY_EVENT));
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
     if (!session?.expiresAt) return undefined;
 
-    const remainingTime = session.expiresAt - Date.now();
-    if (remainingTime <= 0) {
-      if (
-        navigator.onLine === false &&
-        session.offlineAccessUntil > Date.now()
-      ) {
-        setSession((current) => {
-          if (!current) return current;
-          const offlineSession = { ...current, offlineAccess: true };
-          saveSession(offlineSession);
-          return offlineSession;
-        });
+    let timeoutId;
+    const evaluateExpiry = () => {
+      // Reavalia a conexão e a conta no vencimento; outra aba pode ter trocado a sessão.
+      const current = readSession();
+      setSession(current);
+      if (!current) {
+        setAuthNotice("Sua sessão expirou. Entre novamente para continuar.");
+        refreshOfflineSyncState().catch(() => {});
+        return;
+      }
+      if (current.offlineAccess) {
         setAuthNotice(
           "Acesso offline ativo. Entre novamente quando a internet voltar para sincronizar.",
         );
-        return undefined;
       }
-      expireSession();
-      return undefined;
-    }
-
-    const timeoutId = window.setTimeout(expireSession, remainingTime);
+      const deadline = current.offlineAccess
+        ? current.offlineAccessUntil
+        : current.expiresAt;
+      timeoutId = window.setTimeout(
+        evaluateExpiry,
+        Math.min(Math.max(1, deadline - Date.now()), 2_147_483_647),
+      );
+    };
+    const deadline = session.offlineAccess
+      ? session.offlineAccessUntil
+      : session.expiresAt;
+    if (deadline <= Date.now()) evaluateExpiry();
+    else
+      timeoutId = window.setTimeout(
+        evaluateExpiry,
+        Math.min(deadline - Date.now(), 2_147_483_647),
+      );
     return () => window.clearTimeout(timeoutId);
   }, [
     expireSession,
@@ -133,7 +156,10 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleOnline = () => {
       if (session?.offlineAccess || session?.expiresAt <= Date.now()) {
-        expireSession();
+        const current = readSession();
+        setSession(current);
+        if (!current)
+          setAuthNotice("Sua sessão expirou. Entre novamente para continuar.");
       }
     };
     window.addEventListener("online", handleOnline);

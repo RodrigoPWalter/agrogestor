@@ -1,17 +1,26 @@
-import { buildUserCacheKey } from "../auth/session";
+import {
+  APP_CACHE_KEY_PREFIX,
+  getCurrentUserCacheScope,
+} from "../auth/session";
 
 const DRAFT_VERSION = "v1";
 const MAX_DRAFT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-function draftKey(name) {
-  return buildUserCacheKey(`draft:${name}:${DRAFT_VERSION}`);
+function draftKey(name, scope) {
+  return `${APP_CACHE_KEY_PREFIX}${scope}:draft:${name}:${DRAFT_VERSION}`;
 }
 
-export function readFormDraft(name, now = Date.now()) {
-  if (typeof window === "undefined") return null;
+export function readFormDraft(
+  name,
+  now = Date.now(),
+  scope = getCurrentUserCacheScope(),
+) {
+  if (typeof window === "undefined" || scope === "anonymous") return null;
 
   try {
-    const saved = JSON.parse(window.localStorage.getItem(draftKey(name)));
+    const saved = JSON.parse(
+      window.localStorage.getItem(draftKey(name, scope)),
+    );
     const savedAt = new Date(saved?.savedAt).getTime();
 
     if (!saved?.value || !Number.isFinite(savedAt)) {
@@ -19,7 +28,7 @@ export function readFormDraft(name, now = Date.now()) {
     }
 
     if (now - savedAt > MAX_DRAFT_AGE_MS) {
-      clearFormDraft(name);
+      clearFormDraft(name, scope);
       return null;
     }
 
@@ -29,12 +38,16 @@ export function readFormDraft(name, now = Date.now()) {
   }
 }
 
-export function writeFormDraft(name, value) {
-  if (typeof window === "undefined") return;
+export function writeFormDraft(
+  name,
+  value,
+  scope = getCurrentUserCacheScope(),
+) {
+  if (typeof window === "undefined" || scope === "anonymous") return;
 
   try {
     window.localStorage.setItem(
-      draftKey(name),
+      draftKey(name, scope),
       JSON.stringify({ value, savedAt: new Date().toISOString() }),
     );
   } catch {
@@ -42,11 +55,11 @@ export function writeFormDraft(name, value) {
   }
 }
 
-export function clearFormDraft(name) {
-  if (typeof window === "undefined") return;
+export function clearFormDraft(name, scope = getCurrentUserCacheScope()) {
+  if (typeof window === "undefined" || scope === "anonymous") return;
 
   try {
-    window.localStorage.removeItem(draftKey(name));
+    window.localStorage.removeItem(draftKey(name, scope));
   } catch {
     // Sem ação: o armazenamento pode estar bloqueado pelo navegador.
   }

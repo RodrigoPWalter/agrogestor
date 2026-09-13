@@ -25,7 +25,11 @@ describe("sincronização offline", () => {
     saveSession({
       accessToken: "jwt-assinado",
       expiresAt: Date.now() + 60_000,
-      user: { email: "produtor@agrogestor.local" },
+      user: {
+        id: "one",
+        propertyId: "farm",
+        email: "produtor@agrogestor.local",
+      },
     });
     Object.defineProperty(window.navigator, "onLine", {
       configurable: true,
@@ -76,7 +80,7 @@ describe("sincronização offline", () => {
       .mockResolvedValueOnce({ status: 201, data: {} });
 
     await syncPendingRequests();
-    const requests = await listQueuedRequests("produtor@agrogestor.local");
+    const requests = await listQueuedRequests("user:one:property:farm");
 
     expect(httpClient.request).toHaveBeenCalledTimes(2);
     expect(requests).toHaveLength(1);
@@ -100,7 +104,7 @@ describe("sincronização offline", () => {
     httpClient.request.mockRejectedValueOnce(serverError);
 
     await syncPendingRequests();
-    const requests = await listQueuedRequests("produtor@agrogestor.local");
+    const requests = await listQueuedRequests("user:one:property:farm");
 
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatchObject({
@@ -137,7 +141,7 @@ describe("sincronização offline", () => {
     saveSession({
       accessToken: "jwt-outra-conta",
       expiresAt: Date.now() + 60_000,
-      user: { email: "outra@agrogestor.local" },
+      user: { id: "two", propertyId: "farm", email: "outra@agrogestor.local" },
     });
     finishFirstRequest({ status: 201, data: {} });
     await synchronization;
@@ -150,9 +154,7 @@ describe("sincronização offline", () => {
         }),
       }),
     );
-    expect(await listQueuedRequests("produtor@agrogestor.local")).toHaveLength(
-      1,
-    );
-    expect(await listQueuedRequests("outra@agrogestor.local")).toEqual([]);
+    expect(await listQueuedRequests("user:one:property:farm")).toHaveLength(1);
+    expect(await listQueuedRequests("user:two:property:farm")).toEqual([]);
   });
 });

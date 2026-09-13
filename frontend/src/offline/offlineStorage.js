@@ -1,3 +1,9 @@
+import {
+  getLegacyScopesForUser,
+  getUserCacheScope,
+  moveLocalCacheScope,
+} from "../auth/session";
+
 const DATABASE_NAME = "agrogestor-offline";
 const DATABASE_VERSION = 2;
 const REQUEST_STORE = "requests";
@@ -202,13 +208,15 @@ export async function moveOfflineScope(previousScope, nextScope) {
     });
     memoryCache.forEach((entry, id) => {
       if (entry.scope === previousScope) {
-        memoryCache.delete(id);
         const movedEntry = {
           ...entry,
           id: cacheId(nextScope, entry.path),
           scope: nextScope,
         };
-        memoryCache.set(movedEntry.id, movedEntry);
+        if (!memoryCache.has(movedEntry.id)) {
+          memoryCache.set(movedEntry.id, movedEntry);
+          memoryCache.delete(id);
+        }
       }
     });
     return;
@@ -234,18 +242,29 @@ export async function moveOfflineScope(previousScope, nextScope) {
       cachedResponses.result
         .filter((entry) => entry.scope === previousScope)
         .forEach((entry) => {
-          cacheStore.delete(entry.id);
-          cacheStore.put({
-            ...entry,
-            id: cacheId(nextScope, entry.path),
-            scope: nextScope,
-          });
+          const nextId = cacheId(nextScope, entry.path);
+          if (
+            !cachedResponses.result.some((existing) => existing.id === nextId)
+          ) {
+            cacheStore.delete(entry.id);
+            cacheStore.put({ ...entry, id: nextId, scope: nextScope });
+          }
         });
     };
     transaction.oncomplete = resolve;
     transaction.onerror = () => reject(transaction.error);
     transaction.onabort = () => reject(transaction.error);
   });
+}
+
+export async function migrateLegacyOfflineData(user) {
+  const scope = getUserCacheScope(user);
+  // O e-mail atual não prova quem criou a fila antiga.
+  // Registros sem vínculo comprovado ficam isolados, sem serem apagados.
+  for (const legacyScope of getLegacyScopesForUser(user)) {
+    moveLocalCacheScope(legacyScope, scope);
+    await moveOfflineScope(legacyScope, scope);
+  }
 }
 
 export async function resetOfflineStorageForTests() {

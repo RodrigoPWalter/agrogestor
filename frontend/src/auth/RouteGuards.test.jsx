@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import { useAuth } from "./AuthContext";
@@ -13,7 +14,50 @@ function CurrentPath() {
   return <span>{location.pathname}</span>;
 }
 
+function PrivateForm() {
+  const [text, setText] = useState("");
+  return (
+    <input
+      aria-label="Anotação privada"
+      value={text}
+      onChange={(event) => setText(event.target.value)}
+    />
+  );
+}
+
 describe("proteção das rotas", () => {
+  it("limpa o estado da página ao trocar de conta, mas não ao trocar o e-mail da mesma conta", () => {
+    const user = { id: "a", propertyId: "farm-a", email: "antes@local" };
+    useAuth.mockReturnValue({ isAuthenticated: true, user });
+    const app = () => (
+      <MemoryRouter initialEntries={["/gastos"]}>
+        <Routes>
+          <Route element={<PrivateRoute />}>
+            <Route path="/gastos" element={<PrivateForm />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+    const { rerender } = render(app());
+    fireEvent.change(screen.getByLabelText("Anotação privada"), {
+      target: { value: "Dados da conta A" },
+    });
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { ...user, email: "depois@local" },
+    });
+    rerender(app());
+    expect(screen.getByLabelText("Anotação privada")).toHaveValue(
+      "Dados da conta A",
+    );
+    useAuth.mockReturnValue({
+      isAuthenticated: true,
+      user: { id: "b", propertyId: "farm-b", email: "depois@local" },
+    });
+    rerender(app());
+    expect(screen.getByLabelText("Anotação privada")).toHaveValue("");
+  });
+
   it("envia visitantes para a tela de login", () => {
     useAuth.mockReturnValue({ isAuthenticated: false });
 

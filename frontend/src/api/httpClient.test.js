@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clearSession, saveSession } from "../auth/session";
+import {
+  captureSessionContext,
+  clearSession,
+  saveSession,
+} from "../auth/session";
 import {
   CONNECTION_STATUS,
   getConnectionStatus,
@@ -160,5 +164,62 @@ describe("cliente HTTP", () => {
         },
       }),
     ).rejects.toThrow("O lançamento ficará salvo neste aparelho.");
+  });
+
+  it("um 401 atrasado da conta anterior não encerra a sessão atual", async () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", email: "a@local" },
+    });
+    const listener = vi.fn();
+    window.addEventListener(AUTH_EXPIRED_EVENT, listener);
+    let fail;
+    const promise = httpClient.request({
+      url: "/api/v1/expenses",
+      adapter: (config) =>
+        new Promise((_, reject) => {
+          fail = () =>
+            reject(
+              Object.assign(new Error("não autorizado"), {
+                config,
+                response: { status: 401, data: {} },
+              }),
+            );
+        }),
+    });
+    const rejected = expect(promise).rejects.toMatchObject({ status: 401 });
+    await vi.waitFor(() => expect(fail).toBeTypeOf("function"));
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", email: "b@local" },
+    });
+    fail();
+    await rejected;
+    expect(listener).not.toHaveBeenCalled();
+    window.removeEventListener(AUTH_EXPIRED_EVENT, listener);
+  });
+
+  it("não substitui pelo token B uma requisição preparada para A", async () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", email: "a@local" },
+    });
+    const sessionContext = captureSessionContext();
+    const adapter = vi.fn();
+    const promise = httpClient.request({
+      url: "/api/v1/expenses",
+      sessionContext,
+      adapter,
+    });
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", email: "b@local" },
+    });
+    await expect(promise).rejects.toMatchObject({ sessionChanged: true });
+    expect(adapter).not.toHaveBeenCalled();
   });
 });

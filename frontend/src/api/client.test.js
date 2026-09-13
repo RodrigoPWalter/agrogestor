@@ -3,6 +3,8 @@ import { httpClient } from "./httpClient";
 import { api } from "./client";
 import { saveSession } from "../auth/session";
 import {
+  getCachedResponse,
+  putCachedResponse,
   listQueuedRequests,
   resetOfflineStorageForTests,
 } from "../offline/offlineStorage";
@@ -40,6 +42,7 @@ describe("cliente da API", () => {
     await api.getDashboardSummary();
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/dashboard",
     });
   });
@@ -93,6 +96,7 @@ describe("cliente da API", () => {
     await api.getPlantingExpenseSummaries("HARVESTED");
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/expenses/plantings/summaries?status=HARVESTED",
     });
   });
@@ -124,6 +128,7 @@ describe("cliente da API", () => {
     await api.updateProfile(data);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/auth/profile",
       method: "PUT",
       data,
@@ -144,6 +149,7 @@ describe("cliente da API", () => {
     await api.createPlantingStep("planting-1", data);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/plantings/planting-1/steps",
       method: "POST",
       headers: {
@@ -180,6 +186,7 @@ describe("cliente da API", () => {
     await api.createHarvestStep("planting-1", data);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/plantings/planting-1/harvest-steps",
       method: "POST",
       headers: {
@@ -196,6 +203,7 @@ describe("cliente da API", () => {
     await api.saveSeasonClosingPrice("planting-1", 72.5);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/plantings/planting-1/season-closing/price",
       method: "PUT",
       headers: {
@@ -217,6 +225,7 @@ describe("cliente da API", () => {
     await api.adjustInventoryValuation("product-1", data);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/inventory/products/product-1/valuation-adjustments",
       method: "POST",
       headers: {
@@ -239,6 +248,7 @@ describe("cliente da API", () => {
     await api.createProductionSale("planting-1", data);
 
     expect(httpClient.request).toHaveBeenCalledWith({
+      sessionContext: expect.any(Object),
       url: "/api/v1/plantings/planting-1/sales",
       method: "POST",
       headers: {
@@ -253,7 +263,11 @@ describe("cliente da API", () => {
     saveSession({
       accessToken: "jwt-assinado",
       expiresAt: Date.now() + 60_000,
-      user: { email: "produtor@agrogestor.local" },
+      user: {
+        id: "one",
+        propertyId: "farm",
+        email: "produtor@agrogestor.local",
+      },
     });
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
 
@@ -261,7 +275,7 @@ describe("cliente da API", () => {
       measurementDate: "2026-08-10",
       millimeters: 12,
     });
-    const requests = await listQueuedRequests("produtor@agrogestor.local");
+    const requests = await listQueuedRequests("user:one:property:farm");
 
     expect(result.offlineQueued).toBe(true);
     expect(httpClient.request).not.toHaveBeenCalled();
@@ -294,5 +308,101 @@ describe("cliente da API", () => {
       offlineCacheMiss: true,
       message: expect.stringContaining("ainda não foram salvos"),
     });
+  });
+
+  it("não entrega resposta antiga nem grava o cache na conta nova", async () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", email: "a@local" },
+    });
+    let finish;
+    httpClient.request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const result = api.getDashboardSummary();
+    const rejected = expect(result).rejects.toMatchObject({
+      sessionChanged: true,
+    });
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", email: "b@local" },
+    });
+    finish({ status: 200, data: { owner: "a" } });
+    await rejected;
+    expect(
+      await getCachedResponse("user:a:property:none", "/api/v1/dashboard"),
+    ).toEqual({ owner: "a" });
+    expect(
+      await getCachedResponse("user:b:property:none", "/api/v1/dashboard"),
+    ).toBeNull();
+    expect(httpClient.request.mock.calls[0][0].sessionContext.accessToken).toBe(
+      "a",
+    );
+  });
+
+  it("uma falha antiga guarda a mutação na fila original sem retornar sucesso à conta nova", async () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", email: "shared@local" },
+    });
+    let fail;
+    httpClient.request.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          fail = reject;
+        }),
+    );
+    const data = { millimeters: 12 };
+    const result = api.createRainfall(data);
+    const rejected = expect(result).rejects.toMatchObject({
+      sessionChanged: true,
+    });
+    data.millimeters = 99;
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", email: "shared@local" },
+    });
+    fail(Object.assign(new Error("offline"), { offlineEligible: true }));
+    await rejected;
+    expect(await listQueuedRequests("user:a:property:none")).toEqual([
+      expect.objectContaining({ data: { millimeters: 12 } }),
+    ]);
+    expect(await listQueuedRequests("user:b:property:none")).toEqual([]);
+  });
+
+  it("uma falha de consulta antiga não usa o cache da nova conta", async () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", email: "a@local" },
+    });
+    let fail;
+    httpClient.request.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          fail = reject;
+        }),
+    );
+    const result = api.getDashboardSummary();
+    const rejected = expect(result).rejects.toMatchObject({
+      sessionChanged: true,
+    });
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", email: "b@local" },
+    });
+    await putCachedResponse("user:b:property:none", "/api/v1/dashboard", {
+      owner: "b",
+    });
+    fail(Object.assign(new Error("offline"), { offlineEligible: true }));
+    await rejected;
   });
 });

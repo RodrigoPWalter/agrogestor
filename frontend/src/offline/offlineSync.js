@@ -1,4 +1,9 @@
-import { getAccessToken, getCurrentUserCacheScope } from "../auth/session";
+import {
+  AUTH_STORAGE_KEY,
+  assertSessionContextCurrent,
+  captureSessionContext,
+  isSessionContextCurrent,
+} from "../auth/session";
 import { httpClient } from "../api/httpClient";
 import {
   deleteQueuedRequest,
@@ -35,7 +40,9 @@ export function getOfflineSyncSnapshot() {
 }
 
 export async function refreshOfflineSyncState() {
-  const requests = await listQueuedRequests(getCurrentUserCacheScope());
+  const context = captureSessionContext();
+  const requests = await listQueuedRequests(context.scope);
+  if (!isSessionContextCurrent(context)) return [];
   publish({
     pendingCount: requests.length,
     errorCount: requests.filter((item) => item.status === "error").length,
@@ -43,17 +50,31 @@ export async function refreshOfflineSyncState() {
   return requests;
 }
 
-export function getOfflineRequests() {
-  return listQueuedRequests(getCurrentUserCacheScope());
+export async function getOfflineRequests() {
+  const context = captureSessionContext();
+  const requests = await listQueuedRequests(context.scope);
+  assertSessionContextCurrent(context);
+  return requests;
 }
 
-export async function queueMutation({ id, url, method, data, headers }) {
-  const queuedHeaders = { ...headers };
-  delete queuedHeaders.Authorization;
+export async function queueMutation(
+  { id, url, method, data, headers },
+  context = captureSessionContext(),
+) {
+  if (context.scope === "anonymous" || !context.accessToken) {
+    throw new Error(
+      "Entre na sua conta para salvar um lançamento neste aparelho.",
+    );
+  }
+  const queuedHeaders = Object.fromEntries(
+    Object.entries(headers ?? {}).filter(
+      ([name]) => name.toLowerCase() !== "authorization",
+    ),
+  );
 
   await putQueuedRequest({
     id,
-    scope: getCurrentUserCacheScope(),
+    scope: context.scope,
     url,
     method,
     data: data ?? null,
@@ -76,8 +97,9 @@ export async function syncPendingRequests() {
     await refreshOfflineSyncState();
     return { synchronized: 0, pending: snapshot.pendingCount };
   }
-  const syncScope = getCurrentUserCacheScope();
-  const syncToken = getAccessToken();
+  const context = captureSessionContext();
+  const syncScope = context.scope;
+  const syncToken = context.expiresAt > Date.now() ? context.accessToken : null;
   if (!syncToken) {
     await refreshOfflineSyncState();
     return { synchronized: 0, pending: snapshot.pendingCount };
@@ -90,8 +112,8 @@ export async function syncPendingRequests() {
 
     for (const request of requests.filter((item) => item.status !== "error")) {
       if (
-        getCurrentUserCacheScope() !== syncScope ||
-        getAccessToken() !== syncToken
+        !isSessionContextCurrent(context) ||
+        context.expiresAt <= Date.now()
       ) {
         break;
       }
@@ -100,6 +122,7 @@ export async function syncPendingRequests() {
           url: request.url,
           method: request.method,
           data: request.data,
+          sessionContext: context,
           headers: {
             ...request.headers,
             Authorization: `Bearer ${syncToken}`,
@@ -111,6 +134,7 @@ export async function syncPendingRequests() {
       } catch (error) {
         const recoverable =
           error.offlineEligible ||
+          error.sessionChanged ||
           error.status === 401 ||
           error.status === 429 ||
           error.status >= 500;
@@ -125,7 +149,11 @@ export async function syncPendingRequests() {
     }
 
     const remaining = await refreshOfflineSyncState();
-    if (synchronized > 0 && typeof window !== "undefined") {
+    if (
+      synchronized > 0 &&
+      isSessionContextCurrent(context) &&
+      typeof window !== "undefined"
+    ) {
       window.dispatchEvent(
         new CustomEvent(OFFLINE_SYNC_COMPLETE_EVENT, {
           detail: { synchronized, pending: remaining.length },
@@ -142,6 +170,8 @@ export async function syncPendingRequests() {
 }
 
 export async function retryQueuedRequest(id) {
+  const requests = await getOfflineRequests();
+  if (!requests.some((request) => request.id === id)) return;
   await updateQueuedRequest(id, {
     status: "pending",
     lastError: null,
@@ -152,6 +182,8 @@ export async function retryQueuedRequest(id) {
 }
 
 export async function discardQueuedRequest(id) {
+  const requests = await getOfflineRequests();
+  if (!requests.some((request) => request.id === id)) return;
   await deleteQueuedRequest(id);
   return refreshOfflineSyncState();
 }
@@ -161,6 +193,10 @@ export function initializeOfflineSync() {
   initialized = true;
   window.addEventListener("online", syncPendingRequests);
   window.addEventListener(SESSION_READY_EVENT, syncPendingRequests);
+  window.addEventListener("storage", (event) => {
+    if (event.key === AUTH_STORAGE_KEY)
+      refreshOfflineSyncState().catch(() => {});
+  });
   refreshOfflineSyncState().catch(() => {});
   cleanupOfflineCache().catch(() => {});
 }

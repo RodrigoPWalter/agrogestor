@@ -1,15 +1,16 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { getUserCacheScope } from "./session";
 
 export function PrivateRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  return <Outlet />;
+  return <Outlet key={getUserCacheScope(user)} />;
 }
 
 export function PublicOnlyRoute() {

@@ -1,5 +1,8 @@
 import { httpClient } from "./httpClient";
-import { getCurrentUserCacheScope } from "../auth/session";
+import {
+  assertSessionContextCurrent,
+  captureSessionContext,
+} from "../auth/session";
 import {
   getCachedResponse,
   putCachedResponse,
@@ -9,17 +12,17 @@ import { queueMutation } from "../offline/offlineSync";
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const DEFAULT_PAGE_SIZE = 100;
 
-async function readCachedResponse(path) {
+async function readCachedResponse(scope, path) {
   try {
-    return await getCachedResponse(getCurrentUserCacheScope(), path);
+    return await getCachedResponse(scope, path);
   } catch {
     return null;
   }
 }
 
-async function cacheResponse(path, data) {
+async function cacheResponse(scope, path, data) {
   try {
-    await putCachedResponse(getCurrentUserCacheScope(), path, data);
+    await putCachedResponse(scope, path, data);
   } catch {
     // O cache melhora o uso no campo, mas nunca deve invalidar dados recebidos da API.
   }
@@ -37,16 +40,23 @@ function createRequestId() {
   return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
-async function request(path, options = {}) {
+async function request(path, options = {}, context = captureSessionContext()) {
+  assertSessionContextCurrent(context);
   const { body, data, offline = true, ...config } = options;
   const method = (config.method || "GET").toUpperCase();
-  const requestData = data ?? (body ? JSON.parse(body) : undefined);
+  const requestData =
+    data !== undefined
+      ? structuredClone(data)
+      : body
+        ? JSON.parse(body)
+        : undefined;
   const isMutation = method !== "GET" && method !== "HEAD";
   const requestId = isMutation && offline ? createRequestId() : null;
   const requestConfig = {
     url: path,
     ...config,
     data: requestData,
+    sessionContext: context,
   };
   if (requestId) {
     requestConfig.headers = {
@@ -56,13 +66,18 @@ async function request(path, options = {}) {
   }
 
   if (requestId && navigator.onLine === false) {
-    return queueMutation({
-      id: requestId,
-      url: path,
-      method,
-      data: requestData,
-      headers: config.headers,
-    });
+    const queued = await queueMutation(
+      {
+        id: requestId,
+        url: path,
+        method,
+        data: requestData,
+        headers: config.headers,
+      },
+      context,
+    );
+    assertSessionContextCurrent(context);
+    return queued;
   }
 
   let response;
@@ -70,28 +85,37 @@ async function request(path, options = {}) {
     response = await httpClient.request(requestConfig);
   } catch (error) {
     if (method === "GET" && error.offlineEligible) {
-      const cached = await readCachedResponse(path);
+      assertSessionContextCurrent(context);
+      const cached = await readCachedResponse(context.scope, path);
+      assertSessionContextCurrent(context);
       if (cached !== null) return cached;
       error.offlineCacheMiss = true;
       error.message =
         "Os dados desta tela ainda não foram salvos neste aparelho. Conecte-se uma vez para carregá-los.";
     }
     if (requestId && error.offlineEligible) {
-      return queueMutation({
-        id: requestId,
-        url: path,
-        method,
-        data: requestData,
-        headers: config.headers,
-      });
+      const queued = await queueMutation(
+        {
+          id: requestId,
+          url: path,
+          method,
+          data: requestData,
+          headers: config.headers,
+        },
+        context,
+      );
+      assertSessionContextCurrent(context);
+      return queued;
     }
+    assertSessionContextCurrent(context);
     throw error;
   }
 
   const responseData = response.status === 204 ? null : response.data;
   if (method === "GET") {
-    await cacheResponse(path, responseData);
+    await cacheResponse(context.scope, path, responseData);
   }
+  assertSessionContextCurrent(context);
   return responseData;
 }
 
@@ -109,12 +133,15 @@ function withQueryParams(path, params = {}) {
 }
 
 async function requestAllPages(path, params = {}) {
+  const context = captureSessionContext();
   const firstPage = await request(
     withQueryParams(path, {
       ...params,
       page: 0,
       size: DEFAULT_PAGE_SIZE,
     }),
+    {},
+    context,
   );
 
   if (!firstPage || firstPage.totalPages <= 1) {
@@ -130,9 +157,12 @@ async function requestAllPages(path, params = {}) {
           page: index + 1,
           size: DEFAULT_PAGE_SIZE,
         }),
+        {},
+        context,
       ),
   );
   const remainingPages = await Promise.all(remainingRequests);
+  assertSessionContextCurrent(context);
   const content = [
     ...firstPage.content,
     ...remainingPages.flatMap((page) => page.content),

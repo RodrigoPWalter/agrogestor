@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
 import { AUTH_EXPIRED_EVENT } from "../api/httpClient";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { readSession } from "./session";
+import { captureSessionContext, readSession, saveSession } from "./session";
+import { readFormDraft, writeFormDraft } from "../utils/formDraft";
 import {
   listQueuedRequests,
   putQueuedRequest,
@@ -68,10 +69,12 @@ describe("AuthProvider", () => {
     resetOfflineStorageForTests();
     api.login.mockReset();
     api.updateProfile.mockReset();
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it("autentica, mantém a sessão e permite sair", async () => {
@@ -114,6 +117,7 @@ describe("AuthProvider", () => {
         tokenType: "Bearer",
         expiresAt: Date.now() + 60_000,
         user: {
+          id: "profile-owner",
           nome: "Rodrigo",
           email: "antigo@agro.local",
           role: "ADMIN",
@@ -125,6 +129,7 @@ describe("AuthProvider", () => {
       tokenType: "Bearer",
       expiresIn: 3600,
       user: {
+        id: "profile-owner",
         nome: "Rodrigo Walter",
         email: "rodrigo@agro.local",
         role: "ADMIN",
@@ -150,7 +155,9 @@ describe("AuthProvider", () => {
     expect(readSession()?.accessToken).toBe("jwt-novo");
     expect(readSession()?.user.email).toBe("rodrigo@agro.local");
     expect(await listQueuedRequests("antigo@agro.local")).toEqual([]);
-    expect(await listQueuedRequests("rodrigo@agro.local")).toHaveLength(1);
+    expect(
+      await listQueuedRequests("user:profile-owner:property:none"),
+    ).toHaveLength(1);
   });
 
   it("encerra a sessão quando a API informa que o token expirou", () => {
@@ -205,5 +212,66 @@ describe("AuthProvider", () => {
 
     expect(screen.getByText("Visitante")).toBeInTheDocument();
     expect(readSession()).toBeNull();
+  });
+
+  it("entra no modo offline ao expirar o token e encerra no limite offline sem apagar o rascunho", async () => {
+    vi.useFakeTimers();
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 1000,
+      offlineAccessUntil: Date.now() + 5000,
+      user: { id: "a", nome: "Rodrigo", email: "a@local" },
+    });
+    writeFormDraft("diario", { activity: "Vistoria" });
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+    await act(async () => vi.advanceTimersByTime(1001));
+    expect(screen.getByText("Rodrigo")).toBeInTheDocument();
+    expect(readSession()?.offlineAccess).toBe(true);
+    await act(async () => vi.advanceTimersByTime(4000));
+    expect(screen.getByText("Visitante")).toBeInTheDocument();
+    expect(readSession()).toBeNull();
+    expect(readFormDraft("diario")).toBeNull();
+
+    vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
+    api.login.mockResolvedValue({
+      accessToken: "new-a",
+      expiresIn: 3600,
+      user: { id: "a", nome: "Rodrigo", email: "a@local" },
+    });
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Entrar" })),
+    );
+    expect(readFormDraft("diario")).toEqual({ activity: "Vistoria" });
+  });
+
+  it("não encerra a sessão nova por um aviso de expiração antigo", () => {
+    saveSession({
+      accessToken: "a",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "a", nome: "A", email: "a@local" },
+    });
+    const previous = captureSessionContext();
+    saveSession({
+      accessToken: "b",
+      expiresAt: Date.now() + 60_000,
+      user: { id: "b", nome: "B", email: "b@local" },
+    });
+    render(
+      <AuthProvider>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+    act(() =>
+      window.dispatchEvent(
+        new CustomEvent(AUTH_EXPIRED_EVENT, { detail: previous }),
+      ),
+    );
+    expect(screen.getByText("B")).toBeInTheDocument();
+    expect(readSession()?.accessToken).toBe("b");
   });
 });

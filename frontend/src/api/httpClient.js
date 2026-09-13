@@ -1,5 +1,9 @@
 import axios from "axios";
-import { getAccessToken } from "../auth/session";
+import {
+  assertSessionContextCurrent,
+  captureSessionContext,
+  isSessionContextCurrent,
+} from "../auth/session";
 import { markApiReachable, markApiUnavailable } from "./connectionStatus";
 
 export const AUTH_EXPIRED_EVENT = "agrogestor:auth-expired";
@@ -15,7 +19,10 @@ export const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use((config) => {
-  const token = getAccessToken();
+  const context = config.sessionContext ?? captureSessionContext();
+  config.sessionContext = context;
+  assertSessionContextCurrent(context);
+  const token = context.expiresAt > Date.now() ? context.accessToken : null;
   if (token && !config.headers.Authorization) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,6 +36,7 @@ httpClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.sessionChanged) return Promise.reject(error);
     const loginRequest = error.config?.url?.includes("/api/v1/auth/login");
     const readRequest = (error.config?.method || "GET").toUpperCase() === "GET";
     if (error.response) {
@@ -81,9 +89,16 @@ httpClient.interceptors.response.use(
     if (
       response?.status === 401 &&
       error.config?.headers?.Authorization &&
+      isSessionContextCurrent(error.config.sessionContext) &&
+      error.config.headers.Authorization ===
+        `Bearer ${error.config.sessionContext.accessToken}` &&
       !error.config?.url?.includes("/api/v1/auth/login")
     ) {
-      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+      window.dispatchEvent(
+        new CustomEvent(AUTH_EXPIRED_EVENT, {
+          detail: error.config.sessionContext,
+        }),
+      );
     }
 
     const responseError = new Error(

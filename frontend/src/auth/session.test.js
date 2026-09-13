@@ -7,6 +7,8 @@ import {
   clearSession,
   getCurrentUserCacheScope,
   getAccessToken,
+  getUserCacheScope,
+  getLegacyScopesForUser,
   readSession,
   saveSession,
 } from "./session";
@@ -25,7 +27,11 @@ describe("sessão de autenticação", () => {
 
     saveSession(session);
 
-    expect(readSession()).toEqual({ ...session, offlineAccess: false });
+    expect(readSession()).toEqual({
+      ...session,
+      storageVersion: 2,
+      offlineAccess: false,
+    });
     expect(getAccessToken()).toBe("token-valido");
   });
 
@@ -79,20 +85,24 @@ describe("sessão de autenticação", () => {
     expect(readSession()).toBeNull();
   });
 
-  it("separa chaves de cache pelo e-mail do usuário", () => {
+  it("separa chaves de cache por identidade estável e propriedade", () => {
     saveSession({
       accessToken: "token",
       expiresAt: Date.now() + 60_000,
-      user: { email: "Produtor@AgroGestor.local" },
+      user: {
+        id: "user-1",
+        propertyId: "farm-1",
+        email: "Produtor@AgroGestor.local",
+      },
     });
 
-    expect(getCurrentUserCacheScope()).toBe("produtor@agrogestor.local");
+    expect(getCurrentUserCacheScope()).toBe("user:user-1:property:farm-1");
     expect(buildUserCacheKey("dashboard:v1")).toBe(
-      `${APP_CACHE_KEY_PREFIX}produtor@agrogestor.local:dashboard:v1`,
+      `${APP_CACHE_KEY_PREFIX}user:user-1:property:farm-1:dashboard:v1`,
     );
   });
 
-  it("remove caches locais ao encerrar a sessão", () => {
+  it("preserva caches e rascunhos da conta ao encerrar a sessão", () => {
     localStorage.setItem(`${APP_CACHE_KEY_PREFIX}usuario:dashboard:v1`, "{}");
     localStorage.setItem("agrogestor:dashboard-cache:v1", "{}");
 
@@ -100,8 +110,8 @@ describe("sessão de autenticação", () => {
 
     expect(
       localStorage.getItem(`${APP_CACHE_KEY_PREFIX}usuario:dashboard:v1`),
-    ).toBeNull();
-    expect(localStorage.getItem("agrogestor:dashboard-cache:v1")).toBeNull();
+    ).toBe("{}");
+    expect(localStorage.getItem("agrogestor:dashboard-cache:v1")).toBe("{}");
   });
 
   it("limpa apenas dados locais do AgroGestor", () => {
@@ -114,5 +124,51 @@ describe("sessão de autenticação", () => {
       localStorage.getItem(`${APP_CACHE_KEY_PREFIX}usuario:dashboard:v1`),
     ).toBeNull();
     expect(localStorage.getItem("preferencia-do-navegador")).toBe("manter");
+  });
+
+  it("não confunde mudança de email com troca de identidade ou propriedade", () => {
+    const user = { id: "one", propertyId: "farm", email: "old@local" };
+    expect(getUserCacheScope({ ...user, email: "new@local" })).toBe(
+      getUserCacheScope(user),
+    );
+    expect(getUserCacheScope({ ...user, id: "two" })).not.toBe(
+      getUserCacheScope(user),
+    );
+    expect(getUserCacheScope({ ...user, propertyId: "other" })).not.toBe(
+      getUserCacheScope(user),
+    );
+  });
+
+  it("só associa o escopo antigo ao ID observado antes da atualização", () => {
+    const user = { id: "one", propertyId: "farm", email: "old@local" };
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ accessToken: "old", expiresAt: Date.now() - 1, user }),
+    );
+    readSession();
+    expect(getLegacyScopesForUser(user)).toEqual(["old@local"]);
+    saveSession({
+      accessToken: "new",
+      expiresAt: Date.now() + 1000,
+      user: { ...user, id: "two" },
+    });
+    expect(getLegacyScopesForUser({ ...user, id: "two" })).toEqual([]);
+  });
+
+  it("isola a associação legada quando o mesmo email tem dois IDs observados", () => {
+    const user = { id: "one", email: "shared@local" };
+    for (const id of ["one", "two"]) {
+      localStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({
+          accessToken: "old",
+          expiresAt: Date.now() + 1000,
+          user: { ...user, id },
+        }),
+      );
+      readSession();
+    }
+    expect(getLegacyScopesForUser(user)).toEqual([]);
+    expect(getLegacyScopesForUser({ ...user, id: "two" })).toEqual([]);
   });
 });
