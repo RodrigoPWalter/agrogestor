@@ -79,6 +79,39 @@ class PropertyIsolationRepositoryTest {
         });
     }
 
+    @Test
+    void dashboardCostUsesOnlyActivePlantingsAndTracksReactivation() {
+        Property owner = propertyRepository.save(new Property("Propriedade"));
+        Property other = propertyRepository.save(new Property("Outra propriedade"));
+        Planting active = plantingRepository.save(planting(owner, "Soja"));
+        Planting closed = planting(owner, "Trigo");
+        closed.finish();
+        plantingRepository.save(closed);
+        Planting foreign = plantingRepository.save(planting(other, "Milho"));
+        expenseRepository.save(expense(owner, active, "Adubo", "2000"));
+        expenseRepository.save(expense(owner, closed, "Safra anterior", "10000"));
+        expenseRepository.save(expense(other, foreign, "Outra conta", "9000"));
+        expenseRepository.save(expense(owner, null, "Despesa geral", "500"));
+
+        assertThat(expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(
+                owner.getId(), PlantingStatus.ACTIVE)).isEqualByComparingTo("2000");
+        assertThat(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(
+                owner.getId(), PlantingStatus.ACTIVE)).isEqualByComparingTo("10");
+
+        closed.reactivate();
+        plantingRepository.flush();
+        assertThat(expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(
+                owner.getId(), PlantingStatus.ACTIVE)).isEqualByComparingTo("12000");
+        assertThat(plantingRepository.sumPlannedAreaByPropertyIdAndStatus(
+                owner.getId(), PlantingStatus.ACTIVE)).isEqualByComparingTo("20");
+
+        active.finish();
+        closed.finish();
+        plantingRepository.flush();
+        assertThat(expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(
+                owner.getId(), PlantingStatus.ACTIVE)).isEqualByComparingTo("0");
+    }
+
     private Expense expense(
             Property property,
             Planting planting,

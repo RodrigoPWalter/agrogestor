@@ -66,7 +66,7 @@ public class DashboardService {
                 expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
                         propertyId, ExpenseOrigin.STOCK_ALLOCATION));
         BigDecimal plantingExpenses = valueOrZero(
-                expenseRepository.sumPlantingAmountsByPropertyId(propertyId));
+                expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(propertyId, activeStatus));
 
         List<Planting> recentPlantings = plantingRepository
                 .findByPropertyIdAndStatusOrderByStartDateDescCropAsc(

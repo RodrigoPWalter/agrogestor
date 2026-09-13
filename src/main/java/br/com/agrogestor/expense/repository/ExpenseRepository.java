@@ -52,9 +52,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             from Expense expense
             where expense.property.id = :propertyId
               and expense.planting is not null
+              and expense.planting.status = :status
             """)
-    BigDecimal sumPlantingAmountsByPropertyId(
-            @Param("propertyId") UUID propertyId
+    BigDecimal sumPlantingAmountsByPropertyIdAndStatus(
+            @Param("propertyId") UUID propertyId,
+            @Param("status") PlantingStatus status
     );
 
     long countByPropertyIdAndOriginNot(

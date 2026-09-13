@@ -78,7 +78,7 @@ class DashboardServiceTest {
                 .thenReturn(new BigDecimal("30"));
         when(expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
                 PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(new BigDecimal("17000"));
-        when(expenseRepository.sumPlantingAmountsByPropertyId(PROPERTY_ID))
+        when(expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(new BigDecimal("16400"));
         when(plantingRepository.countByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE)).thenReturn(2L);
         when(expenseRepository.countByPropertyIdAndOriginNot(
@@ -135,7 +135,7 @@ class DashboardServiceTest {
                 .thenReturn(BigDecimal.ZERO);
         when(expenseRepository.sumAllAmountsByPropertyIdAndOriginNot(
                 PROPERTY_ID, ExpenseOrigin.STOCK_ALLOCATION)).thenReturn(new BigDecimal("150"));
-        when(expenseRepository.sumPlantingAmountsByPropertyId(PROPERTY_ID))
+        when(expenseRepository.sumPlantingAmountsByPropertyIdAndStatus(PROPERTY_ID, PlantingStatus.ACTIVE))
                 .thenReturn(BigDecimal.ZERO);
         when(plantingRepository.findByPropertyIdAndStatusOrderByStartDateDescCropAsc(
                 any(UUID.class),
