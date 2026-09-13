@@ -1,129 +1,136 @@
 package br.com.agrogestor.shared.idempotency;
 
-import br.com.agrogestor.auth.security.JwtTokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.UUID;
 
 @Component
 public class IdempotencyFilter extends OncePerRequestFilter {
 
     public static final String IDEMPOTENCY_HEADER = "X-Idempotency-Key";
     private static final String REPLAY_HEADER = "X-Idempotent-Replay";
-    private static final String BEARER_PREFIX = "Bearer ";
-    private static final Set<String> MUTATING_METHODS = Set.of(
-            "POST", "PUT", "PATCH", "DELETE"
-    );
-    private static final int LOCK_STRIPES = 64;
-    private static final Logger LOGGER = LoggerFactory.getLogger(IdempotencyFilter.class);
+    private static final Set<String> MUTATING_METHODS = Set.of("POST", "PUT", "PATCH", "DELETE");
 
     private final IdempotencyService service;
-    private final JwtTokenService tokenService;
-    private final Lock[] requestLocks = new Lock[LOCK_STRIPES];
+    private final TransactionTemplate transaction;
 
-    public IdempotencyFilter(
-            IdempotencyService service,
-            JwtTokenService tokenService
-    ) {
+    public IdempotencyFilter(IdempotencyService service, PlatformTransactionManager transactionManager) {
         this.service = service;
-        this.tokenService = tokenService;
-        for (int index = 0; index < requestLocks.length; index++) {
-            requestLocks[index] = new ReentrantLock();
-        }
+        this.transaction = new TransactionTemplate(transactionManager);
+        // Após aguardar o bloqueio, a consulta precisa enxergar o registro já confirmado.
+        this.transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestKey = request.getHeader(IDEMPOTENCY_HEADER);
         return !MUTATING_METHODS.contains(request.getMethod())
-                || requestKey == null
-                || requestKey.isBlank()
+                || requestKey == null || requestKey.isBlank()
                 || request.getRequestURI().equals("/api/v1/auth/login");
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
-        String username = authenticatedUsername(request);
-        String requestKey = request.getHeader(IDEMPOTENCY_HEADER);
-        if (username == null || requestKey.length() > 100) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        UUID userId = authenticatedUserId();
+        if (userId == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        Lock requestLock = lockFor(username, requestKey);
-        requestLock.lock();
-        try {
-            var previous = service.find(username, requestKey);
-            if (previous.isPresent()) {
-                replay(previous.get(), request, response);
-                return;
-            }
-
-            var cachedResponse = new ContentCachingResponseWrapper(response);
-            try {
-                filterChain.doFilter(request, cachedResponse);
-                if (cachedResponse.getStatus() >= 200 && cachedResponse.getStatus() < 300) {
-                    remember(username, requestKey, request, cachedResponse);
-                }
-            } finally {
-                cachedResponse.copyBodyToResponse();
-            }
-        } finally {
-            requestLock.unlock();
-        }
-    }
-
-    private Lock lockFor(String username, String requestKey) {
-        int index = Math.floorMod((username + '\0' + requestKey).hashCode(), LOCK_STRIPES);
-        return requestLocks[index];
-    }
-
-    private String authenticatedUsername(HttpServletRequest request) {
-        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
-            return null;
-        }
-        try {
-            return tokenService.decode(
-                    authorization.substring(BEARER_PREFIX.length())
-            ).getSubject();
-        } catch (JwtException exception) {
-            return null;
-        }
-    }
-
-    private void replay(
-            IdempotencyRecord record,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws IOException {
-        if (!record.getRequestMethod().equals(request.getMethod())
-                || !record.getRequestPath().equals(request.getRequestURI())) {
-            response.sendError(
-                    HttpServletResponse.SC_CONFLICT,
-                    "A identificação da operação já foi utilizada em outro lançamento"
-            );
+        String requestKey = request.getHeader(IDEMPOTENCY_HEADER);
+        if (requestKey.length() > 100) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Identificação da operação muito longa");
             return;
         }
 
+        var cachedResponse = new BufferedResponse(response);
+        try {
+            transaction.executeWithoutResult(status -> {
+                // O bloqueio no banco também protege requisições em instâncias diferentes.
+                service.lockUser(userId);
+                var previous = service.find(userId.toString(), requestKey);
+                try {
+                    if (previous.isPresent()) {
+                        replay(previous.get(), request, cachedResponse);
+                        return;
+                    }
+                    if (service.hasLegacyReceipt(requestKey)) {
+                        cachedResponse.setStatus(HttpServletResponse.SC_CONFLICT);
+                        cachedResponse.setContentType("application/json");
+                        cachedResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
+                        cachedResponse.getWriter().write(
+                                "{\"message\":\"Este lançamento antigo precisa de conferência no histórico antes de reenviar. Nenhum dado foi alterado.\"}");
+                        return;
+                    }
+                    filterChain.doFilter(request, cachedResponse);
+                    if (cachedResponse.getStatus() >= 200 && cachedResponse.getStatus() < 300) {
+                        String body = new String(cachedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
+                        service.remember(new IdempotencyRecord(
+                                userId.toString(), requestKey, request.getMethod(), request.getRequestURI(),
+                                cachedResponse.getStatus(), cachedResponse.getContentType(),
+                                body.isEmpty() ? null : body));
+                    } else {
+                        // O controller pode ter tratado a exceção e retornado uma resposta de erro.
+                        status.setRollbackOnly();
+                    }
+                } catch (ServletException | IOException exception) {
+                    throw new FilterChainFailure(exception);
+                }
+            });
+        } catch (FilterChainFailure failure) {
+            discardUncommittedResponse(response);
+            if (failure.getCause() instanceof IOException exception) {
+                throw exception;
+            }
+            throw (ServletException) failure.getCause();
+        } catch (RuntimeException | Error failure) {
+            discardUncommittedResponse(response);
+            throw failure;
+        }
+        // A resposta de sucesso só é liberada após confirmar a operação e seu registro.
+        cachedResponse.copyBodyToResponse();
+    }
+
+    private UUID authenticatedUserId() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(authentication.getName());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
+    }
+
+    private void discardUncommittedResponse(HttpServletResponse response) {
+        response.resetBuffer();
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.setHeader("Location", null);
+        response.setHeader(REPLAY_HEADER, null);
+    }
+
+    private void replay(IdempotencyRecord record, HttpServletRequest request,
+                        HttpServletResponse response) throws IOException {
+        if (!record.getRequestMethod().equals(request.getMethod())
+                || !record.getRequestPath().equals(request.getRequestURI())) {
+            response.sendError(HttpServletResponse.SC_CONFLICT,
+                    "A identificação da operação já foi utilizada em outro lançamento");
+            return;
+        }
         response.setStatus(record.getResponseStatus());
         response.setHeader(REPLAY_HEADER, "true");
         if (record.getResponseContentType() != null) {
@@ -134,25 +141,34 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         }
     }
 
-    private void remember(
-            String username,
-            String requestKey,
-            HttpServletRequest request,
-            ContentCachingResponseWrapper response
-    ) {
-        String body = new String(response.getContentAsByteArray(), StandardCharsets.UTF_8);
-        try {
-            service.remember(new IdempotencyRecord(
-                    username,
-                    requestKey,
-                    request.getMethod(),
-                    request.getRequestURI(),
-                    response.getStatus(),
-                    response.getContentType(),
-                    body.isEmpty() ? null : body
-            ));
-        } catch (RuntimeException exception) {
-            LOGGER.warn("Não foi possível registrar a operação idempotente", exception);
+    private static final class FilterChainFailure extends RuntimeException {
+        private FilterChainFailure(Exception cause) {
+            super(cause);
+        }
+    }
+
+    /** Impede sendError/sendRedirect de liberar a resposta antes do fim da transação. */
+    private static final class BufferedResponse extends ContentCachingResponseWrapper {
+        private BufferedResponse(HttpServletResponse response) {
+            super(response);
+        }
+
+        @Override
+        public void sendError(int status) {
+            resetBuffer();
+            setStatus(status);
+        }
+
+        @Override
+        public void sendError(int status, String message) {
+            sendError(status);
+        }
+
+        @Override
+        public void sendRedirect(String location) {
+            resetBuffer();
+            setStatus(HttpServletResponse.SC_FOUND);
+            setHeader("Location", location);
         }
     }
 }

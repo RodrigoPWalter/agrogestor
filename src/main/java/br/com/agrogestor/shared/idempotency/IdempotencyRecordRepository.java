@@ -17,6 +17,8 @@ public interface IdempotencyRecordRepository
             String requestKey
     );
 
+    boolean existsByRequestKeyAndUsernameContaining(String requestKey, String fragment);
+
     @Modifying
     @Query("delete from IdempotencyRecord record where record.createdAt < :cutoff")
     int deleteCreatedBefore(@Param("cutoff") OffsetDateTime cutoff);

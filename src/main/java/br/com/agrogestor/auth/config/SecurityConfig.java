@@ -9,6 +9,7 @@ import br.com.agrogestor.shared.idempotency.IdempotencyFilter;
 import br.com.agrogestor.shared.observability.RequestCorrelationFilter;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -42,6 +43,14 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Bean
+    FilterRegistrationBean<IdempotencyFilter> idempotencyFilterRegistration(IdempotencyFilter filter) {
+        var registration = new FilterRegistrationBean<>(filter);
+        // Run only inside the security chain, after authenticated identity is established.
+        registration.setEnabled(false);
+        return registration;
+    }
 
     @Bean
     SecurityFilterChain securityFilterChain(

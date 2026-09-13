@@ -1,5 +1,6 @@
 package br.com.agrogestor.shared.idempotency;
 
+import br.com.agrogestor.auth.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -16,7 +17,7 @@ class IdempotencyServiceTest {
     void shouldDeleteRecordsOlderThanRetentionPeriod() {
         IdempotencyRecordRepository repository = mock(IdempotencyRecordRepository.class);
         Clock clock = Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC);
-        IdempotencyService service = new IdempotencyService(repository, 90, clock);
+        IdempotencyService service = new IdempotencyService(repository, mock(UsuarioRepository.class), 90, clock);
 
         service.discardExpiredRecords();
 
@@ -28,7 +29,7 @@ class IdempotencyServiceTest {
     void shouldKeepAtLeastOneDayOfProtection() {
         IdempotencyRecordRepository repository = mock(IdempotencyRecordRepository.class);
         Clock clock = Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC);
-        IdempotencyService service = new IdempotencyService(repository, 0, clock);
+        IdempotencyService service = new IdempotencyService(repository, mock(UsuarioRepository.class), 0, clock);
 
         service.discardExpiredRecords();
 

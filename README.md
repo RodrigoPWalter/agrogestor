@@ -224,6 +224,17 @@ Backend:
 .\mvnw.cmd test
 ```
 
+Para incluir os testes de banco no Windows com PostgreSQL 17 instalado:
+
+```powershell
+.\scripts\test-postgres-local.ps1
+```
+
+O script cria um cluster separado em `work/`, acessível apenas neste computador,
+executa as migrations e os testes, e encerra esse cluster ao terminar. Não utiliza
+o banco de desenvolvimento nem o de produção. Se necessário, informe outro
+diretório de instalação com `-PostgresBin`. Os logs ficam na pasta da execução.
+
 Frontend:
 
 ```powershell
