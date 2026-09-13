@@ -16,6 +16,11 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 **Decisão:** o frontend mantém o token JWT no armazenamento local do navegador.
 
+A autenticação e a resolução da propriedade usam o UUID imutável da conta,
+não o e-mail. Tokens anteriores continuam aceitos quando contêm um `uid`
+válido, sem herdar a identidade de outra pessoa que reutilize o endereço.
+Contas inativas não são autenticadas.
+
 **Motivo:** simplifica o PWA e evita uma configuração mais complexa de cookies, domínio, SameSite e HTTPS entre frontend e API durante o MVP.
 
 **Trade-off:** `localStorage` é mais exposto caso algum XSS seja introduzido. Por isso o app deve evitar renderização de HTML externo, manter dependências atualizadas e evoluir para uma política de segurança mais rígida.
@@ -56,6 +61,19 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 **Decisão:** o AgroGestor guarda no IndexedDB as respostas já consultadas e as alterações feitas sem conexão. A fila volta a enviar os itens quando a API fica disponível.
 
+Cache, rascunhos e fila usam os IDs do usuário e da propriedade. Cada requisição
+captura a sessão de origem; uma troca de conta não transfere sua resposta nem
+seu lançamento à nova conta. A migração do armazenamento antigo por e-mail
+exige um vínculo de identidade já existente neste aparelho. Dados ambíguos
+permanecem guardados e isolados, sem envio automático.
+
+No backend, a alteração e seu registro de idempotência são confirmados na mesma
+transação. Um bloqueio da linha do usuário serializa operações identificadas da
+mesma conta, inclusive entre instâncias. Isso reduz a concorrência por usuário,
+mas evita duplicações em reenvios. A migração V32 só reassocia registros antigos
+quando as datas da conta permitem comprovar o vínculo; uma chave antiga sem
+associação segura retorna 409 e exige conferência do histórico.
+
 **Motivo:** o aplicativo precisa continuar útil no campo, onde a conexão pode cair durante um lançamento. Cada operação recebe uma chave de idempotência para que uma repetição não crie o mesmo registro duas vezes.
 
 **Trade-off:** apenas dados abertos anteriormente ficam disponíveis para leitura offline. Limpar os dados do navegador antes da sincronização remove itens que ainda existam somente no aparelho. As chaves confirmadas ficam no servidor por 90 dias, prazo superior ao acesso local máximo de 30 dias.
@@ -80,11 +98,19 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 
 **Trade-off:** os rascunhos ainda ficam no `localStorage` e não são sincronizados; a fila de operações usa IndexedDB. Nenhum dos dois armazena senhas, ambos são separados pelo usuário autenticado e os rascunhos expiram em sete dias.
 
+Expirar a sessão ou sair da conta não apaga esses rascunhos. Eles voltam a ser
+acessíveis ao entrar na mesma conta. O prazo offline é reavaliado no vencimento
+do token; ele não autoriza enviar requisições autenticadas com token expirado.
+
 **Evolução prevista:** manter os rascunhos apenas como proteção do preenchimento em andamento e ampliar testes de sincronização conforme novos tipos de lançamento forem adicionados.
 
 ## 9. Compra como desembolso e uso como custo da safra
 
 **Decisão:** a compra de um produto continua sendo um gasto da propriedade. Quando parte desse produto é usada em um plantio, o sistema transfere o custo médio proporcional para a safra sem registrar um novo pagamento.
+
+Editar uma observação preserva o custo original e o lançamento financeiro.
+Se a quantidade usada aumentar, somente a diferença recebe o custo médio atual;
+se diminuir, o estoque recebe de volta o custo histórico proporcional.
 
 **Motivo:** o dinheiro sai na data da compra, mas o custo produtivo pertence à cultura que consumiu o insumo. Separar essas duas visões evita tanto perder o custo do plantio quanto contar a mesma compra duas vezes.
 
@@ -95,6 +121,10 @@ Este arquivo registra escolhas importantes do AgroGestor, incluindo o motivo de 
 ## 10. Estoque da produção derivado das colheitas
 
 **Decisão:** o saldo comercializável não é armazenado diretamente. A aplicação converte a produção registrada nas etapas de colheita para sacas de 60 kg e subtrai as vendas do plantio.
+
+Colheitas antigas registradas diretamente no Diário também entram nesse saldo.
+Sua edição, mudança de plantio/tipo ou exclusão deve respeitar a produção já
+vendida, com o mesmo bloqueio e validação usados pelas etapas modernas.
 
 **Motivo:** colheita e venda são os fatos que explicam o saldo. Manter uma terceira quantidade editável criaria risco de divergência e exigiria conciliações manuais.
 
