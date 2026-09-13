@@ -36,6 +36,8 @@ import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.service.CurrentPropertyService;
 import br.com.agrogestor.production.dto.ProductionSaleResponse;
 import br.com.agrogestor.production.service.ProductionService;
+import br.com.agrogestor.production.service.ProductionBalanceService;
+import br.com.agrogestor.production.repository.ProductionSaleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -73,6 +75,7 @@ class FieldDiaryServiceTest {
     private ExpenseRepository expenseRepository;
     private CurrentPropertyService currentProperty;
     private ProductionService productionService;
+    private ProductionSaleRepository saleRepository;
     private FieldDiaryService service;
 
     @BeforeEach
@@ -90,6 +93,7 @@ class FieldDiaryServiceTest {
         expenseRepository = mock(ExpenseRepository.class);
         currentProperty = mock(CurrentPropertyService.class);
         productionService = mock(ProductionService.class);
+        saleRepository = mock(ProductionSaleRepository.class);
         when(currentProperty.id()).thenReturn(PROPERTY_ID);
         when(currentProperty.get()).thenReturn(property);
         FieldDiaryStockService stockService = new FieldDiaryStockService(
@@ -110,7 +114,8 @@ class FieldDiaryServiceTest {
                 expenseRepository,
                 currentProperty,
                 new FieldDiaryResponseMapper(diaryProductRepository),
-                productionService
+                productionService,
+                new ProductionBalanceService(harvestStepRepository, diaryRepository, saleRepository)
         );
     }
 
@@ -193,7 +198,7 @@ class FieldDiaryServiceTest {
                 property, planting(), LocalDate.now(), ActivityType.APPLICATION,
                 "Aplicação de adubo", null, null, null);
         ReflectionTestUtils.setField(entry, "id", entryId);
-        when(diaryRepository.findByIdAndPropertyId(entryId, PROPERTY_ID)).thenReturn(Optional.of(entry));
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(entryId, PROPERTY_ID)).thenReturn(Optional.of(entry));
         when(diaryProductRepository.findByEntryId(entryId))
                 .thenReturn(List.of(new FieldDiaryProduct(
                         entry, product, new BigDecimal("3.000"))));
@@ -496,7 +501,7 @@ class FieldDiaryServiceTest {
                 null
         );
         step.linkDiaryEntry(entryId);
-        when(diaryRepository.findByIdAndPropertyId(entryId, PROPERTY_ID))
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(entryId, PROPERTY_ID))
                 .thenReturn(Optional.of(entry));
         when(plantingStepRepository.findByDiaryEntryId(entryId))
                 .thenReturn(Optional.of(step));
@@ -565,6 +570,185 @@ class FieldDiaryServiceTest {
         assertThat(entry.getValue().getAmount()).isEqualByComparingTo("3625.00");
         assertThat(entry.getValue().getSupplier()).isEqualTo("Cooperativa");
     }
+
+    @Test
+    void shouldPreserveHistoricStockCostAndExpenseOnObservationEdit() {
+        UsageFixture fixture = usageFixture();
+
+        service.update(fixture.entry().getId(), usageRequest(fixture, "10", "Texto atualizado"));
+
+        assertThat(fixture.product().getQuantity()).isEqualByComparingTo("190");
+        assertThat(fixture.product().getInventoryValue()).isEqualByComparingTo("2900");
+        assertThat(fixture.line().getTotalCost()).isEqualByComparingTo("100");
+        assertThat(fixture.expense().getAmount()).isEqualByComparingTo("100");
+        assertThat(fixture.expense().getObservations()).isEqualTo("Texto atualizado");
+        assertThat(fixture.entry().getExpenseId()).isEqualTo(fixture.expense().getId());
+        verify(movementRepository, never()).save(any());
+        verify(diaryProductRepository, never()).delete(any(FieldDiaryProduct.class));
+        verify(diaryProductRepository, never()).save(any());
+        verify(expenseRepository, never()).deleteById(any());
+        verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldValueOnlyExtraUsageAtCurrentAverage() {
+        UsageFixture fixture = usageFixture();
+        service.update(fixture.entry().getId(), usageRequest(fixture, "12", "Mais produto"));
+        assertThat(fixture.product().getQuantity()).isEqualByComparingTo("188");
+        assertThat(fixture.product().getInventoryValue()).isEqualByComparingTo("2869.47");
+        assertThat(fixture.line().getTotalCost()).isEqualByComparingTo("130.53");
+        assertThat(fixture.expense().getAmount()).isEqualByComparingTo("130.53");
+        ArgumentCaptor<InventoryMovement> movement = ArgumentCaptor.forClass(InventoryMovement.class);
+        verify(movementRepository).save(movement.capture());
+        assertThat(movement.getValue().getQuantity()).isEqualByComparingTo("2");
+        assertThat(movement.getValue().getTotalCost()).isEqualByComparingTo("30.53");
+    }
+
+    @Test
+    void shouldReturnRecordedCostWhenReducingUsage() {
+        UsageFixture fixture = usageFixture();
+        service.update(fixture.entry().getId(), usageRequest(fixture, "8", "Menos produto"));
+        assertThat(fixture.product().getQuantity()).isEqualByComparingTo("192");
+        assertThat(fixture.product().getInventoryValue()).isEqualByComparingTo("2920");
+        assertThat(fixture.line().getTotalCost()).isEqualByComparingTo("80");
+        assertThat(fixture.expense().getAmount()).isEqualByComparingTo("80");
+        ArgumentCaptor<InventoryMovement> movement = ArgumentCaptor.forClass(InventoryMovement.class);
+        verify(movementRepository).save(movement.capture());
+        assertThat(movement.getValue().getMovementType()).isEqualTo(MovementType.ENTRY);
+        assertThat(movement.getValue().getTotalCost()).isEqualByComparingTo("20");
+    }
+
+    @Test
+    void shouldLeaveOtherProductLinesUntouchedWhenQuantityChanges() {
+        UsageFixture fixture = usageFixture();
+        InventoryProduct other = product(UUID.randomUUID(), "50");
+        FieldDiaryProduct otherLine = new FieldDiaryProduct(fixture.entry(), other,
+                new BigDecimal("5"), MovementType.EXIT, new BigDecimal("7"), new BigDecimal("35"));
+        when(diaryProductRepository.findByEntryId(fixture.entry().getId()))
+                .thenReturn(List.of(fixture.line(), otherLine));
+        FieldDiaryRequest request = new FieldDiaryRequest(fixture.entry().getPlanting().getId(),
+                LocalDate.now(), ActivityType.PRODUCT_USE, null, null, null,
+                List.of(new FieldDiaryProductRequest(fixture.product().getId(), new BigDecimal("12")),
+                        new FieldDiaryProductRequest(other.getId(), new BigDecimal("5"))), "Alteração");
+        service.update(fixture.entry().getId(), request);
+        assertThat(otherLine.getTotalCost()).isEqualByComparingTo("35");
+        assertThat(otherLine.getQuantity()).isEqualByComparingTo("5");
+        assertThat(fixture.expense().getAmount()).isEqualByComparingTo("165.53");
+        verify(inventoryRepository, never()).findByIdAndPropertyIdForUpdate(other.getId(), PROPERTY_ID);
+        verify(diaryProductRepository, never()).delete(otherLine);
+    }
+
+    @Test
+    void shouldRejectAmbiguousProductRepresentationsWithoutMovingStock() {
+        UsageFixture fixture = usageFixture();
+        FieldDiaryRequest request = new FieldDiaryRequest(fixture.entry().getPlanting().getId(),
+                LocalDate.now(), ActivityType.PRODUCT_USE, null, null, null,
+                List.of(new FieldDiaryProductRequest(fixture.product().getId(), BigDecimal.TEN)),
+                "Texto", null, fixture.product().getId(), null, null, BigDecimal.TEN,
+                null, null, null, null, null, null);
+        assertThatThrownBy(() -> service.update(fixture.entry().getId(), request))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("apenas um formato");
+        assertThat(fixture.product().getQuantity()).isEqualByComparingTo("190");
+        verify(movementRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectDeletingLegacyHarvestAlreadySoldAndPreserveData() {
+        FieldDiaryEntry entry = legacyHarvest();
+        assertThatThrownBy(() -> service.delete(entry.getId()))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("80 sacas");
+        assertThat(entry.getHarvestQuantity()).isEqualByComparingTo("100");
+        verify(plantingRepository).findByIdAndPropertyIdForUpdate(entry.getPlanting().getId(), PROPERTY_ID);
+        verify(diaryRepository, never()).delete(any());
+        verify(diaryProductRepository, never()).deleteByEntryId(any());
+    }
+
+    @Test
+    void shouldRejectReducingLegacyHarvestBelowSalesAndPreserveData() {
+        FieldDiaryEntry entry = legacyHarvest();
+        assertThatThrownBy(() -> service.update(entry.getId(), harvestRequest(entry.getPlanting().getId(), "70")))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("80 sacas");
+        assertThat(entry.getHarvestQuantity()).isEqualByComparingTo("100");
+        assertThat(entry.getObservations()).isEqualTo("Original");
+    }
+
+    @Test
+    void shouldRejectChangingLegacyHarvestTypeOrPlantingIfAlreadySold() {
+        FieldDiaryEntry entry = legacyHarvest();
+        assertThatThrownBy(() -> service.update(entry.getId(), request(entry.getPlanting().getId(), "Outro")))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("80 sacas");
+        Planting destination = planting();
+        UUID destinationId = UUID.randomUUID();
+        ReflectionTestUtils.setField(destination, "id", destinationId);
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(destinationId, PROPERTY_ID))
+                .thenReturn(Optional.of(destination));
+        assertThatThrownBy(() -> service.update(entry.getId(), harvestRequest(destinationId, "100")))
+                .isInstanceOf(BusinessRuleException.class).hasMessageContaining("80 sacas");
+        assertThat(entry.getActivityType()).isEqualTo(ActivityType.HARVEST);
+        assertThat(entry.getPlanting()).isNotSameAs(destination);
+    }
+
+    @Test
+    void shouldAllowLegacyHarvestEditAtSoldQuantity() {
+        FieldDiaryEntry entry = legacyHarvest();
+        service.update(entry.getId(), harvestRequest(entry.getPlanting().getId(), "80"));
+        assertThat(entry.getHarvestQuantity()).isEqualByComparingTo("80");
+        assertThat(entry.getObservations()).isEqualTo("Editada");
+    }
+
+    private FieldDiaryEntry legacyHarvest() {
+        Planting planting = planting();
+        UUID plantingId = UUID.randomUUID();
+        ReflectionTestUtils.setField(planting, "id", plantingId);
+        FieldDiaryEntry entry = new FieldDiaryEntry(property, planting, LocalDate.now(),
+                ActivityType.HARVEST, "Colheita", null, null, "Original");
+        ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+        entry.updateDetails(null, null, null, null, new BigDecimal("100"), "sacas", null);
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(entry.getId(), PROPERTY_ID)).thenReturn(Optional.of(entry));
+        when(plantingRepository.findByIdAndPropertyIdForUpdate(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting));
+        when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting));
+        when(diaryRepository.findByPlantingIdAndActivityType(plantingId, ActivityType.HARVEST)).thenReturn(List.of(entry));
+        when(saleRepository.sumQuantityByPlantingId(plantingId)).thenReturn(new BigDecimal("80"));
+        return entry;
+    }
+
+    private FieldDiaryRequest harvestRequest(UUID plantingId, String quantity) {
+        return new FieldDiaryRequest(plantingId, LocalDate.now(), ActivityType.HARVEST,
+                null, null, null, null, "Editada", null, null, null, null, null,
+                null, null, null, null, new BigDecimal(quantity), "sacas");
+    }
+
+    private UsageFixture usageFixture() {
+        Planting planting = planting();
+        ReflectionTestUtils.setField(planting, "id", UUID.randomUUID());
+        InventoryProduct product = product(UUID.randomUUID(), "0");
+        product.applyEntry(new BigDecimal("100"), new BigDecimal("1000"));
+        var cost = product.applyExit(BigDecimal.TEN);
+        product.applyEntry(new BigDecimal("100"), new BigDecimal("2000"));
+        FieldDiaryEntry entry = new FieldDiaryEntry(property, planting, LocalDate.now(),
+                ActivityType.PRODUCT_USE, "Uso", null, null, "Original");
+        ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
+        FieldDiaryProduct line = new FieldDiaryProduct(entry, product, BigDecimal.TEN,
+                MovementType.EXIT, cost.unitCost(), cost.totalCost());
+        Expense expense = new Expense(property, planting, "Uso", ExpenseCategory.FERTILIZERS,
+                cost.totalCost(), LocalDate.now(), "Original", ExpenseOrigin.STOCK_ALLOCATION);
+        ReflectionTestUtils.setField(expense, "id", UUID.randomUUID());
+        entry.linkExpense(expense.getId());
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(entry.getId(), PROPERTY_ID)).thenReturn(Optional.of(entry));
+        when(plantingRepository.findByIdAndPropertyId(planting.getId(), PROPERTY_ID)).thenReturn(Optional.of(planting));
+        when(diaryProductRepository.findByEntryId(entry.getId())).thenReturn(List.of(line));
+        when(inventoryRepository.findByIdAndPropertyIdForUpdate(product.getId(), PROPERTY_ID)).thenReturn(Optional.of(product));
+        when(expenseRepository.findById(expense.getId())).thenReturn(Optional.of(expense));
+        return new UsageFixture(entry, product, line, expense);
+    }
+
+    private FieldDiaryRequest usageRequest(UsageFixture fixture, String quantity, String note) {
+        return new FieldDiaryRequest(fixture.entry().getPlanting().getId(), LocalDate.now(), ActivityType.PRODUCT_USE,
+                null, null, null, null, note, null, fixture.product().getId(), null, null,
+                new BigDecimal(quantity), null, null, null, null, null, null);
+    }
+
+    private record UsageFixture(FieldDiaryEntry entry, InventoryProduct product, FieldDiaryProduct line, Expense expense) {}
 
     private FieldDiaryRequest request(UUID plantingId, String activity) {
         return new FieldDiaryRequest(

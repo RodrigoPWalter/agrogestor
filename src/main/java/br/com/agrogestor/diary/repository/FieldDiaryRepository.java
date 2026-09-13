@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
@@ -16,6 +18,11 @@ public interface FieldDiaryRepository extends JpaRepository<FieldDiaryEntry, UUI
     Page<FieldDiaryEntry> findByPropertyId(UUID propertyId, Pageable pageable);
     Page<FieldDiaryEntry> findByPropertyIdAndPlantingId(UUID propertyId, UUID plantingId, Pageable pageable);
     java.util.Optional<FieldDiaryEntry> findByIdAndPropertyId(UUID id, UUID propertyId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select entry from FieldDiaryEntry entry where entry.id = :id and entry.property.id = :propertyId")
+    Optional<FieldDiaryEntry> findByIdAndPropertyIdForUpdate(
+            @Param("id") UUID id, @Param("propertyId") UUID propertyId);
 
     List<FieldDiaryEntry> findByPlantingIdAndActivityType(UUID plantingId, ActivityType activityType);
 

@@ -2,6 +2,8 @@ import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { getUserCacheScope } from "../auth/session";
 import { useConfirmation } from "../components/ConfirmationProvider";
 import {
   EmptyState,
@@ -32,6 +34,9 @@ import {
 import { toInputDate } from "../utils/formatters";
 
 export function FieldDiaryPage() {
+  const { user } = useAuth();
+  const userScope = getUserCacheScope(user);
+  const [draftScope, setDraftScope] = useState(userScope);
   const requestConfirmation = useConfirmation();
   const [plantings, setPlantings] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -125,6 +130,7 @@ export function FieldDiaryPage() {
         : "OBSERVATION";
 
     setEditing(null);
+    setDraftScope(userScope);
     setForm({
       ...newDiaryForm(searchParams.get("plantingId") || ""),
       activityType: requestedActivityType,
@@ -132,7 +138,7 @@ export function FieldDiaryPage() {
     setDraftRecovered(false);
     setModalOpen(true);
     setSearchParams({});
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, userScope]);
 
   useEffect(() => {
     loadEntries(selectedPlantingId);
@@ -144,12 +150,12 @@ export function FieldDiaryPage() {
 
   useEffect(() => {
     if (modalOpen && !editing) {
-      writeFormDraft("diario", form);
+      writeFormDraft("diario", form, draftScope);
     }
-  }, [editing, form, modalOpen]);
+  }, [draftScope, editing, form, modalOpen]);
 
   function openCreate(activityType = "") {
-    const draft = readFormDraft("diario");
+    const draft = readFormDraft("diario", Date.now(), userScope);
     const recoveredDraft =
       draft?.activityType === "INSPECTION"
         ? { ...draft, activityType: "OBSERVATION", activity: "" }
@@ -158,6 +164,7 @@ export function FieldDiaryPage() {
       recoveredDraft &&
       (!activityType || recoveredDraft.activityType === activityType);
     setEditing(null);
+    setDraftScope(userScope);
     setForm({
       ...newDiaryForm(selectedPlantingId),
       ...(shouldRecoverDraft ? recoveredDraft : {}),
@@ -169,6 +176,11 @@ export function FieldDiaryPage() {
   }
 
   function openEdit(entry) {
+    const singleProduct =
+      ["PRODUCT_PURCHASE", "PRODUCT_USE"].includes(entry.activityType) &&
+      entry.products?.length === 1
+        ? entry.products[0]
+        : null;
     setDraftRecovered(false);
     setEditing(entry);
     setForm({
@@ -178,13 +190,13 @@ export function FieldDiaryPage() {
       activity: entry.activity,
       weatherCondition: entry.weatherCondition || "",
       appliedProducts: entry.appliedProducts || "",
-      products: entry.products || [],
+      products: singleProduct ? [] : entry.products || [],
       observations: entry.observations || "",
       rainfallMillimeters: entry.rainfallMillimeters || "",
-      productId: "",
+      productId: singleProduct?.productId || "",
       productName: "",
       productType: "PESTICIDE",
-      quantity: "",
+      quantity: singleProduct?.quantity ?? "",
       unit: "LITER",
       supplier: entry.supplier || "",
       amount: entry.amount || "",
@@ -208,7 +220,7 @@ export function FieldDiaryPage() {
   }
 
   function closeForm() {
-    if (!editing) clearFormDraft("diario");
+    if (!editing) clearFormDraft("diario", draftScope);
     setDraftRecovered(false);
     setModalOpen(false);
   }
@@ -244,9 +256,10 @@ export function FieldDiaryPage() {
         rainfallMillimeters: form.rainfallMillimeters
           ? Number(form.rainfallMillimeters)
           : null,
-        productId: form.productId || null,
+        productId: form.products.length ? null : form.productId || null,
         productName: form.productName || null,
-        quantity: form.quantity ? Number(form.quantity) : null,
+        quantity:
+          !form.products.length && form.quantity ? Number(form.quantity) : null,
         supplier: form.supplier || null,
         amount: form.amount ? Number(form.amount) : null,
         expenseCategory: form.expenseCategory || null,
@@ -279,7 +292,7 @@ export function FieldDiaryPage() {
               )
             : await api.createPlantingStep(form.plantingId, stepPayload);
           if (!editing) {
-            clearFormDraft("diario");
+            clearFormDraft("diario", draftScope);
             setDraftRecovered(false);
           }
           setSuccess(
@@ -308,7 +321,7 @@ export function FieldDiaryPage() {
               )
             : await api.createHarvestStep(form.plantingId, stepPayload);
           if (!editing) {
-            clearFormDraft("diario");
+            clearFormDraft("diario", draftScope);
             setDraftRecovered(false);
           }
           setSuccess(
@@ -332,7 +345,7 @@ export function FieldDiaryPage() {
           }
         } else {
           const result = await api.createDiaryEntry(payload);
-          clearFormDraft("diario");
+          clearFormDraft("diario", draftScope);
           setDraftRecovered(false);
           setSuccess(
             mutationFeedback(
@@ -471,9 +484,15 @@ export function FieldDiaryPage() {
           products={inventoryProducts}
           machines={machines}
           activityTypes={
-            editing?.activityType === "INSPECTION"
+            editing &&
+            !diaryActivityTypes.some(
+              (type) => type.value === editing.activityType,
+            )
               ? [
-                  { value: "INSPECTION", label: "Vistoria (registro antigo)" },
+                  {
+                    value: editing.activityType,
+                    label: `${editing.activityTypeName || editing.activityType} (registro antigo)`,
+                  },
                   ...diaryActivityTypes,
                 ]
               : diaryActivityTypes

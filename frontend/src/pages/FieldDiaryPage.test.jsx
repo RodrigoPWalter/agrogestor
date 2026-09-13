@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
 import { FieldDiaryPage } from "./FieldDiaryPage";
 
+vi.mock("../auth/AuthContext", () => ({
+  useAuth: () => ({
+    user: { id: "user-1", propertyId: "property-1", email: "test@example.com" },
+  }),
+}));
+
 vi.mock("../api/client", () => ({
   api: {
     getAllPlantings: vi.fn(),
@@ -29,6 +35,106 @@ describe("FieldDiaryPage", () => {
     api.getInventoryProducts.mockResolvedValue([]);
     api.getMachines.mockResolvedValue([]);
     api.getDiaryEntries.mockResolvedValue({ content: [] });
+    localStorage.clear();
+  });
+
+  it.each(["PRODUCT_USE", "PRODUCT_PURCHASE"])(
+    "prefills %s without duplicating stock on edit",
+    async (activityType) => {
+      const product = {
+        id: "product-1",
+        name: "Adubo",
+        quantity: 0,
+        unitName: "L",
+      };
+      const entry = {
+        id: "entry-1",
+        activity: "Produto registrado",
+        activityType,
+        entryDate: "2026-07-29",
+        products: [
+          { productId: product.id, quantity: 10, productName: product.name },
+        ],
+      };
+      api.getInventoryProducts.mockResolvedValue([product]);
+      api.getDiaryEntries.mockResolvedValue({ content: [entry] });
+      api.updateDiaryEntry.mockResolvedValue({});
+      render(
+        <MemoryRouter>
+          <FieldDiaryPage />
+        </MemoryRouter>,
+      );
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Editar atividade" }),
+      );
+      expect(screen.getByLabelText("Produto")).toHaveValue(product.id);
+      expect(
+        screen.getByLabelText(
+          activityType === "PRODUCT_USE"
+            ? "Quantidade usada"
+            : "Quantidade comprada",
+        ),
+      ).toHaveValue(10);
+      fireEvent.change(screen.getByLabelText(/Observação/), {
+        target: { value: "Texto atualizado" },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Salvar lançamento" }),
+      );
+      await waitFor(() =>
+        expect(api.updateDiaryEntry).toHaveBeenCalledWith(
+          entry.id,
+          expect.objectContaining({
+            products: [],
+            productId: product.id,
+            quantity: 10,
+            observations: "Texto atualizado",
+          }),
+        ),
+      );
+    },
+  );
+
+  it("keeps legacy product lines visible and edits only the selected quantity", async () => {
+    const entry = {
+      id: "entry-1",
+      activity: "Aplicação antiga",
+      activityType: "PRODUCT_USE",
+      entryDate: "2026-07-29",
+      products: [
+        { productId: "p1", productName: "Adubo", quantity: 10 },
+        { productId: "p2", productName: "Defensivo", quantity: 5 },
+      ],
+    };
+    api.getDiaryEntries.mockResolvedValue({ content: [entry] });
+    api.updateDiaryEntry.mockResolvedValue({});
+    render(
+      <MemoryRouter>
+        <FieldDiaryPage />
+      </MemoryRouter>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Editar atividade" }),
+    );
+    expect(screen.getByLabelText("Quantidade do produto 1")).toHaveValue(10);
+    expect(screen.getByLabelText("Quantidade do produto 2")).toHaveValue(5);
+    fireEvent.change(screen.getByLabelText("Quantidade do produto 2"), {
+      target: { value: "6" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
+    await waitFor(() =>
+      expect(api.updateDiaryEntry).toHaveBeenCalledWith(
+        entry.id,
+        expect.objectContaining({
+          productId: null,
+          quantity: null,
+          products: [
+            { productId: "p1", quantity: 10 },
+            { productId: "p2", quantity: 6 },
+          ],
+        }),
+      ),
+    );
   });
 
   it("carrega os registros do diário apenas uma vez ao abrir a página", async () => {

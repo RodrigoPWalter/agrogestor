@@ -108,6 +108,20 @@ public class ProductionBalanceService {
         BigDecimal resultingHarvest = harvestedBags(plantingId)
                 .subtract(toBags(previousQuantity, previousUnit))
                 .add(toBags(newQuantity, newUnit));
+        ensureHarvestCoversSales(plantingId, resultingHarvest);
+    }
+
+    public void ensureLegacyHarvestChangeKeepsSoldStock(
+            FieldDiaryEntry previous, String newUnit, BigDecimal newQuantity
+    ) {
+        UUID plantingId = previous.getPlanting().getId();
+        BigDecimal resultingHarvest = harvestedBags(plantingId)
+                .subtract(toBags(previous))
+                .add(legacyToBags(newQuantity, newUnit));
+        ensureHarvestCoversSales(plantingId, resultingHarvest);
+    }
+
+    private void ensureHarvestCoversSales(UUID plantingId, BigDecimal resultingHarvest) {
         BigDecimal sold = soldBags(plantingId);
         if (resultingHarvest.compareTo(sold) < 0) {
             throw new BusinessRuleException(
@@ -127,19 +141,23 @@ public class ProductionBalanceService {
     }
 
     private BigDecimal toBags(FieldDiaryEntry entry) {
-        if (entry.getHarvestQuantity() == null || entry.getHarvestUnit() == null) {
+        return legacyToBags(entry.getHarvestQuantity(), entry.getHarvestUnit());
+    }
+
+    private BigDecimal legacyToBags(BigDecimal quantity, String rawUnit) {
+        if (quantity == null || rawUnit == null) {
             return BigDecimal.ZERO;
         }
-        String unit = entry.getHarvestUnit().trim().toLowerCase(Locale.ROOT);
-        if (unit.contains("saca") || unit.equals("sc")) {
-            return entry.getHarvestQuantity();
+        String unit = rawUnit.trim().toLowerCase(Locale.ROOT);
+        if (unit.contains("saca") || unit.equals("sc") || unit.equals("bags_60_kg")) {
+            return quantity;
         }
-        if (unit.equals("kg") || unit.contains("quilograma")) {
-            return entry.getHarvestQuantity().divide(
+        if (unit.equals("kg") || unit.contains("quilograma") || unit.equals("kilograms")) {
+            return quantity.divide(
                     BAG_WEIGHT_KILOGRAMS, 3, RoundingMode.HALF_UP);
         }
-        if (unit.equals("t") || unit.contains("tonelada")) {
-            return entry.getHarvestQuantity().multiply(new BigDecimal("1000"))
+        if (unit.equals("t") || unit.contains("tonelada") || unit.equals("tonnes")) {
+            return quantity.multiply(new BigDecimal("1000"))
                     .divide(BAG_WEIGHT_KILOGRAMS, 3, RoundingMode.HALF_UP);
         }
         return BigDecimal.ZERO;

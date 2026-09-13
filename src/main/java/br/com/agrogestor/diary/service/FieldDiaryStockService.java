@@ -19,6 +19,7 @@ import br.com.agrogestor.shared.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,7 +51,6 @@ public class FieldDiaryStockService {
     ) {
         if (entry.getId() == null) return List.of();
 
-        removeProducts(entry, "Estorno por edição no diário: ");
         MovementType type = request.activityType() == ActivityType.PRODUCT_PURCHASE
                 ? MovementType.ENTRY : MovementType.EXIT;
         var quantities = requestedQuantities(request);
@@ -63,9 +63,59 @@ public class FieldDiaryStockService {
         }
 
         List<FieldDiaryProduct> savedProducts = new ArrayList<>();
+        List<FieldDiaryProduct> previous = diaryProductRepository.findByEntryId(entry.getId());
+        // Alterar só a observação não movimenta estoque nem reprecifica o uso anterior.
+        for (FieldDiaryProduct item : previous) {
+            BigDecimal requested = quantities.get(item.getProduct().getId());
+            if (requested != null && item.getMovementType() == type
+                    && item.isStockDeducted()
+                    && (type == MovementType.EXIT
+                    || (item.getQuantity().compareTo(requested) == 0
+                    && item.getTotalCost().compareTo(purchaseCost) == 0))) {
+                if (item.getQuantity().compareTo(requested) != 0) {
+                    adjustUsage(item, requested, entry);
+                }
+                savedProducts.add(item);
+                quantities.remove(item.getProduct().getId());
+            } else {
+                restoreStock(List.of(item), entry, "Estorno por edição no diário: ");
+                diaryProductRepository.delete(item);
+            }
+        }
+        if (!previous.isEmpty()) diaryProductRepository.flush();
         quantities.forEach((productId, quantity) -> savedProducts.add(
                 applyProductMovement(entry, productId, quantity, type, purchaseCost)));
         return savedProducts;
+    }
+
+    private void adjustUsage(FieldDiaryProduct item, BigDecimal quantity, FieldDiaryEntry entry) {
+        InventoryProduct product = inventoryRepository.findByIdAndPropertyIdForUpdate(
+                        item.getProduct().getId(), currentProperty.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
+        BigDecimal delta = quantity.subtract(item.getQuantity());
+        InventoryMovementCost cost;
+        MovementType movementType;
+        BigDecimal allocatedCost;
+        if (delta.signum() > 0) {
+            // Só o consumo adicional recebe o custo atual.
+            cost = product.applyExit(delta);
+            movementType = MovementType.EXIT;
+            allocatedCost = item.getTotalCost().add(cost.totalCost());
+        } else {
+            // A redução devolve o custo registrado, não o custo médio atual.
+            BigDecimal returnedCost = item.getTotalCost().multiply(delta.abs())
+                    .divide(item.getQuantity(), 2, RoundingMode.HALF_UP);
+            product.reverseMovement(MovementType.EXIT, delta.abs(), returnedCost);
+            cost = new InventoryMovementCost(
+                    returnedCost.divide(delta.abs(), 6, RoundingMode.HALF_UP), returnedCost);
+            movementType = MovementType.ENTRY;
+            allocatedCost = item.getTotalCost().subtract(returnedCost);
+        }
+        movementRepository.save(new InventoryMovement(
+                product, movementType, delta.abs(), entry.getEntryDate(),
+                "Ajuste de quantidade no diário: " + entry.getActivity(),
+                cost.unitCost(), cost.totalCost()));
+        item.updateAllocation(quantity, allocatedCost);
     }
 
     public void removeProducts(FieldDiaryEntry entry, String notePrefix) {
@@ -77,19 +127,35 @@ public class FieldDiaryStockService {
 
     private LinkedHashMap<UUID, BigDecimal> requestedQuantities(FieldDiaryRequest request) {
         var quantities = new LinkedHashMap<UUID, BigDecimal>();
-        if (request.products() != null) {
-            request.products().forEach(item ->
-                    quantities.merge(item.productId(), item.quantity(), BigDecimal::add));
+        if (request.products() != null && !request.products().isEmpty()) {
+            if (request.productId() != null || request.quantity() != null) {
+                throw new BusinessRuleException("Informe os produtos em apenas um formato");
+            }
+            request.products().forEach(item -> {
+                validateQuantity(item.productId(), item.quantity());
+                quantities.merge(item.productId(), item.quantity(), BigDecimal::add);
+            });
+            return quantities;
         }
         if (request.productId() != null && request.quantity() != null) {
+            validateQuantity(request.productId(), request.quantity());
             quantities.merge(request.productId(), request.quantity(), BigDecimal::add);
         }
         if (request.activityType() == ActivityType.PRODUCT_PURCHASE
                 && request.productId() == null && request.quantity() != null) {
+            if (request.quantity().signum() <= 0) {
+                throw new BusinessRuleException("Informe uma quantidade maior que zero");
+            }
             InventoryProduct created = findOrCreateProduct(request);
             quantities.merge(created.getId(), request.quantity(), BigDecimal::add);
         }
         return quantities;
+    }
+
+    private void validateQuantity(UUID productId, BigDecimal quantity) {
+        if (productId == null || quantity == null || quantity.signum() <= 0) {
+            throw new BusinessRuleException("Informe o produto e uma quantidade maior que zero");
+        }
     }
 
     private InventoryProduct findOrCreateProduct(FieldDiaryRequest request) {

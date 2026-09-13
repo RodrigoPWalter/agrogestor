@@ -3,7 +3,9 @@ export function ProductEventFields({ form, type, products, onUpdate }) {
   const isNewProduct = isPurchase && !form.productId;
   const selectableProducts = isPurchase
     ? products
-    : products.filter((item) => Number(item.quantity) > 0);
+    : products.filter(
+        (item) => Number(item.quantity) > 0 || item.id === form.productId,
+      );
 
   return (
     <>

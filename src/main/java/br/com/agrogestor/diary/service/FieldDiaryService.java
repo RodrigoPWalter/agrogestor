@@ -30,6 +30,7 @@ import br.com.agrogestor.property.service.CurrentPropertyService;
 import br.com.agrogestor.production.dto.ProductionSaleRequest;
 import br.com.agrogestor.production.dto.ProductionSaleResponse;
 import br.com.agrogestor.production.service.ProductionService;
+import br.com.agrogestor.production.service.ProductionBalanceService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,6 +62,7 @@ public class FieldDiaryService {
     private final CurrentPropertyService currentProperty;
     private final FieldDiaryResponseMapper responseMapper;
     private final ProductionService productionService;
+    private final ProductionBalanceService productionBalance;
 
     public FieldDiaryService(
             FieldDiaryRepository diaryRepository,
@@ -72,7 +76,8 @@ public class FieldDiaryService {
             ExpenseRepository expenseRepository,
             CurrentPropertyService currentProperty,
             FieldDiaryResponseMapper responseMapper,
-            ProductionService productionService
+            ProductionService productionService,
+            ProductionBalanceService productionBalance
     ) {
         this.diaryRepository = diaryRepository;
         this.plantingRepository = plantingRepository;
@@ -86,12 +91,15 @@ public class FieldDiaryService {
         this.currentProperty = currentProperty;
         this.responseMapper = responseMapper;
         this.productionService = productionService;
+        this.productionBalance = productionBalance;
     }
 
     @Transactional
     public FieldDiaryResponse create(FieldDiaryRequest request) {
         validate(request);
-        Planting planting = findOptionalPlanting(request.plantingId());
+        Planting planting = request.activityType() == ActivityType.HARVEST
+                ? findPlantingForUpdate(request.plantingId())
+                : findOptionalPlanting(request.plantingId());
         FieldDiaryEntry entry = new FieldDiaryEntry(
                 currentProperty.get(),
                 planting,
@@ -162,9 +170,13 @@ public class FieldDiaryService {
     @Transactional
     public FieldDiaryResponse update(UUID id, FieldDiaryRequest request) {
         validate(request);
-        FieldDiaryEntry entry = findEntry(id);
+        FieldDiaryEntry entry = findEntryForUpdate(id);
         ensureDirectEntry(entry);
-        deleteIntegratedRecords(entry);
+        validateLegacyHarvestChange(entry, request);
+        boolean preserveProductExpense = entry.getActivityType() == request.activityType()
+                && (request.activityType() == ActivityType.PRODUCT_USE
+                || request.activityType() == ActivityType.PRODUCT_PURCHASE);
+        if (!preserveProductExpense) deleteIntegratedRecords(entry);
         entry.update(
                 findOptionalPlanting(request.plantingId()),
                 request.entryDate(),
@@ -176,14 +188,19 @@ public class FieldDiaryService {
         );
         updateDetails(entry, request);
         List<FieldDiaryProduct> products = stockService.replaceProducts(entry, request);
-        createIntegratedRecords(entry, request, entry.getPlanting(), products);
+        if (preserveProductExpense) {
+            synchronizeProductExpense(entry, request, products);
+        } else {
+            createIntegratedRecords(entry, request, entry.getPlanting(), products);
+        }
         return responseMapper.toResponse(entry, null, null);
     }
 
     @Transactional
     public void delete(UUID id) {
-        FieldDiaryEntry entry = findEntry(id);
+        FieldDiaryEntry entry = findEntryForUpdate(id);
         ensureDirectEntry(entry);
+        validateLegacyHarvestChange(entry, null);
         stockService.removeProducts(entry, "Estorno por exclusão no diário: ");
         deleteIntegratedRecords(entry);
         diaryRepository.delete(entry);
@@ -208,7 +225,8 @@ public class FieldDiaryService {
             throw new BusinessRuleException("Informe o produto e a quantidade");
         }
         if (type == ActivityType.PRODUCT_PURCHASE && request.productId() == null
-                && (request.productName() == null || request.productName().isBlank())) {
+                && (request.productName() == null || request.productName().isBlank())
+                && (request.products() == null || request.products().isEmpty())) {
             throw new BusinessRuleException("Selecione um produto ou informe o nome do novo produto");
         }
         if (type == ActivityType.PRODUCT_USE && request.productId() == null
@@ -349,6 +367,63 @@ public class FieldDiaryService {
             rainfallRepository.deleteById(entry.getRainfallId());
         }
         entry.clearIntegrationLinks();
+    }
+
+    private void synchronizeProductExpense(
+            FieldDiaryEntry entry, FieldDiaryRequest request, List<FieldDiaryProduct> products
+    ) {
+        boolean usage = request.activityType() == ActivityType.PRODUCT_USE;
+        BigDecimal amount = usage
+                ? products.stream().map(FieldDiaryProduct::getTotalCost)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                : moneyOrZero(request.amount());
+        if (amount.signum() <= 0 || (usage && entry.getPlanting() == null)) {
+            if (entry.getExpenseId() != null) {
+                expenseRepository.deleteById(entry.getExpenseId());
+                entry.linkExpense(null);
+            }
+            return;
+        }
+        Expense expense = entry.getExpenseId() == null ? null
+                : expenseRepository.findById(entry.getExpenseId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Gasto do diário não encontrado"));
+        if (expense == null) {
+            createIntegratedRecords(entry, request, entry.getPlanting(), products);
+            return;
+        }
+        expense.update(
+                usage ? entry.getPlanting() : null,
+                usage ? stockAllocationDescription(products) : activityDescription(request),
+                productCategory(products, request.productType()),
+                amount, request.entryDate(), normalizeNullable(request.observations()));
+    }
+
+    private void validateLegacyHarvestChange(FieldDiaryEntry entry, FieldDiaryRequest request) {
+        UUID previousPlantingId = entry.getActivityType() == ActivityType.HARVEST
+                && entry.getPlanting() != null ? entry.getPlanting().getId() : null;
+        UUID newPlantingId = request != null && request.activityType() == ActivityType.HARVEST
+                ? request.plantingId() : null;
+        // Vendas e etapas de colheita usam o mesmo bloqueio. A ordem evita
+        // bloqueios cruzados ao mover produção entre dois plantios.
+        Stream.of(previousPlantingId, newPlantingId).filter(Objects::nonNull)
+                .distinct().sorted().forEach(this::findPlantingForUpdate);
+        if (previousPlantingId != null) {
+            boolean samePlanting = previousPlantingId.equals(newPlantingId);
+            productionBalance.ensureLegacyHarvestChangeKeepsSoldStock(
+                    entry,
+                    samePlanting ? request.harvestUnit() : null,
+                    samePlanting ? request.harvestQuantity() : BigDecimal.ZERO);
+        }
+    }
+
+    private Planting findPlantingForUpdate(UUID id) {
+        return plantingRepository.findByIdAndPropertyIdForUpdate(id, currentProperty.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Plantio não encontrado com o ID " + id));
+    }
+
+    private FieldDiaryEntry findEntryForUpdate(UUID id) {
+        return diaryRepository.findByIdAndPropertyIdForUpdate(id, currentProperty.id())
+                .orElseThrow(() -> new ResourceNotFoundException("Registro não encontrado com o ID " + id));
     }
 
     private void updateDetails(FieldDiaryEntry entry, FieldDiaryRequest request) {

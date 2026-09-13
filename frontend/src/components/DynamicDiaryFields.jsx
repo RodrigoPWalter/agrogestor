@@ -4,6 +4,7 @@ import { HarvestFields } from "./diary/fields/HarvestFields";
 import { MaintenanceFields } from "./diary/fields/MaintenanceFields";
 import { PlantingOperationFields } from "./diary/fields/PlantingOperationFields";
 import { ProductEventFields } from "./diary/fields/ProductEventFields";
+import { LegacyProductFields } from "./diary/fields/LegacyProductFields";
 import { SaleFields } from "./diary/fields/SaleFields";
 
 export function DynamicDiaryFields({
@@ -59,13 +60,21 @@ export function DynamicDiaryFields({
         </label>
       )}
 
-      {productEvent && (
-        <ProductEventFields
+      {form.products?.length > 0 ? (
+        <LegacyProductFields
           form={form}
-          type={type}
           products={products}
           onUpdate={update}
         />
+      ) : (
+        productEvent && (
+          <ProductEventFields
+            form={form}
+            type={type}
+            products={products}
+            onUpdate={update}
+          />
+        )
       )}
 
       {type === "MAINTENANCE" && (

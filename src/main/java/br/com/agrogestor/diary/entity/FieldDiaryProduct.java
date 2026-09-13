@@ -5,6 +5,7 @@ import br.com.agrogestor.inventory.entity.MovementType;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 @Entity
@@ -67,6 +68,11 @@ public class FieldDiaryProduct {
     }
 
     public UUID getId() { return id; }
+    public void updateAllocation(BigDecimal quantity, BigDecimal totalCost) {
+        this.quantity = quantity;
+        this.totalCost = totalCost.setScale(2, RoundingMode.HALF_UP);
+        this.unitCost = this.totalCost.divide(quantity, 6, RoundingMode.HALF_UP);
+    }
     public InventoryProduct getProduct() { return product; }
     public BigDecimal getQuantity() { return quantity; }
     public boolean isStockDeducted() { return stockDeducted; }
