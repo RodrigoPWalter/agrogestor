@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Política de conteúdo restrita ao aplicativo e à API oficial, com atualização do PWA protegida contra cache antigo no servidor.
 - Gastos de combustível agora registram a quantidade em litros e exibem o custo calculado por litro no Diário e nas visões financeiras.
 - Gastos gerais ou vinculados a um plantio agora podem ser lançados pelo Diário e aparecem automaticamente na visão financeira correspondente.
 - Vendas da produção agora também podem ser lançadas pelo Diário, com baixa automática do saldo colhido e sincronização entre as duas telas.
