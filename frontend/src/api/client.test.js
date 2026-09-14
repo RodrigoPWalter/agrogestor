@@ -47,6 +47,37 @@ describe("cliente da API", () => {
     });
   });
 
+  it("reaproveita uma consulta idêntica enquanto ela ainda está em andamento", async () => {
+    let finishRequest;
+    httpClient.request.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishRequest = resolve;
+        }),
+    );
+
+    const firstRequest = api.getDashboardSummary();
+    const secondRequest = api.getDashboardSummary();
+    finishRequest({ status: 200, data: { activePlantings: 2 } });
+
+    await expect(Promise.all([firstRequest, secondRequest])).resolves.toEqual([
+      { activePlantings: 2 },
+      { activePlantings: 2 },
+    ]);
+    expect(httpClient.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("permite uma nova tentativa depois que a consulta anterior termina", async () => {
+    httpClient.request
+      .mockResolvedValueOnce({ status: 200, data: { version: 1 } })
+      .mockResolvedValueOnce({ status: 200, data: { version: 2 } });
+
+    await expect(api.getDashboardSummary()).resolves.toEqual({ version: 1 });
+    await expect(api.getDashboardSummary()).resolves.toEqual({ version: 2 });
+
+    expect(httpClient.request).toHaveBeenCalledTimes(2);
+  });
+
   it("busca todas as páginas de plantios ativos", async () => {
     httpClient.request
       .mockResolvedValueOnce({

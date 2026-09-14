@@ -6,6 +6,7 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- A abertura do aplicativo reaproveita consultas simultâneas e prepara o modo offline somente quando o navegador está ocioso.
 - Política de conteúdo restrita ao aplicativo e à API oficial, com atualização do PWA protegida contra cache antigo no servidor.
 - Gastos de combustível agora registram a quantidade em litros e exibem o custo calculado por litro no Diário e nas visões financeiras.
 - Gastos gerais ou vinculados a um plantio agora podem ser lançados pelo Diário e aparecem automaticamente na visão financeira correspondente.

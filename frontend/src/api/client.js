@@ -11,6 +11,7 @@ import { queueMutation } from "../offline/offlineSync";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 const DEFAULT_PAGE_SIZE = 100;
+const activeGetRequests = new Map();
 
 async function readCachedResponse(scope, path) {
   try {
@@ -40,7 +41,11 @@ function createRequestId() {
   return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
-async function request(path, options = {}, context = captureSessionContext()) {
+async function executeRequest(
+  path,
+  options = {},
+  context = captureSessionContext(),
+) {
   assertSessionContextCurrent(context);
   const { body, data, offline = true, ...config } = options;
   const method = (config.method || "GET").toUpperCase();
@@ -117,6 +122,25 @@ async function request(path, options = {}, context = captureSessionContext()) {
   }
   assertSessionContextCurrent(context);
   return responseData;
+}
+
+function request(path, options = {}, context = captureSessionContext()) {
+  const method = (options.method || "GET").toUpperCase();
+  if (method !== "GET") {
+    return executeRequest(path, options, context);
+  }
+
+  const requestKey = `${context.scope}::${context.accessToken ?? "anonymous"}::${path}`;
+  const activeRequest = activeGetRequests.get(requestKey);
+  if (activeRequest) return activeRequest;
+
+  const nextRequest = executeRequest(path, options, context).finally(() => {
+    if (activeGetRequests.get(requestKey) === nextRequest) {
+      activeGetRequests.delete(requestKey);
+    }
+  });
+  activeGetRequests.set(requestKey, nextRequest);
+  return nextRequest;
 }
 
 function withQueryParams(path, params = {}) {

@@ -128,14 +128,26 @@ export function AppLayout() {
 
   useEffect(() => {
     let preparationTimer;
-    const prepare = () => {
-      if (navigator.onLine !== false) {
-        window.clearTimeout(preparationTimer);
-        preparationTimer = window.setTimeout(
-          () => prepareOfflineData().catch(() => {}),
-          800,
-        );
+    let idleRequest;
+    const cancelPreparation = () => {
+      window.clearTimeout(preparationTimer);
+      if (idleRequest && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleRequest);
       }
+    };
+    const runPreparation = () => prepareOfflineData().catch(() => {});
+    const prepare = () => {
+      if (navigator.onLine === false) return;
+
+      cancelPreparation();
+      if ("requestIdleCallback" in window) {
+        idleRequest = window.requestIdleCallback(runPreparation, {
+          timeout: 4_000,
+        });
+        return;
+      }
+
+      preparationTimer = window.setTimeout(runPreparation, 1_500);
     };
 
     refreshOfflineSyncState()
@@ -146,7 +158,7 @@ export function AppLayout() {
     window.addEventListener(OFFLINE_SYNC_COMPLETE_EVENT, prepare);
 
     return () => {
-      window.clearTimeout(preparationTimer);
+      cancelPreparation();
       window.removeEventListener("online", prepare);
       window.removeEventListener(OFFLINE_SYNC_COMPLETE_EVENT, prepare);
     };
