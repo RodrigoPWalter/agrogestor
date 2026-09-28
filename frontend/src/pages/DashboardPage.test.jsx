@@ -8,6 +8,7 @@ vi.mock("../api/client", () => ({
   api: {
     getDashboardSummary: vi.fn(),
     getCommodityQuotes: vi.fn(),
+    getTasks: vi.fn(),
   },
 }));
 
@@ -31,6 +32,7 @@ describe("DashboardPage", () => {
       history: [],
       stale: false,
     });
+    api.getTasks.mockResolvedValue({ content: [] });
   });
 
   it("busca as cotações somente depois dos dados essenciais", async () => {

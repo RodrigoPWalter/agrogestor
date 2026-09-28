@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Sprout,
   Tractor,
+  ListChecks,
   Warehouse,
   Wifi,
   WifiOff,
@@ -49,6 +50,7 @@ const navigation = [
     end: true,
   },
   { to: "/diario", label: "Diário", icon: BookOpenText },
+  { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/plantios", label: "Plantios", icon: Sprout },
   { to: "/producao", label: "Produção", icon: Wheat },
   { to: "/estoque", label: "Estoque", icon: Warehouse },
@@ -57,7 +59,7 @@ const navigation = [
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
 ];
 
-const primaryMobilePaths = new Set(["/", "/plantios", "/diario", "/gastos"]);
+const primaryMobilePaths = new Set(["/", "/diario", "/tarefas", "/plantios"]);
 const mobileNavigation = navigation.filter(({ to }) =>
   primaryMobilePaths.has(to),
 );

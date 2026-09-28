@@ -8,6 +8,7 @@ import { loginPageLoader, privatePageLoaders } from "./routes/pageLoaders";
 
 const DashboardPage = lazy(privatePageLoaders["/"]);
 const FieldDiaryPage = lazy(privatePageLoaders["/diario"]);
+const TasksPage = lazy(privatePageLoaders["/tarefas"]);
 const ExpensesPage = lazy(privatePageLoaders["/gastos"]);
 const PlantingsPage = lazy(privatePageLoaders["/plantios"]);
 const InventoryPage = lazy(privatePageLoaders["/estoque"]);
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="estoque" element={lazyPage(InventoryPage)} />
           <Route path="maquinas" element={lazyPage(MachinesPage)} />
           <Route path="diario" element={lazyPage(FieldDiaryPage)} />
+          <Route path="tarefas" element={lazyPage(TasksPage)} />
           <Route path="chuvas" element={lazyPage(RainfallPage)} />
           <Route path="producao" element={lazyPage(ProductionPage)} />
         </Route>

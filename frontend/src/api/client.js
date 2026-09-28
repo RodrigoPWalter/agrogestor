@@ -224,6 +224,27 @@ export const api = {
       offline: false,
     }),
   getCommodityQuotes: () => request("/api/v1/commodity-quotes"),
+  getTasks: ({ status, openOnly } = {}) =>
+    requestAllPages("/api/v1/tasks", { status, openOnly }),
+  createTask: (data) =>
+    request("/api/v1/tasks", {
+      method: "POST",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateTask: (id, data) =>
+    request(`/api/v1/tasks/${id}`, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(data),
+    }),
+  updateTaskStatus: (id, status) =>
+    request(`/api/v1/tasks/${id}/status`, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ status }),
+    }),
+  deleteTask: (id) => request(`/api/v1/tasks/${id}`, { method: "DELETE" }),
   getPlantings: () =>
     requestAllPages("/api/v1/plantings", { status: "ACTIVE" }),
   getAllPlantings: () => requestAllPages("/api/v1/plantings"),

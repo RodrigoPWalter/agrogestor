@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { CommodityQuotesPanel } from "../components/dashboard/CommodityQuotesPanel";
 import { DashboardMetrics } from "../components/dashboard/DashboardMetrics";
 import { DashboardQuickActions } from "../components/dashboard/DashboardQuickActions";
+import { TaskAttentionPanel } from "../components/dashboard/TaskAttentionPanel";
 import {
   InventoryAttentionPanel,
   RecentExpensesPanel,
@@ -184,6 +185,8 @@ export function DashboardPage() {
             }
             onMore={() => navigate("/diario?new=more")}
           />
+
+          <TaskAttentionPanel />
 
           <div className="dashboard-grid dashboard-grid--balanced">
             <DashboardQuickActions />
