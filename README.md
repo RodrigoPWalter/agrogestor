@@ -34,6 +34,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Diário da Lavoura:** Central de lançamentos rápidos para observações, etapas de semeadura e colheita, chuvas, gastos, compras, uso de produtos, manutenções e vendas da produção, com integrações transacionais entre os módulos.
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro e manutenções preventivas/corretivas, com lançamento automático do custo nos gastos da propriedade.
+- **Planejamento de Tarefas:** Lista de serviços com prazo, duração estimada e urgência automática, com vínculo opcional à próxima safra ou a uma máquina.
 - **Mercado Agrícola:** Consulta de cotações de soja, milho, trigo e diesel, com histórico recente.
 - **PWA com sincronização offline:** Instalação no Android e iPhone, leitura dos dados já carregados e fila local para enviar novos lançamentos quando a conexão voltar.
 - **Uso em conexão lenta:** Bloqueio de envios repetidos, mensagens específicas de conexão e recuperação de rascunhos de plantios, gastos e atividades do Diário.
@@ -86,6 +87,7 @@ br.com.agrogestor
 ├── production
 ├── quotation
 ├── rainfall
+├── task
 └── shared
 ```
 
@@ -109,6 +111,7 @@ Todos os endpoints são versionados com o prefixo `/api/v1`.
 | Estoque                | `/api/v1/inventory/products`           |
 | Máquinas               | `/api/v1/machines`                     |
 | Manutenções            | `/api/v1/maintenances`                 |
+| Tarefas                | `/api/v1/tasks`                        |
 | Diário da lavoura      | `/api/v1/field-diary`                  |
 | Chuvas                 | `/api/v1/rainfall`                     |
 | Cotações               | `/api/v1/commodity-quotes`             |

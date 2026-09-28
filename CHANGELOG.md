@@ -6,6 +6,8 @@ O projeto segue uma variação simples de versionamento semântico enquanto aind
 
 ## Em desenvolvimento
 
+- Lista de tarefas com prazo, tempo estimado, vínculo opcional à safra ou máquina e urgência recalculada automaticamente.
+- As próximas tarefas agora aparecem na visão geral e possuem fluxo de pendente, em andamento, concluída e reaberta.
 - A abertura do aplicativo reaproveita consultas simultâneas e prepara o modo offline somente quando o navegador está ocioso.
 - Política de conteúdo restrita ao aplicativo e à API oficial, com atualização do PWA protegida contra cache antigo no servidor.
 - Gastos de combustível agora registram a quantidade em litros e exibem o custo calculado por litro no Diário e nas visões financeiras.
