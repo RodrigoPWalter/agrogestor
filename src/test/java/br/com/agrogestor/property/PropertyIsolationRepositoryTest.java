@@ -9,6 +9,9 @@ import br.com.agrogestor.planting.entity.SeedRateUnit;
 import br.com.agrogestor.planting.repository.PlantingRepository;
 import br.com.agrogestor.property.entity.Property;
 import br.com.agrogestor.property.repository.PropertyRepository;
+import br.com.agrogestor.task.entity.FarmTask;
+import br.com.agrogestor.task.entity.FarmTaskCategory;
+import br.com.agrogestor.task.repository.FarmTaskRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -33,6 +36,28 @@ class PropertyIsolationRepositoryTest {
 
     @Autowired
     private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private FarmTaskRepository farmTaskRepository;
+
+    @Test
+    void onlyReturnsTasksFromTheRequestedProperty() {
+        Property first = propertyRepository.save(new Property("Propriedade principal"));
+        Property second = propertyRepository.save(new Property("Propriedade de testes"));
+        FarmTask ownerTask = farmTaskRepository.save(task(first, "Revisar plantadeira"));
+        FarmTask foreignTask = farmTaskRepository.save(task(second, "Comprar peças"));
+
+        var result = farmTaskRepository.findByPropertyId(
+                first.getId(), PageRequest.of(0, 20));
+
+        assertThat(result.getContent())
+                .extracting(FarmTask::getTitle)
+                .containsExactly("Revisar plantadeira");
+        assertThat(farmTaskRepository.findByIdAndPropertyId(
+                ownerTask.getId(), first.getId())).isPresent();
+        assertThat(farmTaskRepository.findByIdAndPropertyId(
+                foreignTask.getId(), first.getId())).isEmpty();
+    }
 
     @Test
     void onlyReturnsPlantingsFromTheRequestedProperty() {
@@ -139,6 +164,19 @@ class PropertyIsolationRepositoryTest {
                 "Variedade teste",
                 new BigDecimal("50.000"),
                 SeedRateUnit.KILOGRAMS_PER_HECTARE,
+                null
+        );
+    }
+
+    private FarmTask task(Property property, String title) {
+        return new FarmTask(
+                property,
+                null,
+                null,
+                title,
+                FarmTaskCategory.MACHINE,
+                LocalDate.of(2026, 10, 1),
+                240,
                 null
         );
     }
