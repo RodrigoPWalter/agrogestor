@@ -26,6 +26,30 @@
   margin: 16px 0 12px;
 }
 
+.boleto-search {
+  display: flex;
+  max-width: 420px;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.boleto-search label {
+  color: #24452f;
+  font-weight: 700;
+}
+
+.boleto-search input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  color: #172b1d;
+  border: 1px solid #aebfaf;
+  border-radius: 7px;
+  background: #fff;
+  font: inherit;
+}
+
 .boleto-filter {
   display: inline-flex;
   min-height: 44px;

@@ -27,6 +27,14 @@ const statusLabels = {
   paid: "Pago",
 };
 
+function normalizeName(value) {
+  return (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim();
+}
+
 export function BoletosPage() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +43,7 @@ export function BoletosPage() {
   const [success, setSuccess] = useState("");
   const [savingId, setSavingId] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [searchName, setSearchName] = useState("");
 
   async function load() {
     setLoading(true);
@@ -106,7 +115,9 @@ export function BoletosPage() {
     return "pending";
   }
   const filteredEntries = entries.filter(
-    (entry) => filter === "all" || getStatus(entry) === filter,
+    (entry) =>
+      (filter === "all" || getStatus(entry) === filter) &&
+      normalizeName(entry.boletoName).includes(normalizeName(searchName)),
   );
   return (
     <div className="page">
@@ -138,6 +149,18 @@ export function BoletosPage() {
               <h2>Filtrar boletos</h2>
               <p>Próximos do vencimento: hoje e os próximos 7 dias.</p>
             </div>
+            <div className="boleto-search">
+              <label htmlFor="boleto-search-name">
+                Pesquisar pelo nome no boleto
+              </label>
+              <input
+                id="boleto-search-name"
+                type="search"
+                placeholder="Ex.: João"
+                value={searchName}
+                onChange={(event) => setSearchName(event.target.value)}
+              />
+            </div>
             <div className="boleto-filters__buttons">
               {filters.map((option) => (
                 <button
@@ -167,8 +190,8 @@ export function BoletosPage() {
           </section>
           {filteredEntries.length === 0 ? (
             <EmptyState
-              title="Nenhum boleto nesta situação"
-              description="Escolha outro filtro para visualizar seus boletos."
+              title="Nenhum boleto encontrado"
+              description="Confira o nome pesquisado ou escolha outro filtro."
             />
           ) : (
             <div className="data-card-grid boleto-grid">

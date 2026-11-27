@@ -216,8 +216,8 @@ test("boletos destacam vencimentos e filtram por situação", async ({
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   }
   const entries = [
-    { id: "vencido", name: "Ureia", days: -1 },
-    { id: "hoje", name: "Milho", days: 0 },
+    { id: "vencido", name: "Ureia", days: -1, holder: "João Silva" },
+    { id: "hoje", name: "Milho", days: 0, holder: "Maria" },
     { id: "limite", name: "Soja", days: 7 },
     { id: "futuro", name: "Adubo", days: 8 },
     { id: "pago", name: "Trigo", days: -1, paid: true },
@@ -225,7 +225,7 @@ test("boletos destacam vencimentos e filtram por situação", async ({
     id: item.id,
     activityType: "PRODUCT_PURCHASE",
     boletoDueDate: dateFromToday(item.days),
-    boletoName: "Produtor",
+    boletoName: item.holder || "Produtor",
     boletoPaid: Boolean(item.paid),
     products: [{ productName: item.name }],
   }));
@@ -258,11 +258,18 @@ test("boletos destacam vencimentos e filtram por situação", async ({
   await page.getByRole("button", { name: "Vencidos" }).click();
   await expect(page.locator(".boleto-card")).toHaveCount(1);
   await card("Ureia").getByRole("button", { name: "Marcar como pago" }).click();
-  await expect(page.getByText("Nenhum boleto nesta situação")).toBeVisible();
+  await expect(page.getByText("Nenhum boleto encontrado")).toBeVisible();
   await page.getByRole("button", { name: "Próximos do vencimento" }).click();
   await expect(page.locator(".boleto-card")).toHaveCount(2);
   await page.getByRole("button", { name: "Pagos" }).click();
   await expect(page.locator(".boleto-card")).toHaveCount(2);
+  await page.getByLabel("Pesquisar pelo nome no boleto").fill("joao");
+  await expect(page.locator(".boleto-card")).toHaveCount(1);
+  await expect(card("Ureia")).toBeVisible();
+  await page.getByLabel("Pesquisar pelo nome no boleto").fill("Maria");
+  await expect(page.getByText("Nenhum boleto encontrado")).toBeVisible();
+  await page.getByRole("button", { name: "Próximos do vencimento" }).click();
+  await expect(card("Milho")).toBeVisible();
 });
 
 test("login, cadastro de plantio e lançamento de gasto", async ({
