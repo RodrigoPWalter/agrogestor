@@ -40,6 +40,9 @@ public record FieldDiaryResponse(
         UUID productionSaleId,
         BigDecimal salePricePerBag,
         ExpenseCategory expenseCategory,
-        BigDecimal fuelLiters
+        BigDecimal fuelLiters,
+        LocalDate boletoDueDate,
+        String boletoName,
+        boolean boletoPaid
 ) {
 }

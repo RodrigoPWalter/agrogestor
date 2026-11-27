@@ -445,6 +445,12 @@ export const api = {
     }),
   deleteDiaryEntry: (id) =>
     request(`/api/v1/field-diary/${id}`, { method: "DELETE" }),
+  updateBoletoStatus: (id, paid) =>
+    request(`/api/v1/field-diary/${id}/boleto-status`, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      body: JSON.stringify({ paid }),
+    }),
 
   getRainfall: () => request("/api/v1/rainfall"),
   getRainfallByPlanting: (plantingId) =>

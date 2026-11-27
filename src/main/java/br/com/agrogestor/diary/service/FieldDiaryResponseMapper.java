@@ -57,7 +57,8 @@ public class FieldDiaryResponseMapper {
                 entry.getProductionSaleId(),
                 entry.getSalePricePerBag(),
                 entry.getExpenseCategory(),
-                entry.getFuelLiters());
+                entry.getFuelLiters(), entry.getBoletoDueDate(),
+                entry.getBoletoName(), entry.isBoletoPaid());
     }
 
     private UUID operationId(PlantingStep plantingStep, HarvestStep harvestStep) {

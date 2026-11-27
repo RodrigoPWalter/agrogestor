@@ -43,6 +43,10 @@ export const privatePageLoaders = {
     "FieldDiaryPage",
   ),
   "/tarefas": createPageLoader(() => import("../pages/TasksPage"), "TasksPage"),
+  "/boletos": createPageLoader(
+    () => import("../pages/BoletosPage"),
+    "BoletosPage",
+  ),
   "/chuvas": createPageLoader(
     () => import("../pages/RainfallPage"),
     "RainfallPage",

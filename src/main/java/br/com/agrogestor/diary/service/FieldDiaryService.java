@@ -206,8 +206,26 @@ public class FieldDiaryService {
         diaryRepository.delete(entry);
     }
 
+    @Transactional
+    public FieldDiaryResponse updateBoletoStatus(UUID id, boolean paid) {
+        FieldDiaryEntry entry = findEntryForUpdate(id);
+        if (entry.getActivityType() != ActivityType.PRODUCT_PURCHASE || entry.getBoletoDueDate() == null) {
+            throw new BusinessRuleException("Este registro não possui boleto");
+        }
+        entry.setBoletoPaid(paid);
+        return responseMapper.toResponse(entry, null, null);
+    }
+
     private void validate(FieldDiaryRequest request) {
         ActivityType type = request.activityType();
+        if (request.boletoDueDate() != null && (type != ActivityType.PRODUCT_PURCHASE
+                || request.boletoName() == null || request.boletoName().isBlank())) {
+            throw new BusinessRuleException("Informe o nome no boleto para a compra");
+        }
+        if (request.boletoDueDate() == null && request.boletoName() != null
+                && !request.boletoName().isBlank()) {
+            throw new BusinessRuleException("Informe o vencimento do boleto");
+        }
         if (type == ActivityType.HARVEST && request.plantingId() == null) {
             throw new BusinessRuleException("Selecione o plantio que foi colhido");
         }
@@ -427,6 +445,11 @@ public class FieldDiaryService {
     }
 
     private void updateDetails(FieldDiaryEntry entry, FieldDiaryRequest request) {
+        if (request.activityType() != ActivityType.PRODUCT_PURCHASE) {
+            entry.updateBoleto(null, null);
+        } else if (request.boletoDueDate() != null || request.boletoName() != null) {
+            entry.updateBoleto(request.boletoDueDate(), normalizeNullable(request.boletoName()));
+        }
         entry.updateDetails(
                 request.rainfallMillimeters(),
                 request.activityType() == ActivityType.SALE

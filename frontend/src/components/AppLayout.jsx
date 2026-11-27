@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   LayoutDashboard,
   ReceiptText,
+  Receipt,
   Sprout,
   Tractor,
   ListChecks,
@@ -57,6 +58,7 @@ const navigation = [
   { to: "/maquinas", label: "Máquinas", icon: Tractor },
   { to: "/chuvas", label: "Chuvas", icon: CloudRain },
   { to: "/gastos", label: "Gastos", icon: ReceiptText },
+  { to: "/boletos", label: "Boletos", icon: Receipt },
 ];
 
 const primaryMobilePaths = new Set(["/", "/diario", "/tarefas", "/plantios"]);

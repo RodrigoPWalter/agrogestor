@@ -97,6 +97,15 @@ public class FieldDiaryEntry {
     @Column(name = "fuel_liters", precision = 14, scale = 3)
     private BigDecimal fuelLiters;
 
+    @Column(name = "boleto_due_date")
+    private LocalDate boletoDueDate;
+
+    @Column(name = "boleto_name", length = 160)
+    private String boletoName;
+
+    @Column(name = "boleto_paid", nullable = false)
+    private boolean boletoPaid;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
@@ -233,6 +242,17 @@ public class FieldDiaryEntry {
     public BigDecimal getSalePricePerBag() { return salePricePerBag; }
     public ExpenseCategory getExpenseCategory() { return expenseCategory; }
     public BigDecimal getFuelLiters() { return fuelLiters; }
+    public LocalDate getBoletoDueDate() { return boletoDueDate; }
+    public String getBoletoName() { return boletoName; }
+    public boolean isBoletoPaid() { return boletoPaid; }
+
+    public void updateBoleto(LocalDate dueDate, String name) {
+        boletoDueDate = dueDate;
+        boletoName = name;
+        if (dueDate == null) boletoPaid = false;
+    }
+
+    public void setBoletoPaid(boolean paid) { boletoPaid = paid; }
 
     public void linkRainfall(UUID id) { rainfallId = id; }
     public void linkMaintenance(UUID id) { maintenanceId = id; }

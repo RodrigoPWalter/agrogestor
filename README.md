@@ -32,6 +32,7 @@ O ambiente público usa Render e PostgreSQL gerenciado. Como o plano gratuito po
 - **Gestão de Gastos:** Separação entre despesas por plantio e custos gerais da propriedade, com totais por categoria, quantidade e custo por litro de combustível e transferência proporcional do custo dos insumos utilizados.
 - **Controle de Estoque:** Cadastro de sementes, fertilizantes e defensivos, com entradas, saídas, custo médio ajustável com histórico, valor do saldo, validade e alerta de estoque baixo.
 - **Diário da Lavoura:** Central de lançamentos rápidos para observações, etapas de semeadura e colheita, chuvas, gastos, compras, uso de produtos, manutenções e vendas da produção, com integrações transacionais entre os módulos.
+- **Boletos:** Vencimento e nome no boleto são opcionais nas compras do Diário. A área de boletos organiza os vencimentos e permite registrar manualmente se foram pagos; não efetua pagamentos nem armazena arquivos.
 - **Registro de Chuvas:** Controle manual de medições do pluviômetro, com vínculo opcional ao plantio.
 - **Máquinas e Manutenções:** Cadastro da frota, horímetro e manutenções preventivas/corretivas, com lançamento automático do custo nos gastos da propriedade.
 - **Planejamento de Tarefas:** Lista de serviços com prazo, duração estimada e urgência automática, com vínculo opcional à próxima safra ou a uma máquina.

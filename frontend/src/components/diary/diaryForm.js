@@ -31,6 +31,8 @@ export function newDiaryForm(plantingId = "") {
     unit: "LITER",
     supplier: "",
     amount: "",
+    boletoDueDate: "",
+    boletoName: "",
     expenseCategory: "OTHER",
     fuelLiters: "",
     machineId: "",

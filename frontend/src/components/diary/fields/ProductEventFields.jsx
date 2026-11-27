@@ -86,7 +86,7 @@ export function ProductEventFields({ form, type, products, onUpdate }) {
             />
           </label>
           <label>
-            <span>Valor pago (opcional)</span>
+            <span>Valor da compra (opcional)</span>
             <input
               type="number"
               min="0.01"
@@ -95,6 +95,27 @@ export function ProductEventFields({ form, type, products, onUpdate }) {
               value={form.amount}
               onChange={(event) => onUpdate("amount", event.target.value)}
               placeholder="R$ 0,00"
+            />
+          </label>
+          <label>
+            <span>Vencimento do boleto (opcional)</span>
+            <input
+              type="date"
+              value={form.boletoDueDate || ""}
+              required={Boolean(form.boletoName)}
+              onChange={(event) =>
+                onUpdate("boletoDueDate", event.target.value)
+              }
+            />
+          </label>
+          <label>
+            <span>Boleto em nome de (opcional)</span>
+            <input
+              value={form.boletoName || ""}
+              maxLength={160}
+              required={Boolean(form.boletoDueDate)}
+              onChange={(event) => onUpdate("boletoName", event.target.value)}
+              placeholder="Ex.: João"
             />
           </label>
         </>

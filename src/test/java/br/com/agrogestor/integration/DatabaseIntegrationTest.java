@@ -66,6 +66,32 @@ class DatabaseIntegrationTest {
     }
 
     @Test
+    void shouldSavePurchaseBoletoAndKeepItsPaidStatusAfterEditing() {
+        var product = inventoryService.create(productRequest("Semente boleto integração"));
+        var request = new FieldDiaryRequest(
+                null, LocalDate.now(), ActivityType.PRODUCT_PURCHASE, "Compra de teste",
+                null, null, List.of(), null, null, product.id(), null, null,
+                new BigDecimal("2.000"), null, "Fornecedor", new BigDecimal("150.00"),
+                null, null, null, null, null, null, null, null,
+                LocalDate.of(2027, 1, 15), "João"
+        );
+        var entry = diaryService.create(request);
+        assertThat(entry.boletoDueDate()).isEqualTo(LocalDate.of(2027, 1, 15));
+        assertThat(entry.boletoName()).isEqualTo("João");
+        assertThat(entry.boletoPaid()).isFalse();
+
+        diaryService.updateBoletoStatus(entry.id(), true);
+        var updated = diaryService.update(entry.id(), request);
+        assertThat(updated.boletoPaid()).isTrue();
+        assertThat(updated.boletoName()).isEqualTo("João");
+        assertThat(inventoryService.findById(product.id()).quantity()).isEqualByComparingTo("12.000");
+
+        diaryService.delete(entry.id());
+        assertThat(inventoryService.findById(product.id()).quantity()).isEqualByComparingTo("10.000");
+        inventoryService.delete(product.id());
+    }
+
+    @Test
     void shouldApplyAndReverseAProductUseInTheSameDatabase() {
         var product = inventoryService.create(productRequest("Herbicida integração"));
         var entry = diaryService.create(productUseRequest(

@@ -200,6 +200,8 @@ export function FieldDiaryPage() {
       unit: "LITER",
       supplier: entry.supplier || "",
       amount: entry.amount || "",
+      boletoDueDate: entry.boletoDueDate || "",
+      boletoName: entry.boletoName || "",
       expenseCategory: entry.expenseCategory || "OTHER",
       fuelLiters: entry.fuelLiters || "",
       machineId: entry.machineId || "",
@@ -262,6 +264,12 @@ export function FieldDiaryPage() {
           !form.products.length && form.quantity ? Number(form.quantity) : null,
         supplier: form.supplier || null,
         amount: form.amount ? Number(form.amount) : null,
+        boletoDueDate:
+          form.activityType === "PRODUCT_PURCHASE"
+            ? form.boletoDueDate || null
+            : null,
+        boletoName:
+          form.activityType === "PRODUCT_PURCHASE" ? form.boletoName : "",
         expenseCategory: form.expenseCategory || null,
         fuelLiters: form.fuelLiters ? Number(form.fuelLiters) : null,
         machineId: form.machineId || null,

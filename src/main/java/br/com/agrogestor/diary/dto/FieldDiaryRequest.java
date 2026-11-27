@@ -53,8 +53,24 @@ public record FieldDiaryRequest(
         BigDecimal salePricePerBag,
         String buyer,
         ExpenseCategory expenseCategory,
-        BigDecimal fuelLiters
+        BigDecimal fuelLiters,
+        LocalDate boletoDueDate,
+        @Size(max = 160, message = "O nome do boleto deve ter no máximo 160 caracteres")
+        String boletoName
 ) {
+    public FieldDiaryRequest(UUID plantingId, LocalDate entryDate, ActivityType activityType,
+            String activity, String weatherCondition, String appliedProducts,
+            List<FieldDiaryProductRequest> products, String observations,
+            BigDecimal rainfallMillimeters, UUID productId, String productName,
+            ProductType productType, BigDecimal quantity, MeasurementUnit unit,
+            String supplier, BigDecimal amount, UUID machineId, BigDecimal harvestQuantity,
+            String harvestUnit, BigDecimal saleQuantityBags, BigDecimal salePricePerBag,
+            String buyer, ExpenseCategory expenseCategory, BigDecimal fuelLiters) {
+        this(plantingId, entryDate, activityType, activity, weatherCondition, appliedProducts,
+                products, observations, rainfallMillimeters, productId, productName, productType,
+                quantity, unit, supplier, amount, machineId, harvestQuantity, harvestUnit,
+                saleQuantityBags, salePricePerBag, buyer, expenseCategory, fuelLiters, null, null);
+    }
     public FieldDiaryRequest(
             UUID plantingId,
             LocalDate entryDate,

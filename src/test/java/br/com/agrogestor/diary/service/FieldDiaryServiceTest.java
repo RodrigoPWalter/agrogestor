@@ -120,6 +120,45 @@ class FieldDiaryServiceTest {
     }
 
     @Test
+    void rejectsBoletoWithMissingName() {
+        FieldDiaryRequest request = new FieldDiaryRequest(null, LocalDate.now(),
+                ActivityType.PRODUCT_PURCHASE, "Compra", null, null, List.of(), null,
+                null, null, "Semente", ProductType.SEED, BigDecimal.ONE,
+                MeasurementUnit.KILOGRAM, null, null, null, null, null,
+                null, null, null, null, null, LocalDate.of(2027, 1, 10), " ");
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("nome no boleto");
+        verify(diaryRepository, never()).save(any());
+    }
+
+    @Test
+    void boletoStatusIsScopedToPropertyAndSurvivesDetailsEdit() {
+        UUID id = UUID.randomUUID();
+        FieldDiaryEntry entry = new FieldDiaryEntry(property, null, LocalDate.now(),
+                ActivityType.PRODUCT_PURCHASE, "Compra", null, null, null);
+        entry.updateBoleto(LocalDate.of(2027, 1, 10), "João");
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID)).thenReturn(Optional.of(entry));
+
+        service.updateBoletoStatus(id, true);
+        entry.updateBoleto(LocalDate.of(2027, 1, 15), "João");
+
+        assertThat(entry.isBoletoPaid()).isTrue();
+        assertThat(entry.getBoletoDueDate()).isEqualTo(LocalDate.of(2027, 1, 15));
+        verify(diaryRepository).findByIdAndPropertyIdForUpdate(id, PROPERTY_ID);
+        entry.updateBoleto(null, null);
+        assertThat(entry.isBoletoPaid()).isFalse();
+    }
+
+    @Test
+    void boletoStatusRejectsEntryOutsideProperty() {
+        UUID id = UUID.randomUUID();
+        when(diaryRepository.findByIdAndPropertyIdForUpdate(id, PROPERTY_ID)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> service.updateBoletoStatus(id, true))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
     void shouldNormalizeTextWhenCreatingEntry() {
         UUID plantingId = UUID.randomUUID();
         when(plantingRepository.findByIdAndPropertyId(plantingId, PROPERTY_ID)).thenReturn(Optional.of(planting()));

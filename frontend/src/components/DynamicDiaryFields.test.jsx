@@ -80,7 +80,13 @@ describe("DynamicDiaryFields", () => {
 
     expect(screen.getByText("Nome do novo produto")).toBeInTheDocument();
     expect(screen.getByText("Quantidade comprada")).toBeInTheDocument();
-    expect(screen.getByText("Valor pago (opcional)")).toBeInTheDocument();
+    expect(screen.getByText("Valor da compra (opcional)")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Vencimento do boleto (opcional)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Boleto em nome de (opcional)"),
+    ).toBeInTheDocument();
   });
 
   it("pede hectares nas etapas de plantio e colheita", () => {
