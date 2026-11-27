@@ -327,6 +327,9 @@ test("estoque da produção registra venda e mantém o layout responsivo", async
   await page.locator("#login-password").fill("senha-segura");
   await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
 
+  await expect(
+    page.getByRole("heading", { name: "Visão geral da propriedade" }),
+  ).toBeVisible();
   await page.goto("/producao");
   await expect(page.getByRole("heading", { name: "Produção" })).toBeVisible();
   await expect(page.getByText("300 sc").first()).toBeVisible();
