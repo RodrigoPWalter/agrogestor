@@ -74,6 +74,12 @@ export function LoginPage() {
       </section>
 
       <section className="login-access">
+        <div className="login-brand login-brand--mobile">
+          <span>
+            <BrandMark />
+          </span>
+          <strong>AgroGestor</strong>
+        </div>
         <div className="login-card">
           <header>
             <span className="login-card__mark">
