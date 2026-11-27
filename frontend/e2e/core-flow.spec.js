@@ -215,6 +215,10 @@ test("login, cadastro de plantio e lançamento de gasto", async ({
     "Fluxo completo coberto no desktop",
   );
   await page.goto("/login");
+  await expect(page.locator(".login-introduction")).toHaveCSS(
+    "background-image",
+    /trator-login/,
+  );
   await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
   await page.locator("#login-password").fill("senha-segura");
   await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
@@ -256,6 +260,17 @@ test("layout móvel não cria rolagem horizontal", async ({ page }, testInfo) =>
     "Verificação exclusiva do celular",
   );
   await page.goto("/login");
+  const mobilePhoto = await page
+    .locator(".login-access")
+    .evaluate(
+      (element) => getComputedStyle(element, "::before").backgroundImage,
+    );
+  expect(mobilePhoto).toContain("colheitadeira-login");
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+  ).toBeLessThanOrEqual(
+    await page.evaluate(() => document.documentElement.clientWidth),
+  );
   await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
   await page.locator("#login-password").fill("senha-segura");
   await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
