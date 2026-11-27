@@ -581,6 +581,12 @@
   }
 }
 
+@media (max-width: 600px) and (orientation: portrait) {
+  .login-page {
+    background-size: cover, auto 115%, auto;
+  }
+}
+
 .planting-card-finance,
 .planting-detail__summary {
   display: grid;
