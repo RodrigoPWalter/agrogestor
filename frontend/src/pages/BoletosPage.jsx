@@ -10,6 +10,22 @@ import { PageHeader } from "../components/PageHeader";
 import { useOfflineRefresh } from "../hooks/useOfflineRefresh";
 import { isOfflineResult } from "../offline/offlineSync";
 import { formatCurrency, formatDate, toInputDate } from "../utils/formatters";
+import "../styles/boletos.css";
+
+const filters = [
+  { value: "all", label: "Todos" },
+  { value: "overdue", label: "Vencidos" },
+  { value: "dueSoon", label: "Próximos do vencimento" },
+  { value: "pending", label: "A vencer" },
+  { value: "paid", label: "Pagos" },
+];
+
+const statusLabels = {
+  overdue: "Vencido",
+  dueSoon: "Vence em até 7 dias",
+  pending: "A vencer",
+  paid: "Pago",
+};
 
 export function BoletosPage() {
   const [entries, setEntries] = useState([]);
@@ -18,6 +34,7 @@ export function BoletosPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [savingId, setSavingId] = useState(null);
+  const [filter, setFilter] = useState("all");
 
   async function load() {
     setLoading(true);
@@ -82,6 +99,15 @@ export function BoletosPage() {
   const attentionDate = new Date();
   attentionDate.setDate(attentionDate.getDate() + 7);
   const attentionLimit = `${attentionDate.getFullYear()}-${String(attentionDate.getMonth() + 1).padStart(2, "0")}-${String(attentionDate.getDate()).padStart(2, "0")}`;
+  function getStatus(entry) {
+    if (entry.boletoPaid) return "paid";
+    if (entry.boletoDueDate < today) return "overdue";
+    if (entry.boletoDueDate <= attentionLimit) return "dueSoon";
+    return "pending";
+  }
+  const filteredEntries = entries.filter(
+    (entry) => filter === "all" || getStatus(entry) === filter,
+  );
   return (
     <div className="page">
       <PageHeader
@@ -103,65 +129,108 @@ export function BoletosPage() {
           description="Ao registrar uma compra no Diário, informe o vencimento e o nome no boleto."
         />
       ) : (
-        <div className="data-card-grid">
-          {entries.map((entry) => (
-            <article className="data-card" key={entry.id}>
-              <div className="data-card__header">
-                <div>
-                  <h2>
-                    {entry.products
-                      ?.map((product) => product.productName)
-                      .filter(Boolean)
-                      .join(", ") || "Compra de produto"}
-                  </h2>
-                  <span className="badge">
-                    {entry.boletoPaid
-                      ? "Pago"
-                      : entry.boletoDueDate < today
-                        ? "Vencido"
-                        : entry.boletoDueDate <= attentionLimit
-                          ? "Vence em até 7 dias"
-                          : "Pendente"}
+        <>
+          <section
+            className="boleto-filters"
+            aria-label="Filtrar boletos por situação"
+          >
+            <div className="boleto-filters__heading">
+              <h2>Filtrar boletos</h2>
+              <p>Próximos do vencimento: hoje e os próximos 7 dias.</p>
+            </div>
+            <div className="boleto-filters__buttons">
+              {filters.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`boleto-filter boleto-filter--${option.value}`}
+                  aria-pressed={filter === option.value}
+                  onClick={() => setFilter(option.value)}
+                >
+                  {option.label}
+                  <span aria-hidden="true">
+                    {option.value === "all"
+                      ? entries.length
+                      : entries.filter(
+                          (entry) => getStatus(entry) === option.value,
+                        ).length}
                   </span>
-                </div>
-              </div>
-              <dl className="details-list">
-                <div>
-                  <dt>Vencimento</dt>
-                  <dd>{formatDate(entry.boletoDueDate)}</dd>
-                </div>
-                <div>
-                  <dt>Em nome de</dt>
-                  <dd>{entry.boletoName}</dd>
-                </div>
-                <div>
-                  <dt>Fornecedor</dt>
-                  <dd>{entry.supplier || "Não informado"}</dd>
-                </div>
-                <div>
-                  <dt>Valor da compra</dt>
-                  <dd>
-                    {entry.amount != null
-                      ? formatCurrency(entry.amount)
-                      : "Não informado"}
-                  </dd>
-                </div>
-              </dl>
-              <button
-                className="button button--ghost button--wide"
-                type="button"
-                disabled={Boolean(savingId)}
-                onClick={() => changeStatus(entry)}
-              >
-                {savingId === entry.id
-                  ? "Salvando..."
-                  : entry.boletoPaid
-                    ? "Marcar como pendente"
-                    : "Marcar como pago"}
-              </button>
-            </article>
-          ))}
-        </div>
+                </button>
+              ))}
+            </div>
+            <p className="boleto-filters__count" role="status">
+              {filteredEntries.length}{" "}
+              {filteredEntries.length === 1
+                ? "boleto encontrado"
+                : "boletos encontrados"}
+            </p>
+          </section>
+          {filteredEntries.length === 0 ? (
+            <EmptyState
+              title="Nenhum boleto nesta situação"
+              description="Escolha outro filtro para visualizar seus boletos."
+            />
+          ) : (
+            <div className="data-card-grid boleto-grid">
+              {filteredEntries.map((entry) => (
+                <article
+                  className={`data-card boleto-card boleto-card--${getStatus(entry)}`}
+                  key={entry.id}
+                >
+                  <div className="data-card__header">
+                    <div>
+                      <h2>
+                        {entry.products
+                          ?.map((product) => product.productName)
+                          .filter(Boolean)
+                          .join(", ") || "Compra de produto"}
+                      </h2>
+                      <span
+                        className={`badge boleto-badge boleto-badge--${getStatus(entry)}`}
+                      >
+                        {statusLabels[getStatus(entry)]}
+                      </span>
+                    </div>
+                  </div>
+                  <dl className="details-list">
+                    <div>
+                      <dt>Vencimento</dt>
+                      <dd>{formatDate(entry.boletoDueDate)}</dd>
+                    </div>
+                    <div>
+                      <dt>Em nome de</dt>
+                      <dd>{entry.boletoName}</dd>
+                    </div>
+                    <div>
+                      <dt>Fornecedor</dt>
+                      <dd>{entry.supplier || "Não informado"}</dd>
+                    </div>
+                    <div>
+                      <dt>Valor da compra</dt>
+                      <dd>
+                        {entry.amount != null
+                          ? formatCurrency(entry.amount)
+                          : "Não informado"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <button
+                    className="button button--ghost button--wide"
+                    type="button"
+                    disabled={Boolean(savingId)}
+                    onClick={() => changeStatus(entry)}
+                  >
+                    {savingId === entry.id
+                      ? "Salvando..."
+                      : entry.boletoPaid
+                        ? "Marcar como pendente"
+                        : "Marcar como pago"}
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

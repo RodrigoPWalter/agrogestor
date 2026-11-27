@@ -207,6 +207,64 @@ test.beforeEach(async ({ page }) => {
   await mockApi(page);
 });
 
+test("boletos destacam vencimentos e filtram por situação", async ({
+  page,
+}) => {
+  function dateFromToday(days) {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  }
+  const entries = [
+    { id: "vencido", name: "Ureia", days: -1 },
+    { id: "hoje", name: "Milho", days: 0 },
+    { id: "limite", name: "Soja", days: 7 },
+    { id: "futuro", name: "Adubo", days: 8 },
+    { id: "pago", name: "Trigo", days: -1, paid: true },
+  ].map((item) => ({
+    id: item.id,
+    activityType: "PRODUCT_PURCHASE",
+    boletoDueDate: dateFromToday(item.days),
+    boletoName: "Produtor",
+    boletoPaid: Boolean(item.paid),
+    products: [{ productName: item.name }],
+  }));
+  await page.route("**/api/v1/field-diary**", async (route) => {
+    if (route.request().method() === "PATCH") {
+      await route.fulfill({ json: { boletoPaid: true } });
+    } else {
+      await route.fulfill({ json: pageOf(entries) });
+    }
+  });
+
+  await page.goto("/login");
+  await page.getByLabel("E-mail").fill("produtor@agrogestor.test");
+  await page.locator("#login-password").fill("senha-segura");
+  await page.getByRole("button", { name: "Entrar no AgroGestor" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Visão geral da propriedade" }),
+  ).toBeVisible();
+  await page.goto("/boletos");
+
+  const card = (name) =>
+    page
+      .locator(".boleto-card")
+      .filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await expect(card("Ureia")).toHaveClass(/boleto-card--overdue/);
+  await expect(card("Milho")).toHaveClass(/boleto-card--dueSoon/);
+  await expect(card("Soja")).toHaveClass(/boleto-card--dueSoon/);
+  await expect(card("Adubo")).toHaveClass(/boleto-card--pending/);
+  await expect(card("Trigo")).toHaveClass(/boleto-card--paid/);
+  await page.getByRole("button", { name: "Vencidos" }).click();
+  await expect(page.locator(".boleto-card")).toHaveCount(1);
+  await card("Ureia").getByRole("button", { name: "Marcar como pago" }).click();
+  await expect(page.getByText("Nenhum boleto nesta situação")).toBeVisible();
+  await page.getByRole("button", { name: "Próximos do vencimento" }).click();
+  await expect(page.locator(".boleto-card")).toHaveCount(2);
+  await page.getByRole("button", { name: "Pagos" }).click();
+  await expect(page.locator(".boleto-card")).toHaveCount(2);
+});
+
 test("login, cadastro de plantio e lançamento de gasto", async ({
   page,
 }, testInfo) => {

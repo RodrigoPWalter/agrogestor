@@ -1,0 +1,108 @@
+.boleto-filters {
+  margin-bottom: 22px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.boleto-filters__heading h2 {
+  margin: 0 0 4px;
+  color: var(--green-950);
+  font-size: 1.05rem;
+}
+
+.boleto-filters__heading p,
+.boleto-filters__count {
+  margin: 0;
+  color: #4b5c50;
+  font-size: 0.9rem;
+}
+
+.boleto-filters__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 12px;
+}
+
+.boleto-filter {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 13px;
+  color: #24452f;
+  border: 1px solid #b9c8ba;
+  border-radius: 7px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.boleto-filter span {
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(25, 67, 42, 0.1);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.boleto-filter[aria-pressed="true"] {
+  color: #fff;
+  border-color: #205839;
+  background: #205839;
+}
+
+.boleto-filter[aria-pressed="true"] span {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.boleto-card {
+  border-left: 5px solid #6a9274;
+}
+
+.boleto-card--overdue {
+  border-left-color: #b32727;
+}
+
+.boleto-card--dueSoon {
+  border-left-color: #c38a00;
+}
+
+.boleto-badge {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+}
+
+.boleto-badge--overdue {
+  color: #8b1515;
+  background: #fbe3e1;
+}
+
+.boleto-badge--dueSoon {
+  color: #694600;
+  background: #ffedb2;
+}
+
+.boleto-badge--paid {
+  color: #225e38;
+  background: #dcefe0;
+}
+
+.boleto-card .details-list {
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .boleto-filters {
+    padding: 16px;
+  }
+
+  .boleto-filter {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+}
