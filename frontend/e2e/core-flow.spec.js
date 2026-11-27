@@ -265,6 +265,10 @@ test("layout móvel não cria rolagem horizontal", async ({ page }, testInfo) =>
     .evaluate((element) => getComputedStyle(element).backgroundImage);
   expect(mobilePhoto).toContain("colheitadeira-login");
   await expect(page.locator(".login-brand--mobile")).toBeVisible();
+  await expect(page.locator("html")).toHaveCSS(
+    "background-color",
+    "rgb(27, 62, 94)",
+  );
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(
